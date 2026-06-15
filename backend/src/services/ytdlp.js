@@ -5,7 +5,7 @@ import path from 'path';
 import { pool } from '../db/index.js';
 
 const execFileAsync = promisify(execFile);
-const DATA_DIR = '/app/data';
+const DATA_DIR = process.env.DATA_DIR || '/app/data';
 const COOKIES_FILE = path.join(DATA_DIR, 'cookies.txt');
 
 export async function hasCookies() {
