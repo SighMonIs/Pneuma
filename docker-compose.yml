@@ -16,6 +16,8 @@ services:
 
   backend:
     image: ghcr.io/sighmonis/pneuma-backend:latest
+    build:
+      context: ./backend
     ports:
       - "3001:3001"
     environment:
@@ -31,13 +33,23 @@ services:
       postgres:
         condition: service_healthy
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3001/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
 
   frontend:
     image: ghcr.io/sighmonis/pneuma-frontend:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
       - "5173:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:

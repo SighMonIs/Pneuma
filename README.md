@@ -14,7 +14,11 @@ Organise your subscriptions into categories, filter out Shorts, track watched vi
 ## Running
 
 ```bash
+# Build locally (always works, no registry login needed)
 docker compose up --build
+
+# Use pre-built images from GHCR (faster, requires images to be public)
+docker compose pull && docker compose up
 ```
 
 Then open **http://localhost:5173**.
