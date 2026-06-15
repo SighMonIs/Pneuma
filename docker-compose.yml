@@ -15,7 +15,7 @@ services:
       retries: 10
 
   backend:
-    build: ./backend
+    image: ghcr.io/sighmonIs/pneuma-backend:latest
     ports:
       - "3001:3001"
     environment:
@@ -33,9 +33,7 @@ services:
     restart: unless-stopped
 
   frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/sighmonIs/pneuma-frontend:latest
     ports:
       - "5173:80"
     depends_on:
