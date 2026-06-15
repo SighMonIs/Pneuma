@@ -1,6 +1,47 @@
+version: '3.8'
 services:
-  pneuma:
-    image: ghcr.io/sighmonIs/pneuma:latest
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: pneuma
+      POSTGRES_USER: pneuma
+      POSTGRES_PASSWORD: pneuma
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pneuma"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
     ports:
-      - "5173:5173"
+      - "3001:3001"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=pneuma
+      - DB_USER=pneuma
+      - DB_PASSWORD=pneuma
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:5173}
+    volumes:
+      - app_data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  app_data:
