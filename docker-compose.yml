@@ -1,10 +1,6 @@
 services:
   pneuma:
-    build:
-      context: .
-      dockerfile: Dockerfile.dev
+    image: ghcr.io/sighmonIs/pneuma:latest
     ports:
       - "5173:5173"
-    volumes:
-      - .:/app
-      - /app/node_modules
+    restart: unless-stopped
