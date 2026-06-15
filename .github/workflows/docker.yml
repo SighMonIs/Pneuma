@@ -10,6 +10,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+
     steps:
       - uses: actions/checkout@v4
 
@@ -20,12 +21,21 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set lowercase image name
-        run: echo "IMAGE=ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]'):latest" >> $GITHUB_ENV
+      - name: Set base image name
+        run: echo "BASE=ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
-      - name: Build and push
+      - name: Build and push frontend
         uses: docker/build-push-action@v5
         with:
           context: .
+          dockerfile: Dockerfile
           push: true
-          tags: ${{ env.IMAGE }}
+          tags: ${{ env.BASE }}-frontend:latest
+
+      - name: Build and push backend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          dockerfile: ./backend/Dockerfile
+          push: true
+          tags: ${{ env.BASE }}-backend:latest
