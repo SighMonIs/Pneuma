@@ -13,12 +13,14 @@ Organise your subscriptions into categories, filter out Shorts, track watched vi
 
 ## Running
 
+**Server / production** — pull pre-built images from GHCR (only needs the compose file):
 ```bash
-# Build locally (always works, no registry login needed)
-docker compose up --build
+docker compose pull && docker compose up -d
+```
 
-# Use pre-built images from GHCR (faster, requires images to be public)
-docker compose pull && docker compose up
+**Local development** — build from source (requires the full repo):
+```bash
+docker compose -f docker-compose.build.yml up --build
 ```
 
 Then open **http://localhost:5173**.
