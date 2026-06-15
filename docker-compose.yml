@@ -15,7 +15,7 @@ services:
       retries: 10
 
   backend:
-    image: ghcr.io/sighmonIs/pneuma-backend:latest
+    image: ghcr.io/sighmonis/pneuma-backend:latest
     ports:
       - "3001:3001"
     environment:
@@ -33,7 +33,7 @@ services:
     restart: unless-stopped
 
   frontend:
-    image: ghcr.io/sighmonIs/pneuma-frontend:latest
+    image: ghcr.io/sighmonis/pneuma-frontend:latest
     ports:
       - "5173:80"
     depends_on:

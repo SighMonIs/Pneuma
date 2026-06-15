@@ -85,5 +85,5 @@ CI builds and pushes two images to GHCR on every push to `main`:
 
 | Image | Description |
 |-------|-------------|
-| `ghcr.io/sighmonIs/pneuma-frontend:latest` | nginx serving the Vite build |
-| `ghcr.io/sighmonIs/pneuma-backend:latest` | Node.js + yt-dlp API |
+| `ghcr.io/sighmonis/pneuma-frontend:latest` | nginx serving the Vite build |
+| `ghcr.io/sighmonis/pneuma-backend:latest` | Node.js + yt-dlp API |
