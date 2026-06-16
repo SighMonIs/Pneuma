@@ -368,8 +368,7 @@ function ManageFeedsView({ categories, onBack, onDataChange }) {
   const [subs, setSubs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(new Set());
-  const [addCatId, setAddCatId] = useState('');
-  const [removeCatId, setRemoveCatId] = useState('');
+  const [setCatId, setSetCatId] = useState('');
   const [applying, setApplying] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
@@ -397,20 +396,20 @@ function ManageFeedsView({ categories, onBack, onDataChange }) {
       return next;
     });
 
-  const catName = (id) => categories.find(c => c.id === parseInt(id))?.name || '';
-
-  const handleAdd = async () => {
-    if (!addCatId || selected.size === 0) return;
+  const handleSave = async () => {
+    if (!setCatId || selected.size === 0) return;
     setApplying(true); setError('');
     try {
-      const catId = parseInt(addCatId);
+      const catId = parseInt(setCatId);
       for (const sub of subs.filter(s => selected.has(s.id))) {
-        const merged = [...new Set([...(sub.category_ids || []), catId])];
-        await updateChannelCategories(sub.id, merged);
+        await updateChannelCategories(sub.id, [catId]);
       }
       await loadSubs();
       await onDataChange();
-      flash(`Added ${selected.size} channel${selected.size !== 1 ? 's' : ''} to ${catName(addCatId)}`);
+      const name = categories.find(c => c.id === catId)?.name || '';
+      flash(`Set ${selected.size} channel${selected.size !== 1 ? 's' : ''} to ${name}`);
+      setSelected(new Set());
+      setSetCatId('');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -418,24 +417,7 @@ function ManageFeedsView({ categories, onBack, onDataChange }) {
     }
   };
 
-  const handleRemove = async () => {
-    if (!removeCatId || selected.size === 0) return;
-    setApplying(true); setError('');
-    try {
-      const catId = parseInt(removeCatId);
-      for (const sub of subs.filter(s => selected.has(s.id))) {
-        const filtered = (sub.category_ids || []).filter(id => id !== catId);
-        await updateChannelCategories(sub.id, filtered);
-      }
-      await loadSubs();
-      await onDataChange();
-      flash(`Removed ${selected.size} channel${selected.size !== 1 ? 's' : ''} from ${catName(removeCatId)}`);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setApplying(false);
-    }
-  };
+  const handleCancel = () => { setSelected(new Set()); setSetCatId(''); setError(''); };
 
   const catLabel = (sub) => {
     const names = (sub.category_ids || [])
@@ -466,7 +448,7 @@ function ManageFeedsView({ categories, onBack, onDataChange }) {
       {/* Action bar — visible when anything is selected */}
       {selected.size > 0 && (
         <div className="bg-[#1a1a1a] border border-gray-700 rounded-xl p-4 flex flex-col gap-3">
-          <p className="text-white text-sm font-medium">
+              <p className="text-white text-sm font-medium">
             {selected.size} channel{selected.size !== 1 ? 's' : ''} selected
           </p>
 
@@ -481,50 +463,32 @@ function ManageFeedsView({ categories, onBack, onDataChange }) {
             </div>
           )}
 
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2">
-              <span className="text-gray-400 text-xs w-24 flex-shrink-0">Add to</span>
-              <select
-                value={addCatId}
-                onChange={e => setAddCatId(e.target.value)}
-                className="flex-1 bg-[#0f0f0f] border border-gray-700 rounded-lg px-2 py-1.5 text-gray-200 text-sm focus:outline-none focus:border-gray-500"
-              >
-                <option value="">Choose category…</option>
-                {categories.map(c => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
-              <button
-                onClick={handleAdd}
-                disabled={!addCatId || applying}
-                className="flex items-center gap-1 px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg text-sm font-medium transition-colors flex-shrink-0"
-              >
-                {applying ? <RefreshCw size={12} className="animate-spin" /> : <Plus size={12} />}
-                Add
-              </button>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className="text-gray-400 text-xs w-24 flex-shrink-0">Remove from</span>
-              <select
-                value={removeCatId}
-                onChange={e => setRemoveCatId(e.target.value)}
-                className="flex-1 bg-[#0f0f0f] border border-gray-700 rounded-lg px-2 py-1.5 text-gray-200 text-sm focus:outline-none focus:border-gray-500"
-              >
-                <option value="">Choose category…</option>
-                {categories.map(c => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
-              <button
-                onClick={handleRemove}
-                disabled={!removeCatId || applying}
-                className="flex items-center gap-1 px-3 py-1.5 bg-[#242424] hover:bg-[#2e2e2e] disabled:opacity-50 border border-gray-700 text-gray-300 rounded-lg text-sm transition-colors flex-shrink-0"
-              >
-                {applying ? <RefreshCw size={12} className="animate-spin" /> : <Trash2 size={12} />}
-                Remove
-              </button>
-            </div>
+          <div className="flex items-center gap-2">
+            <span className="text-gray-400 text-xs flex-shrink-0">Set category</span>
+            <select
+              value={setCatId}
+              onChange={e => setSetCatId(e.target.value)}
+              className="flex-1 bg-[#0f0f0f] border border-gray-700 rounded-lg px-2 py-1.5 text-gray-200 text-sm focus:outline-none focus:border-gray-500"
+            >
+              <option value="">Choose…</option>
+              {categories.map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+            <button
+              onClick={handleSave}
+              disabled={!setCatId || applying}
+              className="flex items-center gap-1 px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg text-sm font-medium transition-colors flex-shrink-0"
+            >
+              {applying ? <RefreshCw size={12} className="animate-spin" /> : <Check size={12} />}
+              Save
+            </button>
+            <button
+              onClick={handleCancel}
+              className="px-3 py-1.5 bg-[#242424] hover:bg-[#2e2e2e] border border-gray-700 text-gray-400 rounded-lg text-sm transition-colors flex-shrink-0"
+            >
+              Cancel
+            </button>
           </div>
         </div>
       )}
