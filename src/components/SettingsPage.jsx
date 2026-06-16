@@ -3,12 +3,14 @@ import {
   Cookie, FileSpreadsheet, Plus, RefreshCw, Trash2,
   Check, Upload, ArrowRight, AlertCircle, Monitor, Rss, Tag,
   ChevronUp, ChevronDown, Settings, Calendar, RotateCcw,
+  ArrowLeft, ListChecks,
 } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import {
   saveCookies, deleteCookies, importCsv, addChannel, syncSubscriptions,
   createCategory, updateCategory, deleteCategory, reorderCategory,
   getSettings, updateSettings, applyDefaultFetch,
+  getSubscriptions, updateChannelCategories,
 } from '../services/api.js';
 import CategoryModal from './CategoryModal.jsx';
 
@@ -229,6 +231,7 @@ function FetchSettingsSection() {
 function CategoriesTab({ categories, onDataChange }) {
   const [showModal, setShowModal] = useState(false);
   const [editingCat, setEditingCat] = useState(null);
+  const [manageMode, setManageMode] = useState(false);
 
   const sorted = [...categories].sort((a, b) => a.sort_order - b.sort_order);
 
@@ -259,17 +262,36 @@ function CategoriesTab({ categories, onDataChange }) {
     await onDataChange();
   };
 
+  if (manageMode) {
+    return (
+      <ManageFeedsView
+        categories={sorted}
+        onBack={() => setManageMode(false)}
+        onDataChange={onDataChange}
+      />
+    );
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <p className="text-gray-400 text-sm">{categories.length} categor{categories.length === 1 ? 'y' : 'ies'}</p>
-        <button
-          onClick={() => { setEditingCat(null); setShowModal(true); }}
-          className="flex items-center gap-1.5 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors"
-        >
-          <Plus size={14} />
-          New Category
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setManageMode(true)}
+            className="flex items-center gap-1.5 px-3 py-2 bg-[#242424] hover:bg-[#2e2e2e] border border-gray-700 text-gray-300 rounded-lg text-sm transition-colors"
+          >
+            <ListChecks size={14} />
+            Manage Feeds
+          </button>
+          <button
+            onClick={() => { setEditingCat(null); setShowModal(true); }}
+            className="flex items-center gap-1.5 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors"
+          >
+            <Plus size={14} />
+            New Category
+          </button>
+        </div>
       </div>
 
       {categories.length === 0 ? (
@@ -335,6 +357,222 @@ function CategoriesTab({ categories, onDataChange }) {
           onSave={handleSave}
           onClose={() => { setShowModal(false); setEditingCat(null); }}
         />
+      )}
+    </div>
+  );
+}
+
+/* ─── Manage Feeds View ─── */
+
+function ManageFeedsView({ categories, onBack, onDataChange }) {
+  const [subs, setSubs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState(new Set());
+  const [addCatId, setAddCatId] = useState('');
+  const [removeCatId, setRemoveCatId] = useState('');
+  const [applying, setApplying] = useState(false);
+  const [success, setSuccess] = useState('');
+  const [error, setError] = useState('');
+
+  const flash = (msg) => { setSuccess(msg); setTimeout(() => setSuccess(''), 3000); };
+
+  const loadSubs = async () => {
+    const data = await getSubscriptions();
+    setSubs(data.sort((a, b) => (a.title || '').localeCompare(b.title || '')));
+  };
+
+  useEffect(() => {
+    loadSubs().finally(() => setLoading(false));
+  }, []);
+
+  const allSelected = subs.length > 0 && selected.size === subs.length;
+
+  const toggleAll = () =>
+    setSelected(allSelected ? new Set() : new Set(subs.map(s => s.id)));
+
+  const toggle = (id) =>
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+
+  const catName = (id) => categories.find(c => c.id === parseInt(id))?.name || '';
+
+  const handleAdd = async () => {
+    if (!addCatId || selected.size === 0) return;
+    setApplying(true); setError('');
+    try {
+      const catId = parseInt(addCatId);
+      for (const sub of subs.filter(s => selected.has(s.id))) {
+        const merged = [...new Set([...(sub.category_ids || []), catId])];
+        await updateChannelCategories(sub.id, merged);
+      }
+      await loadSubs();
+      await onDataChange();
+      flash(`Added ${selected.size} channel${selected.size !== 1 ? 's' : ''} to ${catName(addCatId)}`);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setApplying(false);
+    }
+  };
+
+  const handleRemove = async () => {
+    if (!removeCatId || selected.size === 0) return;
+    setApplying(true); setError('');
+    try {
+      const catId = parseInt(removeCatId);
+      for (const sub of subs.filter(s => selected.has(s.id))) {
+        const filtered = (sub.category_ids || []).filter(id => id !== catId);
+        await updateChannelCategories(sub.id, filtered);
+      }
+      await loadSubs();
+      await onDataChange();
+      flash(`Removed ${selected.size} channel${selected.size !== 1 ? 's' : ''} from ${catName(removeCatId)}`);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setApplying(false);
+    }
+  };
+
+  const catLabel = (sub) => {
+    const names = (sub.category_ids || [])
+      .map(id => categories.find(c => c.id === id)?.name)
+      .filter(Boolean);
+    return names.length > 0 ? names.join(', ') : null;
+  };
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <button
+          onClick={onBack}
+          className="flex items-center gap-1.5 text-gray-400 hover:text-white text-sm transition-colors"
+        >
+          <ArrowLeft size={14} />
+          Back to categories
+        </button>
+        <button
+          onClick={toggleAll}
+          className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+        >
+          {allSelected ? 'Deselect all' : 'Select all'}
+        </button>
+      </div>
+
+      {/* Action bar — visible when anything is selected */}
+      {selected.size > 0 && (
+        <div className="bg-[#1a1a1a] border border-gray-700 rounded-xl p-4 flex flex-col gap-3">
+          <p className="text-white text-sm font-medium">
+            {selected.size} channel{selected.size !== 1 ? 's' : ''} selected
+          </p>
+
+          {error && (
+            <div className="flex items-center gap-2 text-red-400 text-xs bg-red-900/20 border border-red-800 rounded-lg p-2">
+              <AlertCircle size={12} />{error}
+            </div>
+          )}
+          {success && (
+            <div className="flex items-center gap-2 text-green-400 text-xs bg-green-900/20 border border-green-800 rounded-lg p-2">
+              <Check size={12} />{success}
+            </div>
+          )}
+
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-gray-400 text-xs w-24 flex-shrink-0">Add to</span>
+              <select
+                value={addCatId}
+                onChange={e => setAddCatId(e.target.value)}
+                className="flex-1 bg-[#0f0f0f] border border-gray-700 rounded-lg px-2 py-1.5 text-gray-200 text-sm focus:outline-none focus:border-gray-500"
+              >
+                <option value="">Choose category…</option>
+                {categories.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+              <button
+                onClick={handleAdd}
+                disabled={!addCatId || applying}
+                className="flex items-center gap-1 px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg text-sm font-medium transition-colors flex-shrink-0"
+              >
+                {applying ? <RefreshCw size={12} className="animate-spin" /> : <Plus size={12} />}
+                Add
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-gray-400 text-xs w-24 flex-shrink-0">Remove from</span>
+              <select
+                value={removeCatId}
+                onChange={e => setRemoveCatId(e.target.value)}
+                className="flex-1 bg-[#0f0f0f] border border-gray-700 rounded-lg px-2 py-1.5 text-gray-200 text-sm focus:outline-none focus:border-gray-500"
+              >
+                <option value="">Choose category…</option>
+                {categories.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+              <button
+                onClick={handleRemove}
+                disabled={!removeCatId || applying}
+                className="flex items-center gap-1 px-3 py-1.5 bg-[#242424] hover:bg-[#2e2e2e] disabled:opacity-50 border border-gray-700 text-gray-300 rounded-lg text-sm transition-colors flex-shrink-0"
+              >
+                {applying ? <RefreshCw size={12} className="animate-spin" /> : <Trash2 size={12} />}
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Channel list */}
+      {loading ? (
+        <div className="flex flex-col gap-2">
+          {[1, 2, 3, 4, 5].map(i => (
+            <div key={i} className="h-12 bg-gray-800/40 rounded-lg animate-pulse" />
+          ))}
+        </div>
+      ) : subs.length === 0 ? (
+        <div className="bg-[#1a1a1a] border border-gray-700 rounded-xl p-8 text-center">
+          <p className="text-gray-500 text-sm">No channels yet.</p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-1">
+          {subs.map(sub => {
+            const isSelected = selected.has(sub.id);
+            const label = catLabel(sub);
+            return (
+              <label
+                key={sub.id}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors ${
+                  isSelected ? 'bg-red-600/10 border border-red-600/30' : 'hover:bg-[#1e1e1e] border border-transparent'
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={isSelected}
+                  onChange={() => toggle(sub.id)}
+                  className="w-4 h-4 accent-red-500 flex-shrink-0"
+                />
+                {sub.thumbnail_url ? (
+                  <img src={sub.thumbnail_url} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
+                ) : (
+                  <div className="w-7 h-7 rounded-full bg-gray-700 flex items-center justify-center flex-shrink-0">
+                    <span className="text-gray-400 text-xs">{sub.title?.charAt(0)?.toUpperCase() || '?'}</span>
+                  </div>
+                )}
+                <span className="text-white text-sm flex-1 min-w-0 truncate">{sub.title}</span>
+                {label && (
+                  <span className="text-gray-600 text-xs truncate max-w-[120px] flex-shrink-0">{label}</span>
+                )}
+              </label>
+            );
+          })}
+        </div>
       )}
     </div>
   );
