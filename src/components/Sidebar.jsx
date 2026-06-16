@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Clock, Settings, RefreshCw, Search,
   ChevronDown, ChevronRight,
@@ -8,8 +8,9 @@ import * as LucideIcons from 'lucide-react';
 import ChannelSettingsModal from './ChannelSettingsModal.jsx';
 import { syncSubscriptions } from '../services/api.js';
 
-export default function Sidebar({ subscriptions, categories, onDataChange, selectedChannelId, onSelectChannel, authStatus }) {
+export default function Sidebar({ subscriptions, categories, onDataChange, selectedChannelId, onSelectChannel, selectedCategoryId, onSelectCategory, authStatus }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [syncing, setSyncing] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState(new Set());
@@ -149,20 +150,24 @@ export default function Sidebar({ subscriptions, categories, onDataChange, selec
 
           return (
             <div key={cat.id}>
-              <button
-                onClick={() => toggleCategory(cat.id)}
-                className="flex items-center gap-2 w-full px-4 py-1.5 hover:bg-[#242424] text-left transition-colors"
-              >
-                <Icon size={14} style={{ color: cat.color }} className="flex-shrink-0" />
-                <span className="text-gray-300 text-xs font-medium flex-1 truncate">{cat.name}</span>
-                <span className="bg-gray-800 text-gray-400 rounded px-1.5 py-0.5 text-[10px] border border-gray-700/50">
-                  {allChannels.length}
-                </span>
-                {isExpanded
-                  ? <ChevronDown size={12} className="text-gray-600 flex-shrink-0" />
-                  : <ChevronRight size={12} className="text-gray-600 flex-shrink-0" />
-                }
-              </button>
+              <div className={`flex items-center gap-2 w-full px-4 py-1.5 transition-colors ${selectedCategoryId === cat.id ? 'bg-[#2e2e2e]' : 'hover:bg-[#242424]'}`}>
+                <button
+                  className="flex items-center gap-2 flex-1 text-left min-w-0"
+                  onClick={() => { onSelectCategory?.(selectedCategoryId === cat.id ? null : cat.id); navigate('/'); }}
+                >
+                  <Icon size={14} style={{ color: cat.color }} className="flex-shrink-0" />
+                  <span className="text-white text-sm font-semibold flex-1 truncate">{cat.name}</span>
+                  <span className="bg-gray-800 text-gray-400 rounded px-1.5 py-0.5 text-[10px] border border-gray-700/50 flex-shrink-0">
+                    {allChannels.length}
+                  </span>
+                </button>
+                <button onClick={() => toggleCategory(cat.id)} className="flex-shrink-0 p-0.5 text-gray-600 hover:text-gray-400">
+                  {isExpanded
+                    ? <ChevronDown size={12} />
+                    : <ChevronRight size={12} />
+                  }
+                </button>
+              </div>
 
               {isExpanded && channels.map(sub => (
                 <ChannelRow
@@ -172,6 +177,7 @@ export default function Sidebar({ subscriptions, categories, onDataChange, selec
                   isSelected={selectedChannelId === sub.id}
                   onSelect={() => onSelectChannel(selectedChannelId === sub.id ? null : sub.id)}
                   onSettings={() => setChannelSettingsModal(sub)}
+                  indent
                 />
               ))}
             </div>
@@ -217,12 +223,12 @@ export default function Sidebar({ subscriptions, categories, onDataChange, selec
   );
 }
 
-function ChannelRow({ channel, categories, isSelected, onSelect, onSettings }) {
+function ChannelRow({ channel, categories, isSelected, onSelect, onSettings, indent }) {
   return (
     <div
-      className={`flex items-center gap-2 px-4 py-1.5 group cursor-pointer rounded-lg mx-1 transition-colors ${
+      className={`flex items-center gap-2 py-1.5 group cursor-pointer rounded-lg mx-1 transition-colors ${
         isSelected ? 'bg-[#2e2e2e]' : 'hover:bg-[#242424]'
-      }`}
+      } ${indent ? 'pl-7 pr-3' : 'px-4'}`}
       onClick={onSelect}
     >
       {channel.thumbnail_url ? (

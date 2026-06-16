@@ -7,6 +7,7 @@ import SettingsPage from './SettingsPage.jsx';
 
 export default function Layout({ subscriptions, categories, onDataChange, authStatus, onAuthChange }) {
   const [selectedChannelId, setSelectedChannelId] = useState(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState(null);
   const location = useLocation();
 
   const page = location.pathname === '/scheduler'
@@ -22,7 +23,9 @@ export default function Layout({ subscriptions, categories, onDataChange, authSt
         categories={categories}
         onDataChange={onDataChange}
         selectedChannelId={selectedChannelId}
-        onSelectChannel={setSelectedChannelId}
+        onSelectChannel={(id) => { setSelectedChannelId(id); setSelectedCategoryId(null); }}
+        selectedCategoryId={selectedCategoryId}
+        onSelectCategory={(id) => { setSelectedCategoryId(id); setSelectedChannelId(null); }}
         authStatus={authStatus}
       />
       <div className="ml-[260px] flex-1 flex flex-col">
@@ -39,7 +42,10 @@ export default function Layout({ subscriptions, categories, onDataChange, authSt
           <Dashboard
             selectedChannelId={selectedChannelId}
             onClearChannel={() => setSelectedChannelId(null)}
+            selectedCategoryId={selectedCategoryId}
+            onClearCategory={() => setSelectedCategoryId(null)}
             subscriptions={subscriptions}
+            categories={categories}
           />
         )}
       </div>

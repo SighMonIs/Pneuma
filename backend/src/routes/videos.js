@@ -10,7 +10,10 @@ router.get('/', async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 50;
     const offset = (page - 1) * limit;
-    const { channelId, categoryId, search, hideShorts, hideWatched } = req.query;
+    const { channelId, categoryId, search, hideShorts, hideWatched, sortBy, sortOrder } = req.query;
+    const sortColumns = { published_at: 'v.published_at', title: 'v.title', view_count: 'v.view_count', duration_seconds: 'v.duration_seconds' };
+    const safeSortBy = sortColumns[sortBy] || 'v.published_at';
+    const safeSortOrder = sortOrder === 'asc' ? 'ASC' : 'DESC';
 
     const conditions = [];
     const values = [];
@@ -94,7 +97,7 @@ router.get('/', async (req, res) => {
       LEFT JOIN watched_videos wv ON wv.video_id = v.id
       LEFT JOIN video_progress vp ON vp.video_id = v.id
       ${whereClause}
-      ORDER BY v.published_at DESC
+      ORDER BY ${safeSortBy} ${safeSortOrder}
       LIMIT $${paramCount} OFFSET $${paramCount + 1}
     `;
 
