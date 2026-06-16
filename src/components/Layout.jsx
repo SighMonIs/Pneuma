@@ -32,6 +32,7 @@ export default function Layout({ subscriptions, categories, onDataChange, authSt
             authStatus={authStatus}
             onAuthChange={onAuthChange}
             onDataChange={onDataChange}
+            categories={categories}
           />
         )}
         {page === 'dashboard' && (

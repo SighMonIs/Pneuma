@@ -1,21 +1,18 @@
 import { useState, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
-  LayoutDashboard, Clock, Settings, RefreshCw, Search, Plus,
-  ChevronDown, ChevronRight, ChevronUp,
+  LayoutDashboard, Clock, Settings, RefreshCw, Search,
+  ChevronDown, ChevronRight,
 } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
-import CategoryModal from './CategoryModal.jsx';
 import ChannelSettingsModal from './ChannelSettingsModal.jsx';
-import { syncSubscriptions, createCategory, updateCategory, deleteCategory, reorderCategory } from '../services/api.js';
+import { syncSubscriptions } from '../services/api.js';
 
 export default function Sidebar({ subscriptions, categories, onDataChange, selectedChannelId, onSelectChannel, authStatus }) {
   const location = useLocation();
   const [search, setSearch] = useState('');
   const [syncing, setSyncing] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState(new Set());
-  const [showCategoryModal, setShowCategoryModal] = useState(false);
-  const [editingCategory, setEditingCategory] = useState(null);
   const [channelSettingsModal, setChannelSettingsModal] = useState(null);
 
   const isActive = (path) => location.pathname === path;
@@ -35,63 +32,24 @@ export default function Sidebar({ subscriptions, categories, onDataChange, selec
   const toggleCategory = (catId) => {
     setExpandedCategories(prev => {
       const next = new Set(prev);
-      if (next.has(catId)) {
-        next.delete(catId);
-      } else {
-        next.add(catId);
-      }
+      if (next.has(catId)) next.delete(catId);
+      else next.add(catId);
       return next;
     });
   };
 
-  const handleSaveCategory = async (data) => {
-    if (editingCategory) {
-      await updateCategory(editingCategory.id, data);
-    } else {
-      await createCategory(data);
-    }
-    await onDataChange();
-  };
-
-  const handleDeleteCategory = async (catId) => {
-    if (!confirm('Delete this category? Channels will become uncategorized.')) return;
-    await deleteCategory(catId);
-    await onDataChange();
-  };
-
-  const handleReorder = async (catId, currentOrder, direction) => {
-    const sorted = [...categories].sort((a, b) => a.sort_order - b.sort_order);
-    const idx = sorted.findIndex(c => c.id === catId);
-    const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
-    if (swapIdx < 0 || swapIdx >= sorted.length) return;
-
-    const current = sorted[idx];
-    const swap = sorted[swapIdx];
-
-    await Promise.all([
-      reorderCategory(current.id, swap.sort_order),
-      reorderCategory(swap.id, current.sort_order),
-    ]);
-    await onDataChange();
-  };
-
-  // Group subscriptions by category
   const { categorizedChannels, uncategorized } = useMemo(() => {
     const catMap = {};
     categories.forEach(c => { catMap[c.id] = []; });
     const uncat = [];
-
     subscriptions.forEach(sub => {
       const catIds = sub.category_ids || [];
       if (catIds.length === 0) {
         uncat.push(sub);
       } else {
-        catIds.forEach(cid => {
-          if (catMap[cid]) catMap[cid].push(sub);
-        });
+        catIds.forEach(cid => { if (catMap[cid]) catMap[cid].push(sub); });
       }
     });
-
     return { categorizedChannels: catMap, uncategorized: uncat };
   }, [subscriptions, categories]);
 
@@ -183,58 +141,28 @@ export default function Sidebar({ subscriptions, categories, onDataChange, selec
 
       {/* Channel list */}
       <div className="flex-1 overflow-y-auto py-1">
-        {/* Categories */}
-        {sortedCategories.map((cat, catIdx) => {
+        {sortedCategories.map((cat) => {
           const Icon = LucideIcons[cat.icon] || LucideIcons.Folder;
           const channels = (categorizedChannels[cat.id] || []).filter(filterChannel);
-          const isExpanded = expandedCategories.has(cat.id);
           const allChannels = categorizedChannels[cat.id] || [];
+          const isExpanded = expandedCategories.has(cat.id);
 
           return (
             <div key={cat.id}>
-              <div className="flex items-center group px-2 py-0.5">
-                <button
-                  onClick={() => toggleCategory(cat.id)}
-                  className="flex items-center gap-2 flex-1 px-2 py-1.5 rounded-lg hover:bg-[#242424] text-left transition-colors"
-                >
-                  <Icon size={14} style={{ color: cat.color }} className="flex-shrink-0" />
-                  <span className="text-gray-300 text-xs font-medium flex-1 truncate">{cat.name}</span>
-                  <span className="bg-gray-800 text-gray-400 rounded px-1.5 py-0.5 text-[10px] border border-gray-700/50">{allChannels.length}</span>
-                  {isExpanded
-                    ? <ChevronDown size={12} className="text-gray-600 flex-shrink-0" />
-                    : <ChevronRight size={12} className="text-gray-600 flex-shrink-0" />
-                  }
-                </button>
-
-                {/* Category actions (visible on hover) */}
-                <div className="hidden group-hover:flex items-center gap-0.5 ml-1">
-                  {catIdx > 0 && (
-                    <button
-                      onClick={() => handleReorder(cat.id, cat.sort_order, 'up')}
-                      className="text-gray-600 hover:text-gray-400 p-0.5 rounded"
-                      title="Move up"
-                    >
-                      <ChevronUp size={11} />
-                    </button>
-                  )}
-                  {catIdx < sortedCategories.length - 1 && (
-                    <button
-                      onClick={() => handleReorder(cat.id, cat.sort_order, 'down')}
-                      className="text-gray-600 hover:text-gray-400 p-0.5 rounded"
-                      title="Move down"
-                    >
-                      <ChevronDown size={11} />
-                    </button>
-                  )}
-                  <button
-                    onClick={() => { setEditingCategory(cat); setShowCategoryModal(true); }}
-                    className="text-gray-600 hover:text-gray-400 p-0.5 rounded"
-                    title="Edit category"
-                  >
-                    <Settings size={11} />
-                  </button>
-                </div>
-              </div>
+              <button
+                onClick={() => toggleCategory(cat.id)}
+                className="flex items-center gap-2 w-full px-4 py-1.5 hover:bg-[#242424] text-left transition-colors"
+              >
+                <Icon size={14} style={{ color: cat.color }} className="flex-shrink-0" />
+                <span className="text-gray-300 text-xs font-medium flex-1 truncate">{cat.name}</span>
+                <span className="bg-gray-800 text-gray-400 rounded px-1.5 py-0.5 text-[10px] border border-gray-700/50">
+                  {allChannels.length}
+                </span>
+                {isExpanded
+                  ? <ChevronDown size={12} className="text-gray-600 flex-shrink-0" />
+                  : <ChevronRight size={12} className="text-gray-600 flex-shrink-0" />
+                }
+              </button>
 
               {isExpanded && channels.map(sub => (
                 <ChannelRow
@@ -244,14 +172,12 @@ export default function Sidebar({ subscriptions, categories, onDataChange, selec
                   isSelected={selectedChannelId === sub.id}
                   onSelect={() => onSelectChannel(selectedChannelId === sub.id ? null : sub.id)}
                   onSettings={() => setChannelSettingsModal(sub)}
-                  onDataChange={onDataChange}
                 />
               ))}
             </div>
           );
         })}
 
-        {/* Uncategorized */}
         {uncategorized.filter(filterChannel).length > 0 && (
           <div>
             <div className="px-4 py-1.5 flex items-center gap-2">
@@ -266,7 +192,6 @@ export default function Sidebar({ subscriptions, categories, onDataChange, selec
                 isSelected={selectedChannelId === sub.id}
                 onSelect={() => onSelectChannel(selectedChannelId === sub.id ? null : sub.id)}
                 onSettings={() => setChannelSettingsModal(sub)}
-                onDataChange={onDataChange}
               />
             ))}
           </div>
@@ -275,30 +200,10 @@ export default function Sidebar({ subscriptions, categories, onDataChange, selec
         {subscriptions.length === 0 && (
           <div className="px-4 py-6 text-center">
             <p className="text-gray-600 text-xs">No subscriptions yet.</p>
-            <p className="text-gray-700 text-xs mt-1">Click sync to import from YouTube.</p>
+            <p className="text-gray-700 text-xs mt-1">Go to Settings to add channels.</p>
           </div>
         )}
       </div>
-
-      {/* Add Category button */}
-      <div className="p-3 border-t border-gray-700">
-        <button
-          onClick={() => { setEditingCategory(null); setShowCategoryModal(true); }}
-          className="flex items-center gap-2 w-full px-3 py-2 text-gray-500 hover:text-white hover:bg-[#242424] rounded-lg text-xs transition-colors"
-        >
-          <Plus size={14} />
-          Add Category
-        </button>
-      </div>
-
-      {/* Modals */}
-      {showCategoryModal && (
-        <CategoryModal
-          category={editingCategory}
-          onSave={handleSaveCategory}
-          onClose={() => { setShowCategoryModal(false); setEditingCategory(null); }}
-        />
-      )}
 
       {channelSettingsModal && (
         <ChannelSettingsModal
@@ -321,11 +226,7 @@ function ChannelRow({ channel, categories, isSelected, onSelect, onSettings }) {
       onClick={onSelect}
     >
       {channel.thumbnail_url ? (
-        <img
-          src={channel.thumbnail_url}
-          alt={channel.title}
-          className="w-6 h-6 rounded-full object-cover flex-shrink-0"
-        />
+        <img src={channel.thumbnail_url} alt={channel.title} className="w-6 h-6 rounded-full object-cover flex-shrink-0" />
       ) : (
         <div className="w-6 h-6 rounded-full bg-gray-700 flex-shrink-0 flex items-center justify-center">
           <span className="text-gray-400 text-xs">{channel.title?.charAt(0) || '?'}</span>

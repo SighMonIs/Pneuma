@@ -40,6 +40,8 @@ export default function Dashboard({ selectedChannelId, onClearChannel, subscript
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [hideShorts, setHideShortsRaw] = useState(() => loadBool('pneuma_hide_shorts'));
   const [hideWatched, setHideWatchedRaw] = useState(() => loadBool('pneuma_hide_watched'));
+  const videoMode = (() => { try { return localStorage.getItem('pneuma_video_mode') || 'youtube'; } catch { return 'youtube'; } })();
+  const showComments = (() => { try { return localStorage.getItem('pneuma_show_comments') === 'true'; } catch { return false; } })();
   const [error, setError] = useState('');
   const pollRef = useRef(null);
 
@@ -265,7 +267,13 @@ export default function Dashboard({ selectedChannelId, onClearChannel, subscript
           <>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
               {videos.map(video => (
-                <VideoCard key={video.id} video={video} onWatchedChange={handleWatchedChange} />
+                <VideoCard
+                  key={video.id}
+                  video={video}
+                  onWatchedChange={handleWatchedChange}
+                  videoMode={videoMode}
+                  showComments={showComments}
+                />
               ))}
             </div>
 
