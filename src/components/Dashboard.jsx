@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Search, Scissors, Eye, EyeOff, RefreshCw, X,
   ArrowLeft, ExternalLink, Maximize2, Minimize2, PictureInPicture2,
-  LayoutGrid, List, ArrowDown, ArrowUp, Check, RotateCcw,
+  LayoutGrid, List, ArrowDown, ArrowUp, Check, RotateCcw, AlertCircle,
 } from 'lucide-react';
 import { getVideos, fetchVideos, getFetchStatus, markWatched, unmarkWatched, saveProgress } from '../services/api.js';
 import VideoCard from './VideoCard.jsx';
@@ -157,6 +157,8 @@ export default function Dashboard({ selectedChannelId, onClearChannel, selectedC
   const [loadingMore, setLoadingMore] = useState(false);
   const [fetching, setFetching] = useState(false);
   const [fetchProgress, setFetchProgress] = useState(null);
+  const [fetchErrors, setFetchErrors] = useState([]);
+  const [showErrorModal, setShowErrorModal] = useState(false);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [hideShorts, setHideShortsRaw] = useState(() => loadBool('pneuma_hide_shorts'));
@@ -217,7 +219,8 @@ export default function Dashboard({ selectedChannelId, onClearChannel, selectedC
   const handleFetchVideos = async () => {
     if (fetching) return;
     setFetching(true);
-    setFetchProgress({ running: true, total: 0, done: 0, errors: 0 });
+    setFetchErrors([]);
+    setFetchProgress({ running: true, total: 0, done: 0, errors: 0, errorList: [] });
     try {
       await fetchVideos();
       pollRef.current = setInterval(async () => {
@@ -227,6 +230,7 @@ export default function Dashboard({ selectedChannelId, onClearChannel, selectedC
           if (!status.running) {
             clearInterval(pollRef.current); pollRef.current = null;
             await loadVideos(1, false);
+            if (status.errorList?.length > 0) setFetchErrors(status.errorList);
             setFetching(false); setFetchProgress(null);
           }
         } catch {
@@ -396,6 +400,23 @@ export default function Dashboard({ selectedChannelId, onClearChannel, selectedC
           </div>
         )}
 
+        {/* Post-fetch error summary */}
+        {!fetchProgress && fetchErrors.length > 0 && (
+          <div className="mt-2 flex items-center gap-2">
+            <AlertCircle size={13} className="text-red-400 flex-shrink-0" />
+            <span className="text-red-400 text-xs">{fetchErrors.length} channel{fetchErrors.length !== 1 ? 's' : ''} failed to fetch</span>
+            <button
+              onClick={() => setShowErrorModal(true)}
+              className="text-xs text-gray-400 hover:text-white underline transition-colors"
+            >
+              Show errors
+            </button>
+            <button onClick={() => setFetchErrors([])} className="ml-auto text-gray-700 hover:text-gray-400 transition-colors">
+              <X size={13} />
+            </button>
+          </div>
+        )}
+
         {!loading && !fetchProgress && (
           <div className="mt-2 text-xs text-gray-500">
             <span className="text-gray-300 font-medium">{total.toLocaleString()}</span>{' '}
@@ -509,6 +530,37 @@ export default function Dashboard({ selectedChannelId, onClearChannel, selectedC
           </>
         )}
       </div>
+
+      {/* Fetch error modal */}
+      {showErrorModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+          <div className="bg-[#1a1a1a] border border-gray-800 rounded-xl w-full max-w-lg flex flex-col max-h-[80vh]">
+            <div className="flex items-center justify-between p-5 border-b border-gray-800 flex-shrink-0">
+              <div className="flex items-center gap-2">
+                <AlertCircle size={16} className="text-red-400" />
+                <h2 className="text-white font-semibold">Fetch Errors</h2>
+                <span className="text-gray-500 text-sm">({fetchErrors.length})</span>
+              </div>
+              <button onClick={() => setShowErrorModal(false)} className="text-gray-500 hover:text-white p-1 rounded-lg hover:bg-gray-800 transition-colors">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="overflow-y-auto flex-1 p-2">
+              {fetchErrors.map((e, i) => (
+                <div key={i} className="flex flex-col gap-1 px-3 py-3 rounded-lg hover:bg-[#242424] transition-colors">
+                  <span className="text-white text-sm font-medium">{e.channelTitle}</span>
+                  <span className="text-red-400 text-xs font-mono break-all">{e.message}</span>
+                </div>
+              ))}
+            </div>
+            <div className="p-4 border-t border-gray-800 flex-shrink-0">
+              <button onClick={() => setShowErrorModal(false)} className="px-4 py-2 bg-[#242424] hover:bg-[#2e2e2e] border border-gray-700 text-gray-300 rounded-lg text-sm transition-colors">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Floating player overlay */}
       {selectedVideo && playerSize === 'float' && (

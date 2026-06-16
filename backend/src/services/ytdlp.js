@@ -13,6 +13,7 @@ export const fetchProgress = {
   total: 0,
   done: 0,
   errors: 0,
+  errorList: [],
   startedAt: null,
 };
 
@@ -208,6 +209,7 @@ export async function fetchAllVideos() {
   fetchProgress.total = subs.length;
   fetchProgress.done = 0;
   fetchProgress.errors = 0;
+  fetchProgress.errorList = [];
   fetchProgress.startedAt = new Date();
 
   let total = 0;
@@ -220,7 +222,13 @@ export async function fetchAllVideos() {
     );
     results.forEach((r, j) => {
       if (r.status === 'fulfilled') { total += r.value; }
-      else { console.error(`[yt-dlp] Failed ${batch[j].id}:`, r.reason?.message); fetchProgress.errors++; }
+      else {
+        const sub = batch[j];
+        const msg = r.reason?.message || 'Unknown error';
+        console.error(`[yt-dlp] Failed ${sub.id}:`, msg);
+        fetchProgress.errors++;
+        fetchProgress.errorList.push({ channelId: sub.id, channelTitle: sub.title || sub.id, message: msg });
+      }
       fetchProgress.done++;
     });
   }
