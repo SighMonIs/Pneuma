@@ -34,12 +34,12 @@ app.get('/health', (req, res) => {
 
 // Start server
 async function start() {
+  app.listen(PORT, () => {
+    console.log(`[Server] Pneuma backend running on port ${PORT}`);
+  });
   try {
     await initDb();
     await initScheduler();
-    app.listen(PORT, () => {
-      console.log(`[Server] Pneuma backend running on port ${PORT}`);
-    });
   } catch (err) {
     console.error('[Server] Failed to start:', err.message);
     process.exit(1);
