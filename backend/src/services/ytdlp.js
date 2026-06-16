@@ -197,6 +197,10 @@ export async function fetchVideosForChannel(channelId, { dateAfter = null } = {}
     if (item.upload_date) {
       const d = item.upload_date;
       publishedAt = new Date(`${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}`);
+    } else if (item.timestamp) {
+      publishedAt = new Date(item.timestamp * 1000);
+    } else if (item.release_timestamp) {
+      publishedAt = new Date(item.release_timestamp * 1000);
     }
 
     await pool.query(`
@@ -206,7 +210,7 @@ export async function fetchVideosForChannel(channelId, { dateAfter = null } = {}
       ON CONFLICT (id) DO UPDATE SET
         title = EXCLUDED.title,
         thumbnail_url = EXCLUDED.thumbnail_url,
-        published_at = EXCLUDED.published_at,
+        published_at = COALESCE(EXCLUDED.published_at, videos.published_at),
         duration_seconds = EXCLUDED.duration_seconds,
         is_short = EXCLUDED.is_short,
         view_count = EXCLUDED.view_count,
