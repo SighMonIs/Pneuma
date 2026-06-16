@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { pool } from '../db/index.js';
 import { syncSubscriptions, addChannelByUrl } from '../services/ytdlp.js';
 
+const VALID_MODES = ['default', 'added', 'date', 'beginning'];
+
 const router = Router();
 
 // GET /api/subscriptions — all subscriptions with category IDs
@@ -28,8 +30,11 @@ router.get('/', async (req, res) => {
 
 // POST /api/subscriptions/sync — sync from YouTube feed (requires cookies)
 router.post('/sync', async (req, res) => {
+  const { fetch_since_mode, fetch_since_date } = req.body || {};
+  const sinceMode = VALID_MODES.includes(fetch_since_mode) ? fetch_since_mode : 'default';
+  const sinceDate = fetch_since_date || null;
   try {
-    const count = await syncSubscriptions();
+    const count = await syncSubscriptions({ fetchSinceMode: sinceMode, fetchSinceDate: sinceDate });
     res.json({ count, message: `Synced ${count} subscriptions` });
   } catch (err) {
     console.error('[Subscriptions] Sync failed:', err.message);
@@ -39,12 +44,18 @@ router.post('/sync', async (req, res) => {
 
 // POST /api/subscriptions/add — add a single channel by YouTube URL or @handle
 router.post('/add', async (req, res) => {
-  const { url } = req.body;
+  const { url, fetch_since_mode, fetch_since_date } = req.body;
   if (!url?.trim()) {
     return res.status(400).json({ error: 'url is required' });
   }
+  if (fetch_since_mode && !VALID_MODES.includes(fetch_since_mode)) {
+    return res.status(400).json({ error: 'Invalid fetch_since_mode' });
+  }
   try {
-    const channel = await addChannelByUrl(url.trim());
+    const channel = await addChannelByUrl(url.trim(), {
+      fetchSinceMode: fetch_since_mode || 'default',
+      fetchSinceDate: fetch_since_date || null,
+    });
     res.json(channel);
   } catch (err) {
     console.error('[Subscriptions] Add channel failed:', err.message);
@@ -64,6 +75,10 @@ router.post('/import-csv', async (req, res) => {
   let count = 0;
   const errors = [];
 
+  const { fetch_since_mode, fetch_since_date } = req.body;
+  const sinceMode = VALID_MODES.includes(fetch_since_mode) ? fetch_since_mode : 'default';
+  const sinceDate = fetch_since_date || null;
+
   for (const line of lines) {
     const parts = parseCsvLine(line);
     const channelId = parts[0]?.trim();
@@ -72,12 +87,12 @@ router.post('/import-csv', async (req, res) => {
 
     try {
       await pool.query(`
-        INSERT INTO subscriptions (id, title, last_synced_at)
-        VALUES ($1, $2, NOW())
+        INSERT INTO subscriptions (id, title, fetch_since_mode, fetch_since_date, last_synced_at)
+        VALUES ($1, $2, $3, $4, NOW())
         ON CONFLICT (id) DO UPDATE SET
           title = COALESCE(EXCLUDED.title, subscriptions.title),
           last_synced_at = NOW()
-      `, [channelId, title || channelId]);
+      `, [channelId, title || channelId, sinceMode, sinceDate]);
       count++;
     } catch (err) {
       errors.push(channelId);
@@ -90,16 +105,30 @@ router.post('/import-csv', async (req, res) => {
 // PATCH /api/subscriptions/:id — update channel settings
 router.patch('/:id', async (req, res) => {
   const { id } = req.params;
-  const { hide_shorts } = req.body;
+  const { hide_shorts, fetch_since_mode, fetch_since_date } = req.body;
+
+  if (fetch_since_mode !== undefined && !VALID_MODES.includes(fetch_since_mode)) {
+    return res.status(400).json({ error: 'Invalid fetch_since_mode' });
+  }
+
+  const updates = [];
+  const values = [];
+  let p = 1;
+
+  if (hide_shorts !== undefined) { updates.push(`hide_shorts = $${p++}`); values.push(hide_shorts); }
+  if (fetch_since_mode !== undefined) { updates.push(`fetch_since_mode = $${p++}`); values.push(fetch_since_mode); }
+  if (fetch_since_date !== undefined) { updates.push(`fetch_since_date = $${p++}`); values.push(fetch_since_date || null); }
+
+  if (updates.length === 0) return res.status(400).json({ error: 'No fields to update' });
+
+  values.push(id);
 
   try {
     const result = await pool.query(
-      'UPDATE subscriptions SET hide_shorts = $1 WHERE id = $2 RETURNING *',
-      [hide_shorts, id]
+      `UPDATE subscriptions SET ${updates.join(', ')} WHERE id = $${p} RETURNING *`,
+      values,
     );
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Subscription not found' });
-    }
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Subscription not found' });
     res.json(result.rows[0]);
   } catch (err) {
     console.error('[Subscriptions] PATCH failed:', err.message);

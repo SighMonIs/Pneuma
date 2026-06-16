@@ -8,6 +8,7 @@ import subscriptionRoutes from './routes/subscriptions.js';
 import categoryRoutes from './routes/categories.js';
 import videoRoutes from './routes/videos.js';
 import schedulerRoutes from './routes/scheduler.js';
+import settingsRoutes from './routes/settings.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -26,6 +27,7 @@ app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/videos', videoRoutes);
 app.use('/api/scheduler', schedulerRoutes);
+app.use('/api/settings', settingsRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

@@ -82,7 +82,7 @@ async function fetchChannelThumbnail(channelId) {
   }
 }
 
-export async function syncSubscriptions() {
+export async function syncSubscriptions({ fetchSinceMode = 'default', fetchSinceDate = null } = {}) {
   const args = [
     '--flat-playlist', '--dump-json', '--no-warnings', '--quiet',
     ...(await cookieArgs()),
@@ -100,22 +100,45 @@ export async function syncSubscriptions() {
     if (!id) continue;
 
     await pool.query(`
-      INSERT INTO subscriptions (id, title, thumbnail_url, last_synced_at)
-      VALUES ($1, $2, $3, NOW())
+      INSERT INTO subscriptions (id, title, thumbnail_url, fetch_since_mode, fetch_since_date, last_synced_at)
+      VALUES ($1, $2, $3, $4, $5, NOW())
       ON CONFLICT (id) DO UPDATE SET
         title = EXCLUDED.title,
         thumbnail_url = COALESCE(EXCLUDED.thumbnail_url, subscriptions.thumbnail_url),
         last_synced_at = NOW()
-    `, [id, title, thumbnail]);
+    `, [id, title, thumbnail, fetchSinceMode, fetchSinceDate]);
     count++;
   }
   return count;
 }
 
-export async function fetchVideosForChannel(channelId, maxResults = 20) {
+function formatYtdlpDate(d) {
+  const date = d instanceof Date ? d : new Date(d);
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${y}${m}${day}`;
+}
+
+function resolveDateAfter(sub, globalMode, globalDate) {
+  const mode = sub.fetch_since_mode === 'default' ? globalMode : sub.fetch_since_mode;
+  if (mode === 'beginning') return null;
+  if (mode === 'added') return formatYtdlpDate(sub.created_at);
+  if (mode === 'date') {
+    const d = (sub.fetch_since_mode !== 'default' && sub.fetch_since_date) ? sub.fetch_since_date : globalDate;
+    return d ? formatYtdlpDate(d) : null;
+  }
+  return null;
+}
+
+export async function fetchVideosForChannel(channelId, { dateAfter = null } = {}) {
+  const dateArgs = dateAfter
+    ? ['--dateafter', dateAfter, '--break-on-reject']
+    : ['--playlist-end', '500'];
+
   const args = [
     '--flat-playlist', '--dump-json', '--no-warnings', '--quiet',
-    '--playlist-end', String(maxResults),
+    ...dateArgs,
     ...(await cookieArgs()),
     `https://www.youtube.com/channel/${channelId}/videos`,
   ];
@@ -171,10 +194,18 @@ export async function fetchVideosForChannel(channelId, maxResults = 20) {
 }
 
 export async function fetchAllVideos() {
-  const { rows } = await pool.query('SELECT id FROM subscriptions ORDER BY title');
+  const { rows: subs } = await pool.query(
+    'SELECT id, fetch_since_mode, fetch_since_date, created_at FROM subscriptions ORDER BY title',
+  );
+
+  const { rows: settingRows } = await pool.query('SELECT key, value FROM app_settings');
+  const globalSettings = {};
+  settingRows.forEach(r => (globalSettings[r.key] = r.value));
+  const globalMode = globalSettings.fetch_since_mode || 'added';
+  const globalDate = globalSettings.fetch_since_date || null;
 
   fetchProgress.running = true;
-  fetchProgress.total = rows.length;
+  fetchProgress.total = subs.length;
   fetchProgress.done = 0;
   fetchProgress.errors = 0;
   fetchProgress.startedAt = new Date();
@@ -182,9 +213,11 @@ export async function fetchAllVideos() {
   let total = 0;
   const batchSize = 3;
 
-  for (let i = 0; i < rows.length; i += batchSize) {
-    const batch = rows.slice(i, i + batchSize);
-    const results = await Promise.allSettled(batch.map(r => fetchVideosForChannel(r.id)));
+  for (let i = 0; i < subs.length; i += batchSize) {
+    const batch = subs.slice(i, i + batchSize);
+    const results = await Promise.allSettled(
+      batch.map(sub => fetchVideosForChannel(sub.id, { dateAfter: resolveDateAfter(sub, globalMode, globalDate) })),
+    );
     results.forEach((r, j) => {
       if (r.status === 'fulfilled') { total += r.value; }
       else { console.error(`[yt-dlp] Failed ${batch[j].id}:`, r.reason?.message); fetchProgress.errors++; }
@@ -196,7 +229,7 @@ export async function fetchAllVideos() {
   return total;
 }
 
-export async function addChannelByUrl(url) {
+export async function addChannelByUrl(url, { fetchSinceMode = 'default', fetchSinceDate = null } = {}) {
   const isVideo = /watch\?v=|\/shorts\/|\/live\//.test(url);
   const target = isVideo ? url : url.replace(/\/?$/, '/videos');
 
@@ -217,12 +250,12 @@ export async function addChannelByUrl(url) {
   if (!channelId) throw new Error('Could not determine channel ID from URL.');
 
   await pool.query(`
-    INSERT INTO subscriptions (id, title, last_synced_at)
-    VALUES ($1, $2, NOW())
+    INSERT INTO subscriptions (id, title, fetch_since_mode, fetch_since_date, last_synced_at)
+    VALUES ($1, $2, $3, $4, NOW())
     ON CONFLICT (id) DO UPDATE SET
       title = COALESCE(EXCLUDED.title, subscriptions.title),
       last_synced_at = NOW()
-  `, [channelId, title]);
+  `, [channelId, title, fetchSinceMode, fetchSinceDate]);
 
   // Fetch channel thumbnail
   const thumbnail = await fetchChannelThumbnail(channelId);

@@ -25,11 +25,18 @@ export const getAuthStatus = () => request('GET', '/auth');
 export const saveCookies = (content) => request('POST', '/auth/cookies', { content });
 export const deleteCookies = () => request('DELETE', '/auth/cookies');
 
+// Settings
+export const getSettings = () => request('GET', '/settings');
+export const updateSettings = (data) => request('PATCH', '/settings', data);
+export const applyDefaultFetch = () => request('POST', '/settings/apply-default');
+
 // Subscriptions
 export const getSubscriptions = () => request('GET', '/subscriptions');
-export const syncSubscriptions = () => request('POST', '/subscriptions/sync');
-export const addChannel = (url) => request('POST', '/subscriptions/add', { url });
-export const importCsv = (csv) => request('POST', '/subscriptions/import-csv', { csv });
+export const syncSubscriptions = (data = {}) => request('POST', '/subscriptions/sync', data);
+export const addChannel = (url, fetchSettings = {}) =>
+  request('POST', '/subscriptions/add', { url, ...fetchSettings });
+export const importCsv = (csv, fetchSettings = {}) =>
+  request('POST', '/subscriptions/import-csv', { csv, ...fetchSettings });
 export const updateSubscription = (id, data) => request('PATCH', `/subscriptions/${id}`, data);
 export const updateChannelCategories = (channelId, categoryIds) =>
   request('POST', `/subscriptions/${channelId}/categories`, { categoryIds });

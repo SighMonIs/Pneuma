@@ -1,13 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Cookie, FileSpreadsheet, Plus, RefreshCw, Trash2,
   Check, Upload, ArrowRight, AlertCircle, Monitor, Rss, Tag,
-  ChevronUp, ChevronDown, Settings,
+  ChevronUp, ChevronDown, Settings, Calendar, RotateCcw,
 } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import {
   saveCookies, deleteCookies, importCsv, addChannel, syncSubscriptions,
   createCategory, updateCategory, deleteCategory, reorderCategory,
+  getSettings, updateSettings, applyDefaultFetch,
 } from '../services/api.js';
 import CategoryModal from './CategoryModal.jsx';
 
@@ -129,10 +130,97 @@ function DisplayTab() {
 function FeedsTab({ authStatus, onAuthChange, onDataChange }) {
   return (
     <div className="flex flex-col gap-6">
+      <FetchSettingsSection />
       <CookiesSection authStatus={authStatus} onAuthChange={onAuthChange} onDataChange={onDataChange} />
       <AddChannelSection onDataChange={onDataChange} />
       <ImportCsvSection onDataChange={onDataChange} />
     </div>
+  );
+}
+
+/* ─── Fetch Settings Section ─── */
+
+function FetchSettingsSection() {
+  const [mode, setMode] = useState('added');
+  const [date, setDate] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [applying, setApplying] = useState(false);
+  const [success, setSuccess] = useState('');
+  const [error, setError] = useState('');
+
+  const flash = (msg) => { setSuccess(msg); setTimeout(() => setSuccess(''), 3000); };
+
+  useEffect(() => {
+    getSettings()
+      .then(s => { setMode(s.fetch_since_mode || 'added'); setDate(s.fetch_since_date || ''); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true); setError('');
+    try {
+      await updateSettings({ fetch_since_mode: mode, fetch_since_date: mode === 'date' ? date : null });
+      flash('Default saved');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleApplyAll = async () => {
+    if (!confirm('Reset all channels to use the global default? Any per-channel overrides will be cleared.')) return;
+    setApplying(true); setError('');
+    try {
+      const res = await applyDefaultFetch();
+      flash(`Applied to ${res.updated} channel${res.updated !== 1 ? 's' : ''}`);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setApplying(false);
+    }
+  };
+
+  return (
+    <SectionCard title="Default Fetch Range" description="Controls how far back yt-dlp looks when fetching videos" icon={Calendar}>
+      {loading ? (
+        <div className="h-6 bg-gray-800 rounded animate-pulse w-40" />
+      ) : (
+        <div className="flex flex-col gap-3">
+          <FetchSincePicker mode={mode} date={date} onModeChange={setMode} onDateChange={setDate} />
+          {error && (
+            <div className="flex items-center gap-2 text-red-400 text-sm bg-red-900/20 border border-red-800 rounded-lg p-3">
+              <AlertCircle size={13} />{error}
+            </div>
+          )}
+          {success && (
+            <div className="flex items-center gap-2 text-green-400 text-sm bg-green-900/20 border border-green-800 rounded-lg p-3">
+              <Check size={13} />{success}
+            </div>
+          )}
+          <div className="flex gap-2 flex-wrap">
+            <button
+              onClick={handleSave}
+              disabled={saving || (mode === 'date' && !date)}
+              className="flex items-center gap-1.5 px-3 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg text-sm font-medium transition-colors"
+            >
+              {saving ? <RefreshCw size={13} className="animate-spin" /> : <Check size={13} />}
+              Save default
+            </button>
+            <button
+              onClick={handleApplyAll}
+              disabled={applying}
+              className="flex items-center gap-1.5 px-3 py-2 bg-[#242424] hover:bg-[#2e2e2e] border border-gray-700 text-gray-300 rounded-lg text-sm transition-colors disabled:opacity-50"
+            >
+              {applying ? <RefreshCw size={13} className="animate-spin" /> : <RotateCcw size={13} />}
+              Apply to all channels
+            </button>
+          </div>
+        </div>
+      )}
+    </SectionCard>
   );
 }
 
@@ -271,6 +359,57 @@ function SectionCard({ title, description, icon: Icon, children }) {
   );
 }
 
+/* ─── FetchSincePicker ─── */
+
+const FETCH_OPTIONS = [
+  { value: 'added', label: 'From when the channel was added', desc: 'Only fetch videos published on or after the date the channel was added' },
+  { value: 'date', label: 'From a specific date', desc: 'Only fetch videos published on or after a date you choose' },
+  { value: 'beginning', label: 'From the very beginning', desc: 'Fetch all available videos (up to 500 per channel)' },
+];
+
+export function FetchSincePicker({ mode, date, onModeChange, onDateChange, showDefault = false, defaultSummary = '' }) {
+  const options = showDefault
+    ? [{ value: 'default', label: `Use default${defaultSummary ? ` (${defaultSummary})` : ''}`, desc: 'Follow the global fetch setting in Settings → Feeds' }, ...FETCH_OPTIONS]
+    : FETCH_OPTIONS;
+
+  return (
+    <div className="flex flex-col gap-2">
+      {options.map(opt => (
+        <label
+          key={opt.value}
+          className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+            mode === opt.value
+              ? 'border-red-600/50 bg-red-600/10'
+              : 'border-gray-700 hover:border-gray-600 bg-[#242424]'
+          }`}
+        >
+          <input
+            type="radio"
+            name="fetchSince"
+            value={opt.value}
+            checked={mode === opt.value}
+            onChange={() => onModeChange(opt.value)}
+            className="mt-0.5 accent-red-500 flex-shrink-0"
+          />
+          <div className="flex-1 min-w-0">
+            <p className="text-white text-sm font-medium">{opt.label}</p>
+            <p className="text-gray-500 text-xs mt-0.5">{opt.desc}</p>
+            {opt.value === 'date' && mode === 'date' && (
+              <input
+                type="date"
+                value={date}
+                onChange={e => onDateChange(e.target.value)}
+                onClick={e => e.stopPropagation()}
+                className="mt-2 bg-[#0f0f0f] border border-gray-600 rounded-lg px-2 py-1.5 text-white text-sm focus:outline-none focus:border-gray-500 [color-scheme:dark]"
+              />
+            )}
+          </div>
+        </label>
+      ))}
+    </div>
+  );
+}
+
 function CookiesSection({ authStatus, onAuthChange, onDataChange }) {
   const [editing, setEditing] = useState(false);
   const [content, setContent] = useState('');
@@ -279,6 +418,9 @@ function CookiesSection({ authStatus, onAuthChange, onDataChange }) {
   const [removing, setRemoving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showSyncOptions, setShowSyncOptions] = useState(false);
+  const [syncMode, setSyncMode] = useState('default');
+  const [syncDate, setSyncDate] = useState('');
 
   const flash = (msg) => { setSuccess(msg); setTimeout(() => setSuccess(''), 3000); };
 
@@ -300,7 +442,16 @@ function CookiesSection({ authStatus, onAuthChange, onDataChange }) {
 
   const handleSync = async () => {
     setSyncing(true); setError('');
-    try { const res = await syncSubscriptions(); await onDataChange(); flash(`Synced ${res.count} subscriptions`); }
+    try {
+      const res = await syncSubscriptions(
+        syncMode !== 'default'
+          ? { fetch_since_mode: syncMode, fetch_since_date: syncMode === 'date' ? syncDate : null }
+          : {},
+      );
+      await onDataChange();
+      flash(`Synced ${res.count} subscriptions`);
+      setShowSyncOptions(false);
+    }
     catch (err) { setError(err.message); }
     finally { setSyncing(false); }
   };
@@ -326,19 +477,42 @@ function CookiesSection({ authStatus, onAuthChange, onDataChange }) {
           </div>
         </div>
       ) : (
-        <div className="flex flex-wrap gap-2">
-          {authStatus?.hasCookies && (
-            <button onClick={handleSync} disabled={syncing} className="flex items-center gap-1.5 px-3 py-2 bg-[#242424] hover:bg-[#2e2e2e] border border-gray-700 text-gray-300 rounded-lg text-sm transition-colors disabled:opacity-50">
-              <RefreshCw size={13} className={syncing ? 'animate-spin' : ''} />{syncing ? 'Syncing...' : 'Sync subscriptions'}
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap gap-2">
+            {authStatus?.hasCookies && (
+              <button onClick={() => setShowSyncOptions(v => !v)} className="flex items-center gap-1.5 px-3 py-2 bg-[#242424] hover:bg-[#2e2e2e] border border-gray-700 text-gray-300 rounded-lg text-sm transition-colors">
+                <RefreshCw size={13} />Sync subscriptions
+              </button>
+            )}
+            <button onClick={() => setEditing(true)} className="flex items-center gap-1.5 px-3 py-2 bg-[#242424] hover:bg-[#2e2e2e] border border-gray-700 text-gray-300 rounded-lg text-sm transition-colors">
+              <Cookie size={13} />{authStatus?.hasCookies ? 'Update cookies' : 'Set cookies'}
             </button>
-          )}
-          <button onClick={() => setEditing(true)} className="flex items-center gap-1.5 px-3 py-2 bg-[#242424] hover:bg-[#2e2e2e] border border-gray-700 text-gray-300 rounded-lg text-sm transition-colors">
-            <Cookie size={13} />{authStatus?.hasCookies ? 'Update cookies' : 'Set cookies'}
-          </button>
-          {authStatus?.hasCookies && (
-            <button onClick={handleDelete} disabled={removing} className="flex items-center gap-1.5 px-3 py-2 bg-[#242424] hover:bg-red-900/30 border border-gray-700 hover:border-red-800 text-gray-500 hover:text-red-400 rounded-lg text-sm transition-colors">
-              <Trash2 size={13} />Remove
-            </button>
+            {authStatus?.hasCookies && (
+              <button onClick={handleDelete} disabled={removing} className="flex items-center gap-1.5 px-3 py-2 bg-[#242424] hover:bg-red-900/30 border border-gray-700 hover:border-red-800 text-gray-500 hover:text-red-400 rounded-lg text-sm transition-colors">
+                <Trash2 size={13} />Remove
+              </button>
+            )}
+          </div>
+          {showSyncOptions && (
+            <div className="border border-gray-700 rounded-lg p-4 flex flex-col gap-3 bg-[#141414]">
+              <p className="text-gray-400 text-xs font-medium">Fetch range for newly synced channels:</p>
+              <FetchSincePicker
+                mode={syncMode}
+                date={syncDate}
+                onModeChange={setSyncMode}
+                onDateChange={setSyncDate}
+                showDefault
+                defaultSummary="from when added"
+              />
+              <button
+                onClick={handleSync}
+                disabled={syncing || (syncMode === 'date' && !syncDate)}
+                className="flex items-center gap-1.5 px-3 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg text-sm font-medium transition-colors w-fit"
+              >
+                {syncing ? <RefreshCw size={13} className="animate-spin" /> : <RefreshCw size={13} />}
+                {syncing ? 'Syncing...' : 'Sync now'}
+              </button>
+            </div>
           )}
         </div>
       )}
@@ -351,23 +525,56 @@ function AddChannelSection({ onDataChange }) {
   const [adding, setAdding] = useState(false);
   const [added, setAdded] = useState([]);
   const [error, setError] = useState('');
+  const [showOptions, setShowOptions] = useState(false);
+  const [mode, setMode] = useState('default');
+  const [date, setDate] = useState('');
 
   const handleAdd = async () => {
     if (!url.trim()) return;
     setAdding(true); setError('');
-    try { const ch = await addChannel(url.trim()); setAdded(prev => [ch, ...prev]); setUrl(''); await onDataChange(); }
+    try {
+      const fetchSettings = mode !== 'default'
+        ? { fetch_since_mode: mode, fetch_since_date: mode === 'date' ? date : null }
+        : {};
+      const ch = await addChannel(url.trim(), fetchSettings);
+      setAdded(prev => [ch, ...prev]);
+      setUrl('');
+    }
     catch (err) { setError(err.message); }
-    finally { setAdding(false); }
+    finally { setAdding(false); await onDataChange(); }
   };
 
   return (
     <SectionCard title="Add Channel" description="Add a YouTube channel by URL or @handle" icon={Plus}>
       <div className="flex gap-2 mb-3">
         <input type="text" value={url} onChange={e => setUrl(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAdd()} placeholder="https://youtube.com/@channelname" className="flex-1 bg-[#0f0f0f] border border-gray-700 rounded-lg px-3 py-2 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-gray-600" />
-        <button onClick={handleAdd} disabled={!url.trim() || adding} className="flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg text-sm font-medium transition-colors">
+        <button onClick={handleAdd} disabled={!url.trim() || adding || (mode === 'date' && !date)} className="flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg text-sm font-medium transition-colors">
           {adding ? <RefreshCw size={13} className="animate-spin" /> : <Plus size={13} />} Add
         </button>
       </div>
+
+      <button
+        onClick={() => setShowOptions(v => !v)}
+        className="flex items-center gap-1.5 text-gray-500 hover:text-gray-300 text-xs mb-3 transition-colors"
+      >
+        <Calendar size={12} />
+        {showOptions ? 'Hide fetch options' : 'Set fetch range'}
+      </button>
+
+      {showOptions && (
+        <div className="border border-gray-700 rounded-lg p-4 mb-3 bg-[#141414]">
+          <p className="text-gray-400 text-xs font-medium mb-3">Fetch videos from:</p>
+          <FetchSincePicker
+            mode={mode}
+            date={date}
+            onModeChange={setMode}
+            onDateChange={setDate}
+            showDefault
+            defaultSummary="from when added"
+          />
+        </div>
+      )}
+
       {error && <div className="flex items-center gap-2 text-red-400 text-sm bg-red-900/20 border border-red-800 rounded-lg p-3 mb-2"><AlertCircle size={13} />{error}</div>}
       {added.map((ch, i) => <div key={i} className="flex items-center gap-2 text-sm text-green-400 py-1"><Check size={13} />{ch.title} added</div>)}
     </SectionCard>
@@ -379,6 +586,9 @@ function ImportCsvSection({ onDataChange }) {
   const [importing, setImporting] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
+  const [showOptions, setShowOptions] = useState(false);
+  const [mode, setMode] = useState('default');
+  const [date, setDate] = useState('');
 
   const handleFile = (e) => {
     const file = e.target.files?.[0];
@@ -391,7 +601,14 @@ function ImportCsvSection({ onDataChange }) {
   const handleImport = async () => {
     if (!content.trim()) return;
     setImporting(true); setError(''); setResult(null);
-    try { const res = await importCsv(content); setResult(res); await onDataChange(); }
+    try {
+      const fetchSettings = mode !== 'default'
+        ? { fetch_since_mode: mode, fetch_since_date: mode === 'date' ? date : null }
+        : {};
+      const res = await importCsv(content, fetchSettings);
+      setResult(res);
+      await onDataChange();
+    }
     catch (err) { setError(err.message); }
     finally { setImporting(false); }
   };
@@ -403,9 +620,32 @@ function ImportCsvSection({ onDataChange }) {
         <input type="file" accept=".csv" onChange={handleFile} className="hidden" />
       </label>
       <textarea value={content} onChange={e => setContent(e.target.value)} placeholder="Channel Id,Channel Url,Channel Title&#10;UCxxxxxx,..." rows={4} className="w-full bg-[#0f0f0f] border border-gray-700 rounded-lg p-3 text-gray-300 text-xs font-mono placeholder-gray-700 focus:outline-none focus:border-gray-600 resize-none mb-3" />
+
+      <button
+        onClick={() => setShowOptions(v => !v)}
+        className="flex items-center gap-1.5 text-gray-500 hover:text-gray-300 text-xs mb-3 transition-colors"
+      >
+        <Calendar size={12} />
+        {showOptions ? 'Hide fetch options' : 'Set fetch range'}
+      </button>
+
+      {showOptions && (
+        <div className="border border-gray-700 rounded-lg p-4 mb-3 bg-[#141414]">
+          <p className="text-gray-400 text-xs font-medium mb-3">Fetch videos from (applies to all imported channels):</p>
+          <FetchSincePicker
+            mode={mode}
+            date={date}
+            onModeChange={setMode}
+            onDateChange={setDate}
+            showDefault
+            defaultSummary="from when added"
+          />
+        </div>
+      )}
+
       {error && <div className="flex items-center gap-2 text-red-400 text-sm bg-red-900/20 border border-red-800 rounded-lg p-3 mb-3"><AlertCircle size={13} />{error}</div>}
       {result && <div className="flex items-center gap-2 text-green-400 text-sm bg-green-900/20 border border-green-800 rounded-lg p-3 mb-3"><Check size={13} />Imported {result.count} channels{result.errors?.length > 0 ? ` (${result.errors.length} failed)` : ''}</div>}
-      <button onClick={handleImport} disabled={!content.trim() || importing} className="flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg text-sm font-medium transition-colors">
+      <button onClick={handleImport} disabled={!content.trim() || importing || (mode === 'date' && !date)} className="flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg text-sm font-medium transition-colors">
         {importing ? <RefreshCw size={13} className="animate-spin" /> : <ArrowRight size={13} />}{importing ? 'Importing...' : 'Import'}
       </button>
     </SectionCard>

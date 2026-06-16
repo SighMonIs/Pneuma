@@ -18,6 +18,16 @@ CREATE TABLE IF NOT EXISTS categories (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS app_settings (
+  key VARCHAR(100) PRIMARY KEY,
+  value TEXT
+);
+
+INSERT INTO app_settings (key, value) VALUES
+  ('fetch_since_mode', 'added'),
+  ('fetch_since_date', NULL)
+ON CONFLICT (key) DO NOTHING;
+
 CREATE TABLE IF NOT EXISTS subscriptions (
   id VARCHAR(50) PRIMARY KEY,
   title VARCHAR(200),
@@ -25,9 +35,15 @@ CREATE TABLE IF NOT EXISTS subscriptions (
   thumbnail_url TEXT,
   custom_url VARCHAR(100),
   hide_shorts BOOLEAN DEFAULT FALSE,
+  fetch_since_mode VARCHAR(20) DEFAULT 'default',
+  fetch_since_date DATE,
   last_synced_at TIMESTAMP,
   created_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Migrate existing installs
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS fetch_since_mode VARCHAR(20) DEFAULT 'default';
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS fetch_since_date DATE;
 
 CREATE TABLE IF NOT EXISTS channel_categories (
   channel_id VARCHAR(50) REFERENCES subscriptions(id) ON DELETE CASCADE,
