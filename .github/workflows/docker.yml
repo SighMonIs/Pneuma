@@ -31,6 +31,7 @@ jobs:
           dockerfile: Dockerfile
           push: true
           tags: ${{ env.BASE }}-frontend:latest
+          provenance: false
 
       - name: Build and push backend
         uses: docker/build-push-action@v5
@@ -39,3 +40,4 @@ jobs:
           dockerfile: ./backend/Dockerfile
           push: true
           tags: ${{ env.BASE }}-backend:latest
+          provenance: false
