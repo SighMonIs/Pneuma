@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, RotateCcw } from 'lucide-react';
+import { Check, RotateCcw, Play } from 'lucide-react';
 import { markWatched, unmarkWatched } from '../services/api.js';
 
 function formatDuration(seconds) {
@@ -37,7 +37,7 @@ function formatRelativeTime(dateString) {
 }
 
 function formatViewCount(count) {
-  if (!count) return '0 views';
+  if (!count || count <= 0) return '';
   if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1)}M views`;
   if (count >= 1_000) return `${(count / 1_000).toFixed(1)}K views`;
   return `${count} views`;
@@ -70,6 +70,7 @@ export default function VideoCard({ video, onWatchedChange }) {
   };
 
   const duration = formatDuration(video.duration_seconds);
+  const views = formatViewCount(video.view_count);
 
   return (
     <div
@@ -103,6 +104,15 @@ export default function VideoCard({ video, onWatchedChange }) {
             <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
               <div className="bg-black/60 rounded-full p-2">
                 <Check size={20} className="text-green-400" />
+              </div>
+            </div>
+          )}
+
+          {/* Play button overlay on hover */}
+          {hovered && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="bg-red-600/75 rounded-full p-3">
+                <Play size={26} className="text-white fill-white ml-0.5" />
               </div>
             </div>
           )}
@@ -156,7 +166,7 @@ export default function VideoCard({ video, onWatchedChange }) {
               </span>
             </div>
           )}
-          <span className="text-gray-400 text-xs truncate">{video.channel_title}</span>
+          <span className="text-gray-300 text-xs truncate">{video.channel_title}</span>
         </div>
 
         {/* Title */}
@@ -170,10 +180,9 @@ export default function VideoCard({ video, onWatchedChange }) {
         </a>
 
         {/* Meta */}
-        <div className="flex items-center gap-2 text-gray-500 text-xs">
+        <div className="flex items-center gap-2 text-gray-400 text-xs">
           <span>{formatRelativeTime(video.published_at)}</span>
-          <span>·</span>
-          <span>{formatViewCount(video.view_count)}</span>
+          {views && <><span>·</span><span>{views}</span></>}
         </div>
       </div>
     </div>

@@ -1,13 +1,16 @@
 import { useState } from 'react';
-import { X } from 'lucide-react';
+import { X, Plus } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
-import { updateSubscription, updateChannelCategories } from '../services/api.js';
+import { updateSubscription, updateChannelCategories, createCategory } from '../services/api.js';
+import CategoryModal from './CategoryModal.jsx';
 
 export default function ChannelSettingsModal({ channel, categories, onSave, onClose }) {
   const [hideShorts, setHideShorts] = useState(channel.hide_shorts || false);
   const [selectedCategories, setSelectedCategories] = useState(
     new Set(channel.category_ids || [])
   );
+  const [localCategories, setLocalCategories] = useState(categories);
+  const [showNewCatModal, setShowNewCatModal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -21,6 +24,12 @@ export default function ChannelSettingsModal({ channel, categories, onSave, onCl
       }
       return next;
     });
+  };
+
+  const handleCreateCategory = async (data) => {
+    const newCat = await createCategory(data);
+    setLocalCategories(prev => [...prev, newCat]);
+    setSelectedCategories(prev => new Set([...prev, newCat.id]));
   };
 
   const handleSave = async () => {
@@ -98,11 +107,20 @@ export default function ChannelSettingsModal({ channel, categories, onSave, onCl
           </div>
 
           {/* Category assignments */}
-          {categories.length > 0 && (
-            <div>
-              <p className="text-white text-sm font-medium mb-2">Categories</p>
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-white text-sm font-medium">Categories</p>
+              <button
+                onClick={() => setShowNewCatModal(true)}
+                className="text-gray-500 hover:text-white p-1 rounded hover:bg-gray-800 transition-colors"
+                title="New category"
+              >
+                <Plus size={14} />
+              </button>
+            </div>
+            {localCategories.length > 0 ? (
               <div className="flex flex-col gap-1.5 max-h-40 overflow-y-auto">
-                {categories.map(cat => {
+                {localCategories.map(cat => {
                   const Icon = LucideIcons[cat.icon] || LucideIcons.Folder;
                   const isChecked = selectedCategories.has(cat.id);
                   return (
@@ -122,8 +140,10 @@ export default function ChannelSettingsModal({ channel, categories, onSave, onCl
                   );
                 })}
               </div>
-            </div>
-          )}
+            ) : (
+              <p className="text-gray-600 text-xs px-1">No categories yet. Click + to create one.</p>
+            )}
+          </div>
         </div>
 
         {/* Footer */}
@@ -146,6 +166,14 @@ export default function ChannelSettingsModal({ channel, categories, onSave, onCl
           </div>
         </div>
       </div>
+
+      {showNewCatModal && (
+        <CategoryModal
+          category={null}
+          onSave={handleCreateCategory}
+          onClose={() => setShowNewCatModal(false)}
+        />
+      )}
     </div>
   );
 }

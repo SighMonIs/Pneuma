@@ -68,7 +68,8 @@ export async function syncSubscriptions() {
   for (const item of items) {
     const id = item.channel_id || item.id;
     const title = item.channel || item.uploader || item.title;
-    const thumbnail = item.thumbnails?.[0]?.url ?? null;
+    const thumbs = [...(item.thumbnails || [])].sort((a, b) => (b.width || 0) - (a.width || 0));
+    const thumbnail = thumbs[0]?.url ?? null;
     if (!id) continue;
 
     await pool.query(`

@@ -9,7 +9,7 @@ import CategoryModal from './CategoryModal.jsx';
 import ChannelSettingsModal from './ChannelSettingsModal.jsx';
 import { syncSubscriptions, createCategory, updateCategory, deleteCategory, reorderCategory } from '../services/api.js';
 
-export default function Sidebar({ subscriptions, categories, onDataChange, selectedChannelId, onSelectChannel }) {
+export default function Sidebar({ subscriptions, categories, onDataChange, selectedChannelId, onSelectChannel, authStatus }) {
   const location = useLocation();
   const [search, setSearch] = useState('');
   const [syncing, setSyncing] = useState(false);
@@ -155,14 +155,16 @@ export default function Sidebar({ subscriptions, categories, onDataChange, selec
           <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">
             Channels ({subscriptions.length})
           </span>
-          <button
-            onClick={handleSync}
-            disabled={syncing}
-            className="text-gray-500 hover:text-white p-1 rounded hover:bg-[#242424] transition-colors"
-            title="Sync subscriptions"
-          >
-            <RefreshCw size={14} className={syncing ? 'animate-spin' : ''} />
-          </button>
+          {authStatus?.hasCookies && (
+            <button
+              onClick={handleSync}
+              disabled={syncing}
+              className="text-gray-500 hover:text-white p-1 rounded hover:bg-[#242424] transition-colors"
+              title="Sync subscriptions"
+            >
+              <RefreshCw size={14} className={syncing ? 'animate-spin' : ''} />
+            </button>
+          )}
         </div>
         <div className="relative">
           <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-600" />
