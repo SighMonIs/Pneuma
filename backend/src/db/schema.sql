@@ -64,3 +64,11 @@ CREATE TABLE IF NOT EXISTS scheduled_jobs (
   next_run_at TIMESTAMP,
   created_at TIMESTAMP DEFAULT NOW()
 );
+
+CREATE TABLE IF NOT EXISTS video_progress (
+  video_id VARCHAR(50) PRIMARY KEY,
+  position_seconds FLOAT NOT NULL DEFAULT 0,
+  duration_seconds FLOAT NOT NULL DEFAULT 0,
+  percent_watched FLOAT NOT NULL DEFAULT 0,
+  updated_at TIMESTAMP DEFAULT NOW()
+);

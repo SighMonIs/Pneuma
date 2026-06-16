@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Search, Scissors, Eye, EyeOff, RefreshCw, X, ArrowLeft, ExternalLink } from 'lucide-react';
-import { getVideos, fetchVideos, getFetchStatus, markWatched } from '../services/api.js';
+import { getVideos, fetchVideos, getFetchStatus, markWatched, saveProgress } from '../services/api.js';
 import VideoCard from './VideoCard.jsx';
 
 function SkeletonCard() {
@@ -328,12 +328,25 @@ function VideoPlayerView({ video, showComments, onBack, onWatchedChange }) {
     let destroyed = false;
     markedRef.current = video.is_watched || false;
 
-    const checkProgress = () => {
-      if (markedRef.current || !playerRef.current) return;
+    const saveCurrentProgress = () => {
+      if (!playerRef.current) return;
       try {
         const current = playerRef.current.getCurrentTime();
         const duration = playerRef.current.getDuration();
-        if (duration > 0 && current / duration >= 0.95) {
+        if (duration > 0 && current > 0) {
+          saveProgress(video.id, Math.floor(current), Math.floor(duration)).catch(() => {});
+        }
+      } catch {}
+    };
+
+    const checkProgress = () => {
+      if (!playerRef.current) return;
+      try {
+        const current = playerRef.current.getCurrentTime();
+        const duration = playerRef.current.getDuration();
+        if (duration <= 0) return;
+        saveCurrentProgress();
+        if (!markedRef.current && current / duration >= 0.95) {
           markedRef.current = true;
           clearInterval(intervalRef.current);
           markWatched(video.id).catch(console.error);
@@ -350,12 +363,18 @@ function VideoPlayerView({ video, showComments, onBack, onWatchedChange }) {
         height: '100%',
         playerVars: { autoplay: 1, rel: 0 },
         events: {
+          onReady: () => {
+            if ((video.position_seconds || 0) > 10 && (video.percent_watched || 0) < 0.95) {
+              playerRef.current?.seekTo(video.position_seconds, true);
+            }
+          },
           onStateChange: ({ data }) => {
             if (data === window.YT.PlayerState.PLAYING) {
               intervalRef.current = setInterval(checkProgress, 5000);
             } else {
               clearInterval(intervalRef.current);
-              if (data === window.YT.PlayerState.ENDED) checkProgress();
+              if (data === window.YT.PlayerState.PAUSED) saveCurrentProgress();
+              else if (data === window.YT.PlayerState.ENDED) checkProgress();
             }
           },
         },

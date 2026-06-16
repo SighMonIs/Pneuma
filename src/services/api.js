@@ -56,6 +56,8 @@ export const fetchVideos = () => request('POST', '/videos/fetch');
 export const getFetchStatus = () => request('GET', '/videos/fetch-status');
 export const markWatched = (videoId) => request('POST', '/videos/watched', { videoId });
 export const unmarkWatched = (videoId) => request('DELETE', `/videos/watched/${videoId}`);
+export const saveProgress = (videoId, positionSeconds, durationSeconds) =>
+  request('POST', '/videos/progress', { videoId, positionSeconds, durationSeconds });
 
 // Scheduler
 export const getJobs = () => request('GET', '/scheduler');

@@ -120,6 +120,15 @@ export default function VideoCard({ video, onWatchedChange, videoMode = 'youtube
               SHORTS
             </div>
           )}
+
+          {!isWatched && (video.percent_watched || 0) > 0.01 && (
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/40">
+              <div
+                className="h-full bg-red-500"
+                style={{ width: `${Math.min((video.percent_watched || 0) * 100, 100)}%` }}
+              />
+            </div>
+          )}
         </a>
 
         {hovered && (

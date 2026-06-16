@@ -86,10 +86,13 @@ router.get('/', async (req, res) => {
         v.channel_id,
         s.title AS channel_title,
         s.thumbnail_url AS channel_thumbnail,
-        CASE WHEN wv.video_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_watched
+        CASE WHEN wv.video_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_watched,
+        COALESCE(vp.position_seconds, 0) AS position_seconds,
+        COALESCE(vp.percent_watched, 0) AS percent_watched
       FROM videos v
       JOIN subscriptions s ON s.id = v.channel_id
       LEFT JOIN watched_videos wv ON wv.video_id = v.id
+      LEFT JOIN video_progress vp ON vp.video_id = v.id
       ${whereClause}
       ORDER BY v.published_at DESC
       LIMIT $${paramCount} OFFSET $${paramCount + 1}
@@ -124,6 +127,31 @@ router.post('/fetch', (req, res) => {
 // GET /api/videos/fetch-status — current fetch progress
 router.get('/fetch-status', (req, res) => {
   res.json({ ...fetchProgress });
+});
+
+// POST /api/videos/progress — save watch position
+router.post('/progress', async (req, res) => {
+  const { videoId, positionSeconds, durationSeconds } = req.body;
+  if (!videoId || durationSeconds == null) {
+    return res.status(400).json({ error: 'videoId and durationSeconds are required' });
+  }
+  const pct = durationSeconds > 0 ? positionSeconds / durationSeconds : 0;
+  try {
+    await pool.query(
+      `INSERT INTO video_progress (video_id, position_seconds, duration_seconds, percent_watched, updated_at)
+       VALUES ($1, $2, $3, $4, NOW())
+       ON CONFLICT (video_id) DO UPDATE SET
+         position_seconds = EXCLUDED.position_seconds,
+         duration_seconds = EXCLUDED.duration_seconds,
+         percent_watched = EXCLUDED.percent_watched,
+         updated_at = NOW()`,
+      [videoId, positionSeconds, durationSeconds, pct]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    console.error('[Videos] Save progress failed:', err.message);
+    res.status(500).json({ error: 'Failed to save progress' });
+  }
 });
 
 // POST /api/videos/watched — mark video as watched
