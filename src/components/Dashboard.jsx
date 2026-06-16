@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Search, Scissors, Eye, EyeOff, RefreshCw, X } from 'lucide-react';
+import { Search, Scissors, Eye, EyeOff, RefreshCw, X, ArrowLeft, ExternalLink } from 'lucide-react';
 import { getVideos, fetchVideos, getFetchStatus } from '../services/api.js';
 import VideoCard from './VideoCard.jsx';
 
@@ -40,6 +40,7 @@ export default function Dashboard({ selectedChannelId, onClearChannel, subscript
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [hideShorts, setHideShortsRaw] = useState(() => loadBool('pneuma_hide_shorts'));
   const [hideWatched, setHideWatchedRaw] = useState(() => loadBool('pneuma_hide_watched'));
+  const [selectedVideo, setSelectedVideo] = useState(null);
   const videoMode = (() => { try { return localStorage.getItem('pneuma_video_mode') || 'youtube'; } catch { return 'youtube'; } })();
   const showComments = (() => { try { return localStorage.getItem('pneuma_show_comments') === 'true'; } catch { return false; } })();
   const [error, setError] = useState('');
@@ -129,9 +130,22 @@ export default function Dashboard({ selectedChannelId, onClearChannel, subscript
     }
   };
 
+  // Clear selected video when channel filter changes
+  useEffect(() => { setSelectedVideo(null); }, [selectedChannelId]);
+
   const selectedChannel = selectedChannelId
     ? subscriptions.find(s => s.id === selectedChannelId)
     : null;
+
+  if (selectedVideo) {
+    return (
+      <VideoPlayerView
+        video={selectedVideo}
+        showComments={showComments}
+        onBack={() => setSelectedVideo(null)}
+      />
+    );
+  }
 
   const progressPct = fetchProgress?.total > 0
     ? Math.round((fetchProgress.done / fetchProgress.total) * 100)
@@ -272,7 +286,7 @@ export default function Dashboard({ selectedChannelId, onClearChannel, subscript
                   video={video}
                   onWatchedChange={handleWatchedChange}
                   videoMode={videoMode}
-                  showComments={showComments}
+                  onVideoSelect={setSelectedVideo}
                 />
               ))}
             </div>
@@ -297,6 +311,90 @@ export default function Dashboard({ selectedChannelId, onClearChannel, subscript
             )}
           </>
         )}
+      </div>
+    </main>
+  );
+}
+
+function VideoPlayerView({ video, showComments, onBack }) {
+  const ytUrl = `https://www.youtube.com/watch?v=${video.id}`;
+
+  return (
+    <main className="flex-1 min-h-screen flex flex-col">
+      {/* Back bar */}
+      <div className="sticky top-0 z-10 bg-[#0f0f0f]/95 backdrop-blur border-b border-gray-700 px-6 py-3 flex items-center gap-3">
+        <button
+          onClick={onBack}
+          className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors text-sm"
+        >
+          <ArrowLeft size={16} />
+          Back to feed
+        </button>
+        <div className="flex-1 min-w-0">
+          <p className="text-gray-400 text-sm truncate">{video.title}</p>
+        </div>
+        <a
+          href={ytUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1.5 text-gray-500 hover:text-white text-sm transition-colors flex-shrink-0"
+        >
+          <ExternalLink size={14} />
+          YouTube
+        </a>
+      </div>
+
+      {/* Player + info */}
+      <div className="flex-1 p-6 max-w-5xl mx-auto w-full">
+        {/* Embed */}
+        <div className="aspect-video w-full rounded-xl overflow-hidden bg-black mb-5">
+          <iframe
+            src={`https://www.youtube.com/embed/${video.id}?autoplay=1`}
+            className="w-full h-full"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
+            title={video.title}
+          />
+        </div>
+
+        {/* Video info */}
+        <div className="flex flex-col gap-3">
+          <h1 className="text-white text-xl font-semibold leading-snug">{video.title}</h1>
+
+          <div className="flex items-center gap-3">
+            {video.channel_thumbnail ? (
+              <img src={video.channel_thumbnail} alt={video.channel_title} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center flex-shrink-0">
+                <span className="text-gray-400 text-xs">{video.channel_title?.charAt(0) || '?'}</span>
+              </div>
+            )}
+            <span className="text-gray-300 text-sm font-medium">{video.channel_title}</span>
+            {video.published_at && (
+              <>
+                <span className="text-gray-700">·</span>
+                <span className="text-gray-500 text-sm">
+                  {new Date(video.published_at).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
+                </span>
+              </>
+            )}
+          </div>
+
+          {showComments && (
+            <div className="mt-2 flex items-center justify-between bg-[#1a1a1a] border border-gray-700 rounded-xl px-4 py-3">
+              <p className="text-gray-500 text-sm">Comments are only available on YouTube.</p>
+              <a
+                href={ytUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium flex-shrink-0 ml-4 transition-colors"
+              >
+                <ExternalLink size={13} />
+                View comments
+              </a>
+            </div>
+          )}
+        </div>
       </div>
     </main>
   );
