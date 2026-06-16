@@ -191,6 +191,26 @@ router.delete('/watched/:videoId', async (req, res) => {
   }
 });
 
+// POST /api/videos/purge-and-fetch — delete all video data then start a fresh fetch
+router.post('/purge-and-fetch', async (req, res) => {
+  if (fetchProgress.running) {
+    return res.status(409).json({ error: 'A fetch is already in progress' });
+  }
+  try {
+    await pool.query('DELETE FROM video_progress');
+    await pool.query('DELETE FROM watched_videos');
+    await pool.query('DELETE FROM videos');
+    fetchAllVideos().catch(err => {
+      console.error('[Videos] Purge-and-fetch failed:', err.message);
+      fetchProgress.running = false;
+    });
+    res.json({ started: true });
+  } catch (err) {
+    console.error('[Videos] Purge failed:', err.message);
+    res.status(500).json({ error: 'Failed to purge video data' });
+  }
+});
+
 // POST /api/videos/:id/fetch-channel — fetch videos for a specific channel
 router.post('/:id/fetch-channel', async (req, res) => {
   const { id } = req.params;

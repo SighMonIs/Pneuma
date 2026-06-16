@@ -3,14 +3,14 @@ import {
   Cookie, FileSpreadsheet, Plus, RefreshCw, Trash2,
   Check, Upload, ArrowRight, AlertCircle, Monitor, Rss, Tag,
   ChevronUp, ChevronDown, Settings, Calendar, RotateCcw,
-  ArrowLeft, ListChecks,
+  ArrowLeft, ListChecks, AlertTriangle,
 } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import {
   saveCookies, deleteCookies, importCsv, addChannel, syncSubscriptions,
   createCategory, updateCategory, deleteCategory, reorderCategory,
   getSettings, updateSettings, applyDefaultFetch,
-  getSubscriptions, updateChannelCategories,
+  getSubscriptions, updateChannelCategories, purgeAndFetch,
 } from '../services/api.js';
 import CategoryModal from './CategoryModal.jsx';
 
@@ -136,6 +136,7 @@ function FeedsTab({ authStatus, onAuthChange, onDataChange }) {
       <CookiesSection authStatus={authStatus} onAuthChange={onAuthChange} onDataChange={onDataChange} />
       <AddChannelSection onDataChange={onDataChange} />
       <ImportCsvSection onDataChange={onDataChange} />
+      <PurgeAndFetchSection />
     </div>
   );
 }
@@ -537,6 +538,85 @@ function ManageFeedsView({ categories, onBack, onDataChange }) {
             );
           })}
         </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Purge & Fetch Section ─── */
+
+function PurgeAndFetchSection() {
+  const [confirming, setConfirming] = useState(false);
+  const [running, setRunning] = useState(false);
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState('');
+
+  const handlePurge = async () => {
+    setRunning(true); setError('');
+    try {
+      await purgeAndFetch();
+      setDone(true);
+      setConfirming(false);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  return (
+    <div className="bg-[#1a1a1a] border border-red-900 rounded-xl p-6">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-8 h-8 bg-red-950 rounded-lg flex items-center justify-center flex-shrink-0 border border-red-900">
+          <AlertTriangle size={16} className="text-red-500" />
+        </div>
+        <div>
+          <h2 className="text-white font-semibold text-sm">Purge &amp; Refetch</h2>
+          <p className="text-gray-500 text-xs mt-0.5">Delete all video data and fetch everything from scratch using current date settings</p>
+        </div>
+      </div>
+
+      {error && (
+        <div className="flex items-center gap-2 text-red-400 text-sm bg-red-900/20 border border-red-800 rounded-lg p-3 mb-4">
+          <AlertCircle size={13} />{error}
+        </div>
+      )}
+
+      {done ? (
+        <div className="flex items-center gap-2 text-green-400 text-sm bg-green-900/20 border border-green-800 rounded-lg p-3">
+          <Check size={13} />All video data purged. Fetch is running in the background — check the main feed for progress.
+        </div>
+      ) : confirming ? (
+        <div className="flex flex-col gap-3">
+          <p className="text-gray-300 text-sm">
+            This will permanently delete all <span className="text-white font-medium">videos, watch history, and progress</span> across every feed, then start a fresh fetch. This cannot be undone.
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={handlePurge}
+              disabled={running}
+              className="flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white rounded-lg text-sm font-medium transition-colors"
+            >
+              {running ? <RefreshCw size={13} className="animate-spin" /> : <AlertTriangle size={13} />}
+              {running ? 'Purging…' : 'Yes, purge everything'}
+            </button>
+            <button
+              onClick={() => { setConfirming(false); setError(''); }}
+              disabled={running}
+              className="px-4 py-2 bg-[#242424] hover:bg-[#2e2e2e] border border-gray-700 text-gray-400 rounded-lg text-sm transition-colors disabled:opacity-50"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          onClick={() => setConfirming(true)}
+          className="flex items-center gap-1.5 px-3 py-2 bg-red-950 hover:bg-red-900/60 border border-red-800 text-red-400 hover:text-red-300 rounded-lg text-sm font-medium transition-colors"
+        >
+          <Trash2 size={13} />
+          Purge &amp; Fetch Videos
+        </button>
       )}
     </div>
   );
