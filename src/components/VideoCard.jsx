@@ -11,26 +11,11 @@ function formatDuration(seconds) {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
-function formatRelativeTime(dateString) {
+function formatPublishDate(dateString) {
   if (!dateString) return '';
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffMs = now - date;
-  const diffSeconds = Math.floor(diffMs / 1000);
-  const diffMinutes = Math.floor(diffSeconds / 60);
-  const diffHours = Math.floor(diffMinutes / 60);
-  const diffDays = Math.floor(diffHours / 24);
-  const diffWeeks = Math.floor(diffDays / 7);
-  const diffMonths = Math.floor(diffDays / 30);
-  const diffYears = Math.floor(diffDays / 365);
-
-  if (diffSeconds < 60) return 'just now';
-  if (diffMinutes < 60) return `${diffMinutes} minute${diffMinutes === 1 ? '' : 's'} ago`;
-  if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
-  if (diffDays < 7) return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
-  if (diffWeeks < 5) return `${diffWeeks} week${diffWeeks === 1 ? '' : 's'} ago`;
-  if (diffMonths < 12) return `${diffMonths} month${diffMonths === 1 ? '' : 's'} ago`;
-  return `${diffYears} year${diffYears === 1 ? '' : 's'} ago`;
+  return new Date(dateString).toLocaleDateString(undefined, {
+    year: 'numeric', month: 'short', day: 'numeric',
+  });
 }
 
 function formatViewCount(count) {
@@ -38,6 +23,15 @@ function formatViewCount(count) {
   if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1)}M views`;
   if (count >= 1_000) return `${(count / 1_000).toFixed(1)}K views`;
   return `${count} views`;
+}
+
+function getThumbnailUrl(videoId) {
+  try {
+    const quality = localStorage.getItem('pneuma_thumbnail_quality') || 'hqdefault';
+    return `https://i.ytimg.com/vi/${videoId}/${quality}.jpg`;
+  } catch {
+    return `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+  }
 }
 
 export default function VideoCard({ video, onWatchedChange, videoMode = 'youtube', onVideoSelect }) {
@@ -62,15 +56,19 @@ export default function VideoCard({ video, onWatchedChange, videoMode = 'youtube
   };
 
   const handleVideoClick = (e) => {
+    e.preventDefault();
     if (videoMode === 'embed') {
-      e.preventDefault();
       onVideoSelect?.(video);
+    } else {
+      // Use window.open to maximise chance of opening in browser rather than YouTube app
+      window.open(`https://www.youtube.com/watch?v=${video.id}`, '_blank', 'noopener,noreferrer');
     }
   };
 
   const duration = formatDuration(video.duration_seconds);
   const views = formatViewCount(video.view_count);
-  const ytUrl = `https://www.youtube.com/watch?v=${video.id}`;
+  const thumbnailUrl = getThumbnailUrl(video.id);
+  const publishDate = formatPublishDate(video.published_at);
 
   return (
     <div
@@ -79,19 +77,19 @@ export default function VideoCard({ video, onWatchedChange, videoMode = 'youtube
       onMouseLeave={() => setHovered(false)}
     >
       <div className="relative aspect-video bg-[#1a1a1a]">
-        <a href={ytUrl} target="_blank" rel="noopener noreferrer" className="block w-full h-full" onClick={handleVideoClick}>
-          {video.thumbnail_url ? (
-            <img
-              src={video.thumbnail_url}
-              alt={video.title}
-              className={`w-full h-full object-cover transition-opacity ${isWatched ? 'opacity-50' : 'opacity-100'}`}
-              loading="lazy"
-            />
-          ) : (
-            <div className="w-full h-full bg-gray-800 flex items-center justify-center">
-              <span className="text-gray-600 text-sm">No thumbnail</span>
-            </div>
-          )}
+        <div className="block w-full h-full" onClick={handleVideoClick}>
+          <img
+            src={thumbnailUrl}
+            alt={video.title}
+            className={`w-full h-full object-cover transition-opacity ${isWatched ? 'opacity-50' : 'opacity-100'}`}
+            loading="lazy"
+            onError={e => {
+              if (!e.currentTarget.dataset.fallback) {
+                e.currentTarget.dataset.fallback = '1';
+                e.currentTarget.src = `https://i.ytimg.com/vi/${video.id}/mqdefault.jpg`;
+              }
+            }}
+          />
 
           {isWatched && (
             <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
@@ -129,7 +127,7 @@ export default function VideoCard({ video, onWatchedChange, videoMode = 'youtube
               />
             </div>
           )}
-        </a>
+        </div>
 
         {hovered && (
           <button
@@ -157,19 +155,16 @@ export default function VideoCard({ video, onWatchedChange, videoMode = 'youtube
           <span className="text-gray-300 text-xs truncate">{video.channel_title}</span>
         </div>
 
-        <a
-          href={ytUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-white text-sm font-medium leading-snug line-clamp-2 hover:text-gray-200"
+        <div
+          className="text-white text-sm font-medium leading-snug line-clamp-2 hover:text-gray-200 cursor-pointer"
           onClick={handleVideoClick}
         >
           {video.title}
-        </a>
+        </div>
 
         <div className="flex items-center gap-2 text-gray-400 text-xs">
-          <span>{formatRelativeTime(video.published_at)}</span>
-          {views && <><span>·</span><span>{views}</span></>}
+          {publishDate && <span>{publishDate}</span>}
+          {views && <><span className="text-gray-600">·</span><span>{views}</span></>}
         </div>
       </div>
     </div>

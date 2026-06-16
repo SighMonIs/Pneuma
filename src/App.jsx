@@ -62,7 +62,7 @@ function AppSkeleton() {
 }
 
 function AppInner() {
-  const [status, setStatus] = useState(null); // null = loading
+  const [status, setStatus] = useState(null);
   const [subscriptions, setSubscriptions] = useState([]);
   const [categories, setCategories] = useState([]);
   const [dataLoaded, setDataLoaded] = useState(false);

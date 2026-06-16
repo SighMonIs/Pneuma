@@ -1,20 +1,13 @@
 import { useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import Sidebar from './Sidebar.jsx';
 import Dashboard from './Dashboard.jsx';
 import SchedulerPage from './SchedulerPage.jsx';
 import SettingsPage from './SettingsPage.jsx';
+import ChannelPage from './ChannelPage.jsx';
 
 export default function Layout({ subscriptions, categories, onDataChange, authStatus, onAuthChange }) {
-  const [selectedChannelId, setSelectedChannelId] = useState(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
-  const location = useLocation();
-
-  const page = location.pathname === '/scheduler'
-    ? 'scheduler'
-    : location.pathname === '/settings'
-    ? 'settings'
-    : 'dashboard';
 
   return (
     <div className="flex min-h-screen bg-[#0f0f0f]">
@@ -22,32 +15,46 @@ export default function Layout({ subscriptions, categories, onDataChange, authSt
         subscriptions={subscriptions}
         categories={categories}
         onDataChange={onDataChange}
-        selectedChannelId={selectedChannelId}
-        onSelectChannel={(id) => { setSelectedChannelId(id); setSelectedCategoryId(null); }}
         selectedCategoryId={selectedCategoryId}
-        onSelectCategory={(id) => { setSelectedCategoryId(id); setSelectedChannelId(null); }}
+        onSelectCategory={(id) => setSelectedCategoryId(id)}
         authStatus={authStatus}
       />
-      <div className="ml-[260px] flex-1 flex flex-col">
-        {page === 'scheduler' && <SchedulerPage />}
-        {page === 'settings' && (
-          <SettingsPage
-            authStatus={authStatus}
-            onAuthChange={onAuthChange}
-            onDataChange={onDataChange}
-            categories={categories}
+      <div className="ml-[260px] flex-1 flex flex-col min-w-0">
+        <Routes>
+          <Route path="/scheduler" element={<SchedulerPage />} />
+          <Route
+            path="/settings"
+            element={
+              <SettingsPage
+                authStatus={authStatus}
+                onAuthChange={onAuthChange}
+                onDataChange={onDataChange}
+                categories={categories}
+              />
+            }
           />
-        )}
-        {page === 'dashboard' && (
-          <Dashboard
-            selectedChannelId={selectedChannelId}
-            onClearChannel={() => setSelectedChannelId(null)}
-            selectedCategoryId={selectedCategoryId}
-            onClearCategory={() => setSelectedCategoryId(null)}
-            subscriptions={subscriptions}
-            categories={categories}
+          <Route
+            path="/channel/:id"
+            element={
+              <ChannelPage
+                subscriptions={subscriptions}
+                categories={categories}
+                onDataChange={onDataChange}
+              />
+            }
           />
-        )}
+          <Route
+            path="/*"
+            element={
+              <Dashboard
+                selectedCategoryId={selectedCategoryId}
+                onClearCategory={() => setSelectedCategoryId(null)}
+                subscriptions={subscriptions}
+                categories={categories}
+              />
+            }
+          />
+        </Routes>
       </div>
     </div>
   );

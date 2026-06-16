@@ -32,6 +32,7 @@ export const applyDefaultFetch = () => request('POST', '/settings/apply-default'
 
 // Subscriptions
 export const getSubscriptions = () => request('GET', '/subscriptions');
+export const getChannel = (id) => request('GET', `/subscriptions/${id}`);
 export const syncSubscriptions = (data = {}) => request('POST', '/subscriptions/sync', data);
 export const addChannel = (url, fetchSettings = {}) =>
   request('POST', '/subscriptions/add', { url, ...fetchSettings });
@@ -41,6 +42,9 @@ export const updateSubscription = (id, data) => request('PATCH', `/subscriptions
 export const updateChannelCategories = (channelId, categoryIds) =>
   request('POST', `/subscriptions/${channelId}/categories`, { categoryIds });
 export const deleteSubscription = (id) => request('DELETE', `/subscriptions/${id}`);
+export const refreshChannelInfo = (id) => request('POST', `/subscriptions/${id}/refresh-info`);
+export const markAllWatched = (id) => request('POST', `/subscriptions/${id}/mark-all-watched`);
+export const fetchChannel = (id) => request('POST', `/subscriptions/${id}/fetch`);
 
 // Categories
 export const getCategories = () => request('GET', '/categories');
@@ -61,6 +65,9 @@ export const getVideos = (params = {}) => {
 };
 export const fetchVideos = () => request('POST', '/videos/fetch');
 export const purgeAndFetch = () => request('POST', '/videos/purge-and-fetch');
+export const purgeWatch = () => request('POST', '/videos/purge-watch');
+export const purgeCategories = () => request('POST', '/videos/purge-categories');
+export const purgeBefore = (date) => request('POST', '/videos/purge-before', { date });
 export const getFetchStatus = () => request('GET', '/videos/fetch-status');
 export const markWatched = (videoId) => request('POST', '/videos/watched', { videoId });
 export const unmarkWatched = (videoId) => request('DELETE', `/videos/watched/${videoId}`);

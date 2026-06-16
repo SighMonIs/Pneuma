@@ -1,23 +1,26 @@
 import { Router } from 'express';
 import { pool } from '../db/index.js';
-import { syncSubscriptions, addChannelByUrl } from '../services/ytdlp.js';
+import { syncSubscriptions, addChannelByUrl, fetchChannelInfo, fetchVideosForChannel, resolveDateAfter } from '../services/ytdlp.js';
 
 const VALID_MODES = ['default', 'added', 'date', 'beginning'];
 
 const router = Router();
 
-// GET /api/subscriptions — all subscriptions with category IDs
+// GET /api/subscriptions — all subscriptions with category IDs and watched count
 router.get('/', async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT
         s.*,
         COALESCE(
-          JSON_AGG(cc.category_id) FILTER (WHERE cc.category_id IS NOT NULL),
+          JSON_AGG(DISTINCT cc.category_id) FILTER (WHERE cc.category_id IS NOT NULL),
           '[]'::json
-        ) AS category_ids
+        ) AS category_ids,
+        COUNT(DISTINCT wv.video_id)::int AS watched_count
       FROM subscriptions s
       LEFT JOIN channel_categories cc ON cc.channel_id = s.id
+      LEFT JOIN videos v ON v.channel_id = s.id
+      LEFT JOIN watched_videos wv ON wv.video_id = v.id
       GROUP BY s.id
       ORDER BY s.title
     `);
@@ -70,8 +73,7 @@ router.post('/import-csv', async (req, res) => {
     return res.status(400).json({ error: 'csv content is required' });
   }
 
-  // Google Takeout format: Channel Id,Channel Url,Channel Title
-  const lines = csv.trim().split('\n').slice(1); // skip header
+  const lines = csv.trim().split('\n').slice(1);
   let count = 0;
   const errors = [];
 
@@ -102,10 +104,38 @@ router.post('/import-csv', async (req, res) => {
   res.json({ count, errors });
 });
 
+// GET /api/subscriptions/:id — single channel with video/watched counts
+router.get('/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query(`
+      SELECT
+        s.*,
+        COALESCE(
+          JSON_AGG(DISTINCT cc.category_id) FILTER (WHERE cc.category_id IS NOT NULL),
+          '[]'::json
+        ) AS category_ids,
+        COUNT(DISTINCT v.id)::int AS video_count,
+        COUNT(DISTINCT wv.video_id)::int AS watched_count
+      FROM subscriptions s
+      LEFT JOIN channel_categories cc ON cc.channel_id = s.id
+      LEFT JOIN videos v ON v.channel_id = s.id
+      LEFT JOIN watched_videos wv ON wv.video_id = v.id
+      WHERE s.id = $1
+      GROUP BY s.id
+    `, [id]);
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Channel not found' });
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('[Subscriptions] GET /:id failed:', err.message);
+    res.status(500).json({ error: 'Failed to fetch channel' });
+  }
+});
+
 // PATCH /api/subscriptions/:id — update channel settings
 router.patch('/:id', async (req, res) => {
   const { id } = req.params;
-  const { hide_shorts, fetch_since_mode, fetch_since_date } = req.body;
+  const { hide_shorts, fetch_since_mode, fetch_since_date, is_favourite, show_banner, show_about } = req.body;
 
   if (fetch_since_mode !== undefined && !VALID_MODES.includes(fetch_since_mode)) {
     return res.status(400).json({ error: 'Invalid fetch_since_mode' });
@@ -118,6 +148,9 @@ router.patch('/:id', async (req, res) => {
   if (hide_shorts !== undefined) { updates.push(`hide_shorts = $${p++}`); values.push(hide_shorts); }
   if (fetch_since_mode !== undefined) { updates.push(`fetch_since_mode = $${p++}`); values.push(fetch_since_mode); }
   if (fetch_since_date !== undefined) { updates.push(`fetch_since_date = $${p++}`); values.push(fetch_since_date || null); }
+  if (is_favourite !== undefined) { updates.push(`is_favourite = $${p++}`); values.push(is_favourite); }
+  if (show_banner !== undefined) { updates.push(`show_banner = $${p++}`); values.push(show_banner); }
+  if (show_about !== undefined) { updates.push(`show_about = $${p++}`); values.push(show_about); }
 
   if (updates.length === 0) return res.status(400).json({ error: 'No fields to update' });
 
@@ -163,6 +196,69 @@ router.post('/:id/categories', async (req, res) => {
     res.status(500).json({ error: 'Failed to update category assignments' });
   } finally {
     client.release();
+  }
+});
+
+// POST /api/subscriptions/:id/refresh-info — fetch channel metadata from yt-dlp
+router.post('/:id/refresh-info', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await fetchChannelInfo(id);
+    const result = await pool.query(`
+      SELECT s.*,
+        COALESCE(JSON_AGG(DISTINCT cc.category_id) FILTER (WHERE cc.category_id IS NOT NULL), '[]'::json) AS category_ids,
+        COUNT(DISTINCT v.id)::int AS video_count,
+        COUNT(DISTINCT wv.video_id)::int AS watched_count
+      FROM subscriptions s
+      LEFT JOIN channel_categories cc ON cc.channel_id = s.id
+      LEFT JOIN videos v ON v.channel_id = s.id
+      LEFT JOIN watched_videos wv ON wv.video_id = v.id
+      WHERE s.id = $1
+      GROUP BY s.id
+    `, [id]);
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('[Subscriptions] refresh-info failed:', err.message);
+    res.status(500).json({ error: err.message || 'Failed to fetch channel info' });
+  }
+});
+
+// POST /api/subscriptions/:id/mark-all-watched — mark all channel videos as watched
+router.post('/:id/mark-all-watched', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query(`
+      INSERT INTO watched_videos (video_id)
+      SELECT id FROM videos WHERE channel_id = $1
+      ON CONFLICT (video_id) DO NOTHING
+    `, [id]);
+    res.json({ success: true, count: result.rowCount });
+  } catch (err) {
+    console.error('[Subscriptions] mark-all-watched failed:', err.message);
+    res.status(500).json({ error: 'Failed to mark all as watched' });
+  }
+});
+
+// POST /api/subscriptions/:id/fetch — fetch videos for a specific channel
+router.post('/:id/fetch', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const subResult = await pool.query('SELECT * FROM subscriptions WHERE id = $1', [id]);
+    if (subResult.rows.length === 0) return res.status(404).json({ error: 'Channel not found' });
+    const sub = subResult.rows[0];
+
+    const { rows: settingRows } = await pool.query('SELECT key, value FROM app_settings');
+    const gs = {};
+    settingRows.forEach(r => (gs[r.key] = r.value));
+    const globalMode = gs.fetch_since_mode || 'added';
+    const globalDate = gs.fetch_since_date || null;
+
+    const dateAfter = resolveDateAfter(sub, globalMode, globalDate);
+    const count = await fetchVideosForChannel(id, { dateAfter });
+    res.json({ count, channelId: id });
+  } catch (err) {
+    console.error('[Subscriptions] fetch failed:', err.message);
+    res.status(500).json({ error: err.message || 'Failed to fetch channel videos' });
   }
 });
 

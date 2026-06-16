@@ -191,6 +191,45 @@ router.delete('/watched/:videoId', async (req, res) => {
   }
 });
 
+// POST /api/videos/purge-watch — delete all watch status and progress
+router.post('/purge-watch', async (req, res) => {
+  try {
+    await pool.query('DELETE FROM video_progress');
+    await pool.query('DELETE FROM watched_videos');
+    res.json({ success: true });
+  } catch (err) {
+    console.error('[Videos] Purge watch failed:', err.message);
+    res.status(500).json({ error: 'Failed to purge watch status' });
+  }
+});
+
+// POST /api/videos/purge-categories — delete all channel-category assignments
+router.post('/purge-categories', async (req, res) => {
+  try {
+    await pool.query('DELETE FROM channel_categories');
+    res.json({ success: true });
+  } catch (err) {
+    console.error('[Videos] Purge categories failed:', err.message);
+    res.status(500).json({ error: 'Failed to purge category assignments' });
+  }
+});
+
+// POST /api/videos/purge-before — delete videos published before a given date
+router.post('/purge-before', async (req, res) => {
+  const { date } = req.body;
+  if (!date) return res.status(400).json({ error: 'date is required' });
+  try {
+    const result = await pool.query(
+      `DELETE FROM videos WHERE published_at < $1::timestamp`,
+      [date]
+    );
+    res.json({ success: true, count: result.rowCount });
+  } catch (err) {
+    console.error('[Videos] Purge before date failed:', err.message);
+    res.status(500).json({ error: 'Failed to purge videos' });
+  }
+});
+
 // POST /api/videos/purge-and-fetch — delete all video data then start a fresh fetch
 router.post('/purge-and-fetch', async (req, res) => {
   if (fetchProgress.running) {

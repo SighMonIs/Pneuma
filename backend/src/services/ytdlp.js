@@ -121,7 +121,7 @@ function formatYtdlpDate(d) {
   return `${y}${m}${day}`;
 }
 
-function resolveDateAfter(sub, globalMode, globalDate) {
+export function resolveDateAfter(sub, globalMode, globalDate) {
   const mode = sub.fetch_since_mode === 'default' ? globalMode : sub.fetch_since_mode;
   if (mode === 'beginning') return null;
   if (mode === 'added') return formatYtdlpDate(sub.created_at);
@@ -130,6 +130,41 @@ function resolveDateAfter(sub, globalMode, globalDate) {
     return d ? formatYtdlpDate(d) : null;
   }
   return null;
+}
+
+export async function fetchChannelInfo(channelId) {
+  const args = [
+    '-J', '--flat-playlist', '--playlist-end', '0',
+    '--no-warnings', '--quiet',
+    ...(await cookieArgs()),
+    `https://www.youtube.com/channel/${channelId}`,
+  ];
+  const output = await runYtDlp(args);
+  const data = JSON.parse(output.trim());
+
+  // Thumbnails: banner has very wide aspect ratio (width/height > 4) or has 'banner' in its id
+  const bannerThumb = data.thumbnails?.find(t =>
+    (t.id && t.id.includes('banner')) || (t.width && t.height && t.width / t.height > 4)
+  );
+  const avatarThumb = bestThumbnail(data.thumbnails?.filter(t => !(t.id && t.id.includes('banner'))));
+
+  const banner = bannerThumb?.url ?? null;
+  const avatar = avatarThumb ?? null;
+  const about = data.description ?? null;
+  const subscriberCount = data.channel_follower_count ?? null;
+  const customUrl = data.uploader_id ? `@${data.uploader_id}` : null;
+
+  await pool.query(`
+    UPDATE subscriptions SET
+      description = COALESCE($1, description),
+      thumbnail_url = COALESCE($2, thumbnail_url),
+      banner_url = COALESCE($3, banner_url),
+      subscriber_count = COALESCE($4, subscriber_count),
+      custom_url = COALESCE($5, custom_url)
+    WHERE id = $6
+  `, [about, avatar, banner, subscriberCount, customUrl, channelId]);
+
+  return { description: about, thumbnail_url: avatar, banner_url: banner, subscriber_count: subscriberCount, custom_url: customUrl };
 }
 
 export async function fetchVideosForChannel(channelId, { dateAfter = null } = {}) {

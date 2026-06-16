@@ -44,6 +44,11 @@ CREATE TABLE IF NOT EXISTS subscriptions (
 -- Migrate existing installs
 ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS fetch_since_mode VARCHAR(20) DEFAULT 'default';
 ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS fetch_since_date DATE;
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS is_favourite BOOLEAN DEFAULT FALSE;
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS show_banner BOOLEAN DEFAULT TRUE;
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS show_about BOOLEAN DEFAULT FALSE;
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS subscriber_count BIGINT;
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS banner_url TEXT;
 
 CREATE TABLE IF NOT EXISTS channel_categories (
   channel_id VARCHAR(50) REFERENCES subscriptions(id) ON DELETE CASCADE,

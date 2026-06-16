@@ -1,16 +1,17 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Cookie, FileSpreadsheet, Plus, RefreshCw, Trash2,
   Check, Upload, ArrowRight, AlertCircle, Monitor, Rss, Tag,
   ChevronUp, ChevronDown, Settings, Calendar, RotateCcw,
-  ArrowLeft, ListChecks, AlertTriangle,
+  ArrowLeft, ListChecks, AlertTriangle, ExternalLink, Image, Eye,
 } from 'lucide-react';
-import * as LucideIcons from 'lucide-react';
 import {
   saveCookies, deleteCookies, importCsv, addChannel, syncSubscriptions,
   createCategory, updateCategory, deleteCategory, reorderCategory,
   getSettings, updateSettings, applyDefaultFetch,
   getSubscriptions, updateChannelCategories, purgeAndFetch,
+  purgeWatch, purgeCategories, purgeBefore,
 } from '../services/api.js';
 import CategoryModal from './CategoryModal.jsx';
 
@@ -20,6 +21,12 @@ const TABS = [
   { id: 'categories', label: 'Categories', icon: Tag },
 ];
 
+function tablerClass(iconName) {
+  if (!iconName) return 'folder';
+  if (iconName === iconName.toLowerCase() || iconName.includes('-')) return iconName;
+  return iconName.replace(/([A-Z])/g, (m, p1, offset) => (offset > 0 ? '-' : '') + p1.toLowerCase());
+}
+
 export default function SettingsPage({ authStatus, onAuthChange, onDataChange, categories }) {
   const [activeTab, setActiveTab] = useState('display');
 
@@ -27,7 +34,6 @@ export default function SettingsPage({ authStatus, onAuthChange, onDataChange, c
     <main className="flex-1 p-8 max-w-2xl">
       <h1 className="text-white text-2xl font-bold mb-6">Settings</h1>
 
-      {/* Tabs */}
       <div className="flex gap-1 mb-8 border-b border-gray-700">
         {TABS.map(({ id, label, icon: Icon }) => (
           <button
@@ -64,16 +70,44 @@ function loadStr(key, def) {
 function saveStr(key, val) {
   try { localStorage.setItem(key, val); } catch {}
 }
+function loadBool(key, def = false) {
+  try { const v = localStorage.getItem(key); return v === null ? def : v === 'true'; } catch { return def; }
+}
+function saveBool(key, val) {
+  try { localStorage.setItem(key, String(val)); } catch {}
+}
+
+function Toggle({ checked, onChange }) {
+  return (
+    <button
+      onClick={() => onChange(!checked)}
+      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ${checked ? 'bg-red-600' : 'bg-gray-700'}`}
+    >
+      <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${checked ? 'translate-x-6' : 'translate-x-1'}`} />
+    </button>
+  );
+}
+
+const QUALITY_OPTIONS = [
+  { value: 'hqdefault', label: 'Low', desc: 'hqdefault — fastest, ~480×360' },
+  { value: 'sddefault', label: 'Medium', desc: 'sddefault — ~640×480' },
+  { value: 'maxresdefault', label: 'High', desc: 'maxresdefault — up to 1280×720' },
+];
 
 function DisplayTab() {
   const [videoMode, setVideoModeRaw] = useState(() => loadStr('pneuma_video_mode', 'youtube'));
-  const [showComments, setShowCommentsRaw] = useState(() => loadStr('pneuma_show_comments', 'false') === 'true');
+  const [showComments, setShowCommentsRaw] = useState(() => loadBool('pneuma_show_comments'));
+  const [quality, setQualityRaw] = useState(() => loadStr('pneuma_thumbnail_quality', 'hqdefault'));
+  const [showWatchedBadge, setShowWatchedBadgeRaw] = useState(() => loadBool('pneuma_show_watched_badge', true));
 
   const setVideoMode = (val) => { setVideoModeRaw(val); saveStr('pneuma_video_mode', val); };
-  const setShowComments = (val) => { setShowCommentsRaw(val); saveStr('pneuma_show_comments', String(val)); };
+  const setShowComments = (val) => { setShowCommentsRaw(val); saveBool('pneuma_show_comments', val); };
+  const setQuality = (val) => { setQualityRaw(val); saveStr('pneuma_thumbnail_quality', val); };
+  const setShowWatchedBadge = (val) => { setShowWatchedBadgeRaw(val); saveBool('pneuma_show_watched_badge', val); };
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Video Playback */}
       <SectionCard title="Video Playback" description="Choose what happens when you click on a video" icon={Monitor}>
         <div className="flex flex-col gap-2">
           {[
@@ -108,20 +142,51 @@ function DisplayTab() {
           <div className="mt-4 flex items-center justify-between p-3 bg-[#242424] border border-gray-700 rounded-lg">
             <div>
               <p className="text-white text-sm font-medium">Show comments button</p>
-              <p className="text-gray-500 text-xs mt-0.5">
-                Show a "View on YouTube" link in the player for accessing comments
-              </p>
+              <p className="text-gray-500 text-xs mt-0.5">Show a "View on YouTube" link in the player for accessing comments</p>
             </div>
-            <button
-              onClick={() => setShowComments(!showComments)}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ml-4 ${
-                showComments ? 'bg-red-600' : 'bg-gray-700'
-              }`}
-            >
-              <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${showComments ? 'translate-x-6' : 'translate-x-1'}`} />
-            </button>
+            <Toggle checked={showComments} onChange={setShowComments} />
           </div>
         )}
+      </SectionCard>
+
+      {/* Thumbnail Quality */}
+      <SectionCard title="Image Quality" description="Thumbnail resolution loaded in the video grid" icon={Image}>
+        <div className="flex flex-col gap-2">
+          {QUALITY_OPTIONS.map(opt => (
+            <label
+              key={opt.value}
+              className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                quality === opt.value
+                  ? 'border-red-600/50 bg-red-600/10'
+                  : 'border-gray-700 hover:border-gray-600 bg-[#242424]'
+              }`}
+            >
+              <input
+                type="radio"
+                name="quality"
+                value={opt.value}
+                checked={quality === opt.value}
+                onChange={() => setQuality(opt.value)}
+                className="mt-0.5 accent-red-500"
+              />
+              <div>
+                <p className="text-white text-sm font-medium">{opt.label}</p>
+                <p className="text-gray-500 text-xs mt-0.5">{opt.desc}</p>
+              </div>
+            </label>
+          ))}
+        </div>
+      </SectionCard>
+
+      {/* Sidebar */}
+      <SectionCard title="Sidebar" description="Controls for the channel list" icon={Eye}>
+        <div className="flex items-center justify-between p-3 bg-[#242424] border border-gray-700 rounded-lg">
+          <div>
+            <p className="text-white text-sm font-medium">Show watched count badge</p>
+            <p className="text-gray-500 text-xs mt-0.5">Display a number next to each channel showing how many videos you've watched</p>
+          </div>
+          <Toggle checked={showWatchedBadge} onChange={setShowWatchedBadge} />
+        </div>
       </SectionCard>
     </div>
   );
@@ -136,7 +201,7 @@ function FeedsTab({ authStatus, onAuthChange, onDataChange }) {
       <CookiesSection authStatus={authStatus} onAuthChange={onAuthChange} onDataChange={onDataChange} />
       <AddChannelSection onDataChange={onDataChange} />
       <ImportCsvSection onDataChange={onDataChange} />
-      <PurgeAndFetchSection />
+      <DangerZoneSection />
     </div>
   );
 }
@@ -237,11 +302,8 @@ function CategoriesTab({ categories, onDataChange }) {
   const sorted = [...categories].sort((a, b) => a.sort_order - b.sort_order);
 
   const handleSave = async (data) => {
-    if (editingCat) {
-      await updateCategory(editingCat.id, data);
-    } else {
-      await createCategory(data);
-    }
+    if (editingCat) await updateCategory(editingCat.id, data);
+    else await createCategory(data);
     await onDataChange();
   };
 
@@ -264,13 +326,7 @@ function CategoriesTab({ categories, onDataChange }) {
   };
 
   if (manageMode) {
-    return (
-      <ManageFeedsView
-        categories={sorted}
-        onBack={() => setManageMode(false)}
-        onDataChange={onDataChange}
-      />
-    );
+    return <ManageFeedsView categories={sorted} onBack={() => setManageMode(false)} onDataChange={onDataChange} />;
   }
 
   return (
@@ -304,13 +360,10 @@ function CategoriesTab({ categories, onDataChange }) {
       ) : (
         <div className="flex flex-col gap-2">
           {sorted.map((cat, idx) => {
-            const Icon = LucideIcons[cat.icon] || LucideIcons.Folder;
+            const tablerName = tablerClass(cat.icon);
             return (
-              <div
-                key={cat.id}
-                className="flex items-center gap-3 bg-[#1a1a1a] border border-gray-700 rounded-xl px-4 py-3"
-              >
-                <Icon size={16} style={{ color: cat.color }} className="flex-shrink-0" />
+              <div key={cat.id} className="flex items-center gap-3 bg-[#1a1a1a] border border-gray-700 rounded-xl px-4 py-3">
+                <i className={`ti ti-${tablerName} flex-shrink-0`} style={{ fontSize: 16, color: cat.color }} />
                 <span className="text-white text-sm font-medium flex-1">{cat.name}</span>
                 <span className="text-gray-600 text-xs">{cat.channel_count ?? 0} channel{cat.channel_count !== 1 ? 's' : ''}</span>
 
@@ -366,6 +419,7 @@ function CategoriesTab({ categories, onDataChange }) {
 /* ─── Manage Feeds View ─── */
 
 function ManageFeedsView({ categories, onBack, onDataChange }) {
+  const navigate = useNavigate();
   const [subs, setSubs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(new Set());
@@ -386,16 +440,12 @@ function ManageFeedsView({ categories, onBack, onDataChange }) {
   }, []);
 
   const allSelected = subs.length > 0 && selected.size === subs.length;
-
-  const toggleAll = () =>
-    setSelected(allSelected ? new Set() : new Set(subs.map(s => s.id)));
-
-  const toggle = (id) =>
-    setSelected(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
+  const toggleAll = () => setSelected(allSelected ? new Set() : new Set(subs.map(s => s.id)));
+  const toggle = (id) => setSelected(prev => {
+    const next = new Set(prev);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    return next;
+  });
 
   const handleSave = async () => {
     if (!setCatId || selected.size === 0) return;
@@ -429,30 +479,21 @@ function ManageFeedsView({ categories, onBack, onDataChange }) {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Header */}
       <div className="flex items-center justify-between">
-        <button
-          onClick={onBack}
-          className="flex items-center gap-1.5 text-gray-400 hover:text-white text-sm transition-colors"
-        >
+        <button onClick={onBack} className="flex items-center gap-1.5 text-gray-400 hover:text-white text-sm transition-colors">
           <ArrowLeft size={14} />
           Back to categories
         </button>
-        <button
-          onClick={toggleAll}
-          className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
-        >
+        <button onClick={toggleAll} className="text-xs text-gray-500 hover:text-gray-300 transition-colors">
           {allSelected ? 'Deselect all' : 'Select all'}
         </button>
       </div>
 
-      {/* Action bar — visible when anything is selected */}
       {selected.size > 0 && (
         <div className="bg-[#1a1a1a] border border-gray-700 rounded-xl p-4 flex flex-col gap-3">
-              <p className="text-white text-sm font-medium">
+          <p className="text-white text-sm font-medium">
             {selected.size} channel{selected.size !== 1 ? 's' : ''} selected
           </p>
-
           {error && (
             <div className="flex items-center gap-2 text-red-400 text-xs bg-red-900/20 border border-red-800 rounded-lg p-2">
               <AlertCircle size={12} />{error}
@@ -463,7 +504,6 @@ function ManageFeedsView({ categories, onBack, onDataChange }) {
               <Check size={12} />{success}
             </div>
           )}
-
           <div className="flex items-center gap-2">
             <span className="text-gray-400 text-xs flex-shrink-0">Set category</span>
             <select
@@ -472,9 +512,7 @@ function ManageFeedsView({ categories, onBack, onDataChange }) {
               className="flex-1 bg-[#0f0f0f] border border-gray-700 rounded-lg px-2 py-1.5 text-gray-200 text-sm focus:outline-none focus:border-gray-500"
             >
               <option value="">Choose…</option>
-              {categories.map(c => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
+              {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
             <button
               onClick={handleSave}
@@ -484,22 +522,16 @@ function ManageFeedsView({ categories, onBack, onDataChange }) {
               {applying ? <RefreshCw size={12} className="animate-spin" /> : <Check size={12} />}
               Save
             </button>
-            <button
-              onClick={handleCancel}
-              className="px-3 py-1.5 bg-[#242424] hover:bg-[#2e2e2e] border border-gray-700 text-gray-400 rounded-lg text-sm transition-colors flex-shrink-0"
-            >
+            <button onClick={handleCancel} className="px-3 py-1.5 bg-[#242424] hover:bg-[#2e2e2e] border border-gray-700 text-gray-400 rounded-lg text-sm transition-colors flex-shrink-0">
               Cancel
             </button>
           </div>
         </div>
       )}
 
-      {/* Channel list */}
       {loading ? (
         <div className="flex flex-col gap-2">
-          {[1, 2, 3, 4, 5].map(i => (
-            <div key={i} className="h-12 bg-gray-800/40 rounded-lg animate-pulse" />
-          ))}
+          {[1, 2, 3, 4, 5].map(i => <div key={i} className="h-12 bg-gray-800/40 rounded-lg animate-pulse" />)}
         </div>
       ) : subs.length === 0 ? (
         <div className="bg-[#1a1a1a] border border-gray-700 rounded-xl p-8 text-center">
@@ -511,9 +543,9 @@ function ManageFeedsView({ categories, onBack, onDataChange }) {
             const isSelected = selected.has(sub.id);
             const label = catLabel(sub);
             return (
-              <label
+              <div
                 key={sub.id}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors ${
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
                   isSelected ? 'bg-red-600/10 border border-red-600/30' : 'hover:bg-[#1e1e1e] border border-transparent'
                 }`}
               >
@@ -521,7 +553,7 @@ function ManageFeedsView({ categories, onBack, onDataChange }) {
                   type="checkbox"
                   checked={isSelected}
                   onChange={() => toggle(sub.id)}
-                  className="w-4 h-4 accent-red-500 flex-shrink-0"
+                  className="w-4 h-4 accent-red-500 flex-shrink-0 cursor-pointer"
                 />
                 {sub.thumbnail_url ? (
                   <img src={sub.thumbnail_url} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
@@ -531,10 +563,15 @@ function ManageFeedsView({ categories, onBack, onDataChange }) {
                   </div>
                 )}
                 <span className="text-white text-sm flex-1 min-w-0 truncate">{sub.title}</span>
-                {label && (
-                  <span className="text-gray-600 text-xs truncate max-w-[120px] flex-shrink-0">{label}</span>
-                )}
-              </label>
+                {label && <span className="text-gray-600 text-xs truncate max-w-[120px] flex-shrink-0">{label}</span>}
+                <button
+                  onClick={() => navigate(`/channel/${sub.id}`)}
+                  className="text-gray-600 hover:text-gray-400 p-1 rounded transition-colors flex-shrink-0"
+                  title="Open channel page"
+                >
+                  <ExternalLink size={12} />
+                </button>
+              </div>
             );
           })}
         </div>
@@ -543,20 +580,22 @@ function ManageFeedsView({ categories, onBack, onDataChange }) {
   );
 }
 
-/* ─── Purge & Fetch Section ─── */
+/* ─── Danger Zone Section ─── */
 
-function PurgeAndFetchSection() {
+function DangerAction({ title, description, confirmText, onConfirm, buttonLabel, successMessage }) {
   const [confirming, setConfirming] = useState(false);
   const [running, setRunning] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState('');
+  const [date, setDate] = useState('');
 
-  const handlePurge = async () => {
+  const needsDate = title === 'Purge videos before date';
+
+  const handleRun = async () => {
     setRunning(true); setError('');
     try {
-      await purgeAndFetch();
-      setDone(true);
-      setConfirming(false);
+      await onConfirm(needsDate ? date : undefined);
+      setDone(true); setConfirming(false);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -565,59 +604,178 @@ function PurgeAndFetchSection() {
   };
 
   return (
-    <div className="bg-[#1a1a1a] border border-red-900 rounded-xl p-6">
-      <div className="flex items-center gap-3 mb-4">
-        <div className="w-8 h-8 bg-red-950 rounded-lg flex items-center justify-center flex-shrink-0 border border-red-900">
-          <AlertTriangle size={16} className="text-red-500" />
-        </div>
+    <div className="border border-gray-800 rounded-lg p-4">
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-white font-semibold text-sm">Purge &amp; Refetch</h2>
-          <p className="text-gray-500 text-xs mt-0.5">Delete all video data and fetch everything from scratch using current date settings</p>
+          <p className="text-white text-sm font-medium">{title}</p>
+          <p className="text-gray-500 text-xs mt-0.5">{description}</p>
         </div>
+        {!confirming && !done && (
+          <button
+            onClick={() => setConfirming(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-950 hover:bg-red-900/60 border border-red-800 text-red-400 hover:text-red-300 rounded-lg text-xs font-medium transition-colors flex-shrink-0"
+          >
+            <Trash2 size={12} />
+            {buttonLabel}
+          </button>
+        )}
+        {done && (
+          <span className="flex items-center gap-1.5 text-green-400 text-xs flex-shrink-0">
+            <Check size={12} /> Done
+          </span>
+        )}
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 text-red-400 text-sm bg-red-900/20 border border-red-800 rounded-lg p-3 mb-4">
-          <AlertCircle size={13} />{error}
+        <div className="flex items-center gap-2 text-red-400 text-xs bg-red-900/20 border border-red-800 rounded-lg p-2 mt-3">
+          <AlertCircle size={12} />{error}
         </div>
       )}
 
-      {done ? (
-        <div className="flex items-center gap-2 text-green-400 text-sm bg-green-900/20 border border-green-800 rounded-lg p-3">
-          <Check size={13} />All video data purged. Fetch is running in the background — check the main feed for progress.
-        </div>
-      ) : confirming ? (
-        <div className="flex flex-col gap-3">
-          <p className="text-gray-300 text-sm">
-            This will permanently delete all <span className="text-white font-medium">videos, watch history, and progress</span> across every feed, then start a fresh fetch. This cannot be undone.
-          </p>
+      {confirming && (
+        <div className="mt-3 flex flex-col gap-2">
+          <p className="text-gray-400 text-xs">{confirmText}</p>
+          {needsDate && (
+            <input
+              type="date"
+              value={date}
+              onChange={e => setDate(e.target.value)}
+              className="bg-[#0f0f0f] border border-gray-600 rounded-lg px-2 py-1.5 text-white text-sm w-fit focus:outline-none focus:border-gray-500 [color-scheme:dark]"
+            />
+          )}
           <div className="flex gap-2">
             <button
-              onClick={handlePurge}
-              disabled={running}
-              className="flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white rounded-lg text-sm font-medium transition-colors"
+              onClick={handleRun}
+              disabled={running || (needsDate && !date)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white rounded-lg text-xs font-medium transition-colors"
             >
-              {running ? <RefreshCw size={13} className="animate-spin" /> : <AlertTriangle size={13} />}
-              {running ? 'Purging…' : 'Yes, purge everything'}
+              {running ? <RefreshCw size={11} className="animate-spin" /> : <AlertTriangle size={11} />}
+              {running ? 'Running…' : 'Confirm'}
             </button>
             <button
-              onClick={() => { setConfirming(false); setError(''); }}
+              onClick={() => { setConfirming(false); setError(''); setDate(''); }}
               disabled={running}
-              className="px-4 py-2 bg-[#242424] hover:bg-[#2e2e2e] border border-gray-700 text-gray-400 rounded-lg text-sm transition-colors disabled:opacity-50"
+              className="px-3 py-1.5 bg-[#242424] hover:bg-[#2e2e2e] border border-gray-700 text-gray-400 rounded-lg text-xs transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
           </div>
         </div>
-      ) : (
-        <button
-          onClick={() => setConfirming(true)}
-          className="flex items-center gap-1.5 px-3 py-2 bg-red-950 hover:bg-red-900/60 border border-red-800 text-red-400 hover:text-red-300 rounded-lg text-sm font-medium transition-colors"
-        >
-          <Trash2 size={13} />
-          Purge &amp; Fetch Videos
-        </button>
       )}
+    </div>
+  );
+}
+
+function DangerZoneSection() {
+  const [purgeAllConfirming, setPurgeAllConfirming] = useState(false);
+  const [purgeAllRunning, setPurgeAllRunning] = useState(false);
+  const [purgeAllDone, setPurgeAllDone] = useState(false);
+  const [purgeAllError, setPurgeAllError] = useState('');
+
+  const handlePurgeAll = async () => {
+    setPurgeAllRunning(true); setPurgeAllError('');
+    try {
+      await purgeAndFetch();
+      setPurgeAllDone(true); setPurgeAllConfirming(false);
+    } catch (err) {
+      setPurgeAllError(err.message);
+    } finally {
+      setPurgeAllRunning(false);
+    }
+  };
+
+  return (
+    <div className="bg-[#1a1a1a] border border-red-900 rounded-xl p-6">
+      <div className="flex items-center gap-3 mb-5">
+        <div className="w-8 h-8 bg-red-950 rounded-lg flex items-center justify-center flex-shrink-0 border border-red-900">
+          <AlertTriangle size={16} className="text-red-500" />
+        </div>
+        <div>
+          <h2 className="text-white font-semibold text-sm">Danger Zone</h2>
+          <p className="text-gray-500 text-xs mt-0.5">Irreversible data operations — proceed with care</p>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <DangerAction
+          title="Purge watch history"
+          description="Clear all watched statuses and video progress, keeping the videos themselves"
+          confirmText="This will permanently clear all watch history and video progress. Videos will not be deleted."
+          buttonLabel="Purge watch history"
+          onConfirm={() => purgeWatch()}
+        />
+
+        <DangerAction
+          title="Purge category assignments"
+          description="Remove all channels from their categories, keeping the categories and channels"
+          confirmText="This will remove all channels from their categories. Categories and channels will not be deleted."
+          buttonLabel="Purge assignments"
+          onConfirm={() => purgeCategories()}
+        />
+
+        <DangerAction
+          title="Purge videos before date"
+          description="Delete all videos published before a chosen date"
+          confirmText="Choose a date — all videos published before it will be permanently deleted."
+          buttonLabel="Purge by date"
+          onConfirm={(date) => purgeBefore(date)}
+        />
+
+        {/* Purge & Refetch (full) */}
+        <div className="border border-red-900/60 rounded-lg p-4">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-white text-sm font-medium">Purge &amp; Refetch</p>
+              <p className="text-gray-500 text-xs mt-0.5">Delete all video data and fetch everything from scratch using current date settings</p>
+            </div>
+            {!purgeAllConfirming && !purgeAllDone && (
+              <button
+                onClick={() => setPurgeAllConfirming(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-red-950 hover:bg-red-900/60 border border-red-800 text-red-400 hover:text-red-300 rounded-lg text-xs font-medium transition-colors flex-shrink-0"
+              >
+                <Trash2 size={12} />
+                Purge &amp; Fetch
+              </button>
+            )}
+            {purgeAllDone && (
+              <span className="flex items-center gap-1.5 text-green-400 text-xs flex-shrink-0">
+                <Check size={12} /> Done
+              </span>
+            )}
+          </div>
+
+          {purgeAllError && (
+            <div className="flex items-center gap-2 text-red-400 text-xs bg-red-900/20 border border-red-800 rounded-lg p-2 mt-3">
+              <AlertCircle size={12} />{purgeAllError}
+            </div>
+          )}
+
+          {purgeAllConfirming && (
+            <div className="mt-3 flex flex-col gap-2">
+              <p className="text-gray-400 text-xs">
+                This will permanently delete all <span className="text-white">videos, watch history, and progress</span> across every feed, then start a fresh fetch. This cannot be undone.
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={handlePurgeAll}
+                  disabled={purgeAllRunning}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white rounded-lg text-xs font-medium transition-colors"
+                >
+                  {purgeAllRunning ? <RefreshCw size={11} className="animate-spin" /> : <AlertTriangle size={11} />}
+                  {purgeAllRunning ? 'Purging…' : 'Yes, purge everything'}
+                </button>
+                <button
+                  onClick={() => { setPurgeAllConfirming(false); setPurgeAllError(''); }}
+                  disabled={purgeAllRunning}
+                  className="px-3 py-1.5 bg-[#242424] hover:bg-[#2e2e2e] border border-gray-700 text-gray-400 rounded-lg text-xs transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -778,14 +936,7 @@ function CookiesSection({ authStatus, onAuthChange, onDataChange }) {
           {showSyncOptions && (
             <div className="border border-gray-700 rounded-lg p-4 flex flex-col gap-3 bg-[#141414]">
               <p className="text-gray-400 text-xs font-medium">Fetch range for newly synced channels:</p>
-              <FetchSincePicker
-                mode={syncMode}
-                date={syncDate}
-                onModeChange={setSyncMode}
-                onDateChange={setSyncDate}
-                showDefault
-                defaultSummary="from when added"
-              />
+              <FetchSincePicker mode={syncMode} date={syncDate} onModeChange={setSyncMode} onDateChange={setSyncDate} showDefault defaultSummary="from when added" />
               <button
                 onClick={handleSync}
                 disabled={syncing || (syncMode === 'date' && !syncDate)}
@@ -834,29 +985,16 @@ function AddChannelSection({ onDataChange }) {
           {adding ? <RefreshCw size={13} className="animate-spin" /> : <Plus size={13} />} Add
         </button>
       </div>
-
-      <button
-        onClick={() => setShowOptions(v => !v)}
-        className="flex items-center gap-1.5 text-gray-500 hover:text-gray-300 text-xs mb-3 transition-colors"
-      >
+      <button onClick={() => setShowOptions(v => !v)} className="flex items-center gap-1.5 text-gray-500 hover:text-gray-300 text-xs mb-3 transition-colors">
         <Calendar size={12} />
         {showOptions ? 'Hide fetch options' : 'Set fetch range'}
       </button>
-
       {showOptions && (
         <div className="border border-gray-700 rounded-lg p-4 mb-3 bg-[#141414]">
           <p className="text-gray-400 text-xs font-medium mb-3">Fetch videos from:</p>
-          <FetchSincePicker
-            mode={mode}
-            date={date}
-            onModeChange={setMode}
-            onDateChange={setDate}
-            showDefault
-            defaultSummary="from when added"
-          />
+          <FetchSincePicker mode={mode} date={date} onModeChange={setMode} onDateChange={setDate} showDefault defaultSummary="from when added" />
         </div>
       )}
-
       {error && <div className="flex items-center gap-2 text-red-400 text-sm bg-red-900/20 border border-red-800 rounded-lg p-3 mb-2"><AlertCircle size={13} />{error}</div>}
       {added.map((ch, i) => <div key={i} className="flex items-center gap-2 text-sm text-green-400 py-1"><Check size={13} />{ch.title} added</div>)}
     </SectionCard>
@@ -902,29 +1040,16 @@ function ImportCsvSection({ onDataChange }) {
         <input type="file" accept=".csv" onChange={handleFile} className="hidden" />
       </label>
       <textarea value={content} onChange={e => setContent(e.target.value)} placeholder="Channel Id,Channel Url,Channel Title&#10;UCxxxxxx,..." rows={4} className="w-full bg-[#0f0f0f] border border-gray-700 rounded-lg p-3 text-gray-300 text-xs font-mono placeholder-gray-700 focus:outline-none focus:border-gray-600 resize-none mb-3" />
-
-      <button
-        onClick={() => setShowOptions(v => !v)}
-        className="flex items-center gap-1.5 text-gray-500 hover:text-gray-300 text-xs mb-3 transition-colors"
-      >
+      <button onClick={() => setShowOptions(v => !v)} className="flex items-center gap-1.5 text-gray-500 hover:text-gray-300 text-xs mb-3 transition-colors">
         <Calendar size={12} />
         {showOptions ? 'Hide fetch options' : 'Set fetch range'}
       </button>
-
       {showOptions && (
         <div className="border border-gray-700 rounded-lg p-4 mb-3 bg-[#141414]">
           <p className="text-gray-400 text-xs font-medium mb-3">Fetch videos from (applies to all imported channels):</p>
-          <FetchSincePicker
-            mode={mode}
-            date={date}
-            onModeChange={setMode}
-            onDateChange={setDate}
-            showDefault
-            defaultSummary="from when added"
-          />
+          <FetchSincePicker mode={mode} date={date} onModeChange={setMode} onDateChange={setDate} showDefault defaultSummary="from when added" />
         </div>
       )}
-
       {error && <div className="flex items-center gap-2 text-red-400 text-sm bg-red-900/20 border border-red-800 rounded-lg p-3 mb-3"><AlertCircle size={13} />{error}</div>}
       {result && <div className="flex items-center gap-2 text-green-400 text-sm bg-green-900/20 border border-green-800 rounded-lg p-3 mb-3"><Check size={13} />Imported {result.count} channels{result.errors?.length > 0 ? ` (${result.errors.length} failed)` : ''}</div>}
       <button onClick={handleImport} disabled={!content.trim() || importing || (mode === 'date' && !date)} className="flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg text-sm font-medium transition-colors">

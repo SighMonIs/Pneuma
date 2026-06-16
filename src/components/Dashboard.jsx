@@ -78,7 +78,6 @@ function formatViewCount(count) {
 function VideoTableRow({ video, onWatchedChange, videoMode, onVideoSelect }) {
   const [isWatched, setIsWatched] = useState(video.is_watched);
   const [toggling, setToggling] = useState(false);
-  const ytUrl = `https://www.youtube.com/watch?v=${video.id}`;
 
   const handleWatchedToggle = async (e) => {
     e.preventDefault(); e.stopPropagation();
@@ -93,27 +92,32 @@ function VideoTableRow({ video, onWatchedChange, videoMode, onVideoSelect }) {
   };
 
   const handleClick = (e) => {
-    if (videoMode === 'embed') { e.preventDefault(); onVideoSelect?.(video); }
+    e.preventDefault();
+    if (videoMode === 'embed') { onVideoSelect?.(video); }
+    else { window.open(`https://www.youtube.com/watch?v=${video.id}`, '_blank', 'noopener,noreferrer'); }
   };
+
+  const quality = loadStr('pneuma_thumbnail_quality', 'hqdefault');
+  const thumbnailUrl = `https://i.ytimg.com/vi/${video.id}/${quality}.jpg`;
 
   return (
     <tr className={`border-b border-gray-800/50 hover:bg-[#1a1a1a] transition-colors group ${isWatched ? 'opacity-50' : ''}`}>
       <td className="py-2 px-3">
-        <a href={ytUrl} onClick={handleClick} className="block">
+        <div onClick={handleClick} className="cursor-pointer">
           <div className="relative w-20 rounded overflow-hidden bg-gray-800" style={{ aspectRatio: '16/9' }}>
-            {video.thumbnail_url && <img src={video.thumbnail_url} className="w-full h-full object-cover" loading="lazy" />}
+            <img src={thumbnailUrl} className="w-full h-full object-cover" loading="lazy" onError={e => { e.currentTarget.src = `https://i.ytimg.com/vi/${video.id}/mqdefault.jpg`; }} />
             {!isWatched && (video.percent_watched || 0) > 0.01 && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black/40">
                 <div className="h-full bg-red-500" style={{ width: `${Math.min((video.percent_watched || 0) * 100, 100)}%` }} />
               </div>
             )}
           </div>
-        </a>
+        </div>
       </td>
       <td className="py-2 px-3 max-w-[320px]">
-        <a href={ytUrl} onClick={handleClick} className="text-white text-sm line-clamp-2 hover:text-gray-200 leading-snug">
+        <div onClick={handleClick} className="text-white text-sm line-clamp-2 hover:text-gray-200 leading-snug cursor-pointer">
           {video.title}
-        </a>
+        </div>
       </td>
       <td className="py-2 px-3">
         <div className="flex items-center gap-1.5 min-w-[100px]">
@@ -148,7 +152,7 @@ const SORT_OPTIONS = [
   { value: 'duration_seconds', label: 'Duration' },
 ];
 
-export default function Dashboard({ selectedChannelId, onClearChannel, selectedCategoryId, onClearCategory, subscriptions, categories }) {
+export default function Dashboard({ selectedCategoryId, onClearCategory, subscriptions, categories }) {
   const [videos, setVideos] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -168,7 +172,7 @@ export default function Dashboard({ selectedChannelId, onClearChannel, selectedC
   const [viewMode, setViewModeRaw] = useState(() => loadStr('pneuma_view_mode', 'grid'));
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [playerSize, setPlayerSize] = useState('normal');
-  const embedMode = (() => { try { return localStorage.getItem('pneuma_embed_mode') || 'youtube'; } catch { return 'youtube'; } })();
+  const videoMode = loadStr('pneuma_video_mode', 'youtube');
   const showComments = loadBool('pneuma_show_comments');
   const [error, setError] = useState('');
   const pollRef = useRef(null);
@@ -194,7 +198,6 @@ export default function Dashboard({ selectedChannelId, onClearChannel, selectedC
         hideShorts: hideShorts ? 'true' : undefined,
         hideWatched: hideWatched ? 'true' : undefined,
         search: debouncedSearch || undefined,
-        channelId: selectedChannelId || undefined,
         categoryId: selectedCategoryId || undefined,
         sortBy: sortBy !== 'published_at' ? sortBy : undefined,
         sortOrder: sortOrder !== 'desc' ? sortOrder : undefined,
@@ -210,11 +213,11 @@ export default function Dashboard({ selectedChannelId, onClearChannel, selectedC
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [hideShorts, hideWatched, debouncedSearch, selectedChannelId, selectedCategoryId, sortBy, sortOrder]);
+  }, [hideShorts, hideWatched, debouncedSearch, selectedCategoryId, sortBy, sortOrder]);
 
   useEffect(() => { loadVideos(1, false); }, [loadVideos]);
   useEffect(() => () => { if (pollRef.current) clearInterval(pollRef.current); }, []);
-  useEffect(() => { setSelectedVideo(null); }, [selectedChannelId, selectedCategoryId]);
+  useEffect(() => { setSelectedVideo(null); }, [selectedCategoryId]);
 
   const handleFetchVideos = async () => {
     if (fetching) return;
@@ -259,7 +262,6 @@ export default function Dashboard({ selectedChannelId, onClearChannel, selectedC
     ));
   };
 
-  const selectedChannel = selectedChannelId ? subscriptions.find(s => s.id === selectedChannelId) : null;
   const selectedCategory = selectedCategoryId ? (categories || []).find(c => c.id === selectedCategoryId) : null;
   const progressPct = fetchProgress?.total > 0 ? Math.round((fetchProgress.done / fetchProgress.total) * 100) : 0;
 
@@ -310,13 +312,6 @@ export default function Dashboard({ selectedChannelId, onClearChannel, selectedC
 
         {/* Row 2: filters + sort + view */}
         <div className="flex items-center gap-2 mt-2 flex-wrap">
-          {/* Active filter chips */}
-          {selectedChannel && (
-            <div className="flex items-center gap-1.5 bg-red-600/20 border border-red-600/40 text-red-400 px-2.5 py-1 rounded-full text-xs">
-              <span>{selectedChannel.title}</span>
-              <button onClick={onClearChannel} className="hover:text-white"><X size={11} /></button>
-            </div>
-          )}
           {selectedCategory && (
             <div className="flex items-center gap-1.5 bg-indigo-600/20 border border-indigo-600/40 text-indigo-400 px-2.5 py-1 rounded-full text-xs">
               <span>{selectedCategory.name}</span>
@@ -347,6 +342,7 @@ export default function Dashboard({ selectedChannelId, onClearChannel, selectedC
 
           {/* Sort */}
           <div className="flex items-center gap-1.5">
+            <span className="text-gray-500 text-xs">Sort by:</span>
             <select
               value={sortBy}
               onChange={e => setSortBy(e.target.value)}
@@ -421,7 +417,6 @@ export default function Dashboard({ selectedChannelId, onClearChannel, selectedC
           <div className="mt-2 text-xs text-gray-500">
             <span className="text-gray-300 font-medium">{total.toLocaleString()}</span>{' '}
             video{total !== 1 ? 's' : ''}
-            {selectedChannel && <span className="text-gray-600"> from <span className="text-gray-400">{selectedChannel.title}</span></span>}
             {selectedCategory && <span className="text-gray-600"> in <span className="text-gray-400">{selectedCategory.name}</span></span>}
             {debouncedSearch && <span className="text-gray-600"> matching <span className="text-gray-400">"{debouncedSearch}"</span></span>}
           </div>
@@ -485,7 +480,7 @@ export default function Dashboard({ selectedChannelId, onClearChannel, selectedC
                     key={video.id}
                     video={video}
                     onWatchedChange={handleWatchedChange}
-                    videoMode={embedMode}
+                    videoMode={videoMode}
                     onVideoSelect={v => { setSelectedVideo(v); setPlayerSize('normal'); }}
                   />
                 ))}
@@ -511,7 +506,7 @@ export default function Dashboard({ selectedChannelId, onClearChannel, selectedC
                   key={video.id}
                   video={video}
                   onWatchedChange={handleWatchedChange}
-                  videoMode={embedMode}
+                  videoMode={videoMode}
                   onVideoSelect={v => { setSelectedVideo(v); setPlayerSize('normal'); }}
                 />
               ))}
@@ -679,7 +674,6 @@ function VideoPlayerView({ video, showComments, onBack, onWatchedChange, onProgr
 
   return (
     <main className="flex-1 min-h-screen flex flex-col">
-      {/* Back bar */}
       <div className="sticky top-0 z-10 bg-[#0f0f0f]/95 backdrop-blur border-b border-gray-700 px-6 py-3 flex items-center gap-3">
         <button onClick={handleBack} className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors text-sm flex-shrink-0">
           <ArrowLeft size={16} /> Back
@@ -687,7 +681,6 @@ function VideoPlayerView({ video, showComments, onBack, onWatchedChange, onProgr
         <div className="flex-1 min-w-0">
           <p className="text-gray-400 text-sm truncate">{video.title}</p>
         </div>
-        {/* Size controls */}
         <div className="flex items-center gap-1 bg-[#1a1a1a] border border-gray-700 rounded-lg overflow-hidden flex-shrink-0">
           <button
             onClick={() => onSizeChange('normal')}
@@ -716,7 +709,6 @@ function VideoPlayerView({ video, showComments, onBack, onWatchedChange, onProgr
         </a>
       </div>
 
-      {/* Player */}
       <div className={`flex-1 ${isFull ? 'p-0 flex flex-col' : 'p-6'}`}>
         <div className={isFull ? 'flex-1 bg-black' : 'aspect-video w-full max-w-5xl mx-auto rounded-xl overflow-hidden bg-black mb-5'}>
           {isFull ? (
