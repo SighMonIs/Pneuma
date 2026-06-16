@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Search, Scissors, Eye, EyeOff, RefreshCw, X, ArrowLeft, ExternalLink } from 'lucide-react';
-import { getVideos, fetchVideos, getFetchStatus } from '../services/api.js';
+import { getVideos, fetchVideos, getFetchStatus, markWatched } from '../services/api.js';
 import VideoCard from './VideoCard.jsx';
 
 function SkeletonCard() {
@@ -143,6 +143,7 @@ export default function Dashboard({ selectedChannelId, onClearChannel, subscript
         video={selectedVideo}
         showComments={showComments}
         onBack={() => setSelectedVideo(null)}
+        onWatchedChange={handleWatchedChange}
       />
     );
   }
@@ -316,8 +317,73 @@ export default function Dashboard({ selectedChannelId, onClearChannel, subscript
   );
 }
 
-function VideoPlayerView({ video, showComments, onBack }) {
+function VideoPlayerView({ video, showComments, onBack, onWatchedChange }) {
+  const intervalRef = useRef(null);
+  const playerRef = useRef(null);
+  const markedRef = useRef(video.is_watched || false);
+  const playerId = `yt-player-${video.id}`;
   const ytUrl = `https://www.youtube.com/watch?v=${video.id}`;
+
+  useEffect(() => {
+    let destroyed = false;
+    markedRef.current = video.is_watched || false;
+
+    const checkProgress = () => {
+      if (markedRef.current || !playerRef.current) return;
+      try {
+        const current = playerRef.current.getCurrentTime();
+        const duration = playerRef.current.getDuration();
+        if (duration > 0 && current / duration >= 0.95) {
+          markedRef.current = true;
+          clearInterval(intervalRef.current);
+          markWatched(video.id).catch(console.error);
+          onWatchedChange?.(video.id, true);
+        }
+      } catch {}
+    };
+
+    const createPlayer = () => {
+      if (destroyed) return;
+      playerRef.current = new window.YT.Player(playerId, {
+        videoId: video.id,
+        width: '100%',
+        height: '100%',
+        playerVars: { autoplay: 1, rel: 0 },
+        events: {
+          onStateChange: ({ data }) => {
+            if (data === window.YT.PlayerState.PLAYING) {
+              intervalRef.current = setInterval(checkProgress, 5000);
+            } else {
+              clearInterval(intervalRef.current);
+              if (data === window.YT.PlayerState.ENDED) checkProgress();
+            }
+          },
+        },
+      });
+    };
+
+    if (window.YT?.Player) {
+      createPlayer();
+    } else {
+      const prev = window.onYouTubeIframeAPIReady;
+      window.onYouTubeIframeAPIReady = () => {
+        prev?.();
+        createPlayer();
+      };
+      if (!document.querySelector('script[src="https://www.youtube.com/iframe_api"]')) {
+        const tag = document.createElement('script');
+        tag.src = 'https://www.youtube.com/iframe_api';
+        document.head.appendChild(tag);
+      }
+    }
+
+    return () => {
+      destroyed = true;
+      clearInterval(intervalRef.current);
+      try { playerRef.current?.destroy(); } catch {}
+      playerRef.current = null;
+    };
+  }, [video.id]);
 
   return (
     <main className="flex-1 min-h-screen flex flex-col">
@@ -346,18 +412,10 @@ function VideoPlayerView({ video, showComments, onBack }) {
 
       {/* Player + info */}
       <div className="flex-1 p-6 max-w-5xl mx-auto w-full">
-        {/* Embed */}
         <div className="aspect-video w-full rounded-xl overflow-hidden bg-black mb-5">
-          <iframe
-            src={`https://www.youtube.com/embed/${video.id}?autoplay=1`}
-            className="w-full h-full"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            allowFullScreen
-            title={video.title}
-          />
+          <div id={playerId} className="w-full h-full" />
         </div>
 
-        {/* Video info */}
         <div className="flex flex-col gap-3">
           <h1 className="text-white text-xl font-semibold leading-snug">{video.title}</h1>
 
