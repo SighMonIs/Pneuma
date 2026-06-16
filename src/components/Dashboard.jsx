@@ -152,7 +152,7 @@ const SORT_OPTIONS = [
   { value: 'duration_seconds', label: 'Duration' },
 ];
 
-export default function Dashboard({ selectedCategoryId, onClearCategory, subscriptions, categories }) {
+export default function Dashboard({ subscriptions, categories }) {
   const [videos, setVideos] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -198,7 +198,6 @@ export default function Dashboard({ selectedCategoryId, onClearCategory, subscri
         hideShorts: hideShorts ? 'true' : undefined,
         hideWatched: hideWatched ? 'true' : undefined,
         search: debouncedSearch || undefined,
-        categoryId: selectedCategoryId || undefined,
         sortBy: sortBy !== 'published_at' ? sortBy : undefined,
         sortOrder: sortOrder !== 'desc' ? sortOrder : undefined,
       });
@@ -213,11 +212,10 @@ export default function Dashboard({ selectedCategoryId, onClearCategory, subscri
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [hideShorts, hideWatched, debouncedSearch, selectedCategoryId, sortBy, sortOrder]);
+  }, [hideShorts, hideWatched, debouncedSearch, sortBy, sortOrder]);
 
   useEffect(() => { loadVideos(1, false); }, [loadVideos]);
   useEffect(() => () => { if (pollRef.current) clearInterval(pollRef.current); }, []);
-  useEffect(() => { setSelectedVideo(null); }, [selectedCategoryId]);
 
   const handleFetchVideos = async () => {
     if (fetching) return;
@@ -262,7 +260,6 @@ export default function Dashboard({ selectedCategoryId, onClearCategory, subscri
     ));
   };
 
-  const selectedCategory = selectedCategoryId ? (categories || []).find(c => c.id === selectedCategoryId) : null;
   const progressPct = fetchProgress?.total > 0 ? Math.round((fetchProgress.done / fetchProgress.total) * 100) : 0;
 
   if (selectedVideo && playerSize !== 'float') {
@@ -312,13 +309,6 @@ export default function Dashboard({ selectedCategoryId, onClearCategory, subscri
 
         {/* Row 2: filters + sort + view */}
         <div className="flex items-center gap-2 mt-2 flex-wrap">
-          {selectedCategory && (
-            <div className="flex items-center gap-1.5 bg-indigo-600/20 border border-indigo-600/40 text-indigo-400 px-2.5 py-1 rounded-full text-xs">
-              <span>{selectedCategory.name}</span>
-              <button onClick={onClearCategory} className="hover:text-white"><X size={11} /></button>
-            </div>
-          )}
-
           <button
             onClick={() => setHideShorts(!hideShorts)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-colors border ${
@@ -417,7 +407,7 @@ export default function Dashboard({ selectedCategoryId, onClearCategory, subscri
           <div className="mt-2 text-xs text-gray-500">
             <span className="text-gray-300 font-medium">{total.toLocaleString()}</span>{' '}
             video{total !== 1 ? 's' : ''}
-            {selectedCategory && <span className="text-gray-600"> in <span className="text-gray-400">{selectedCategory.name}</span></span>}
+
             {debouncedSearch && <span className="text-gray-600"> matching <span className="text-gray-400">"{debouncedSearch}"</span></span>}
           </div>
         )}

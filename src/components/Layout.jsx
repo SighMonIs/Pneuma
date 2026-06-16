@@ -1,22 +1,18 @@
-import { useState } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Sidebar from './Sidebar.jsx';
 import Dashboard from './Dashboard.jsx';
 import SchedulerPage from './SchedulerPage.jsx';
 import SettingsPage from './SettingsPage.jsx';
 import ChannelPage from './ChannelPage.jsx';
+import CategoryPage from './CategoryPage.jsx';
 
 export default function Layout({ subscriptions, categories, onDataChange, authStatus, onAuthChange }) {
-  const [selectedCategoryId, setSelectedCategoryId] = useState(null);
-
   return (
     <div className="flex min-h-screen bg-[#0f0f0f]">
       <Sidebar
         subscriptions={subscriptions}
         categories={categories}
         onDataChange={onDataChange}
-        selectedCategoryId={selectedCategoryId}
-        onSelectCategory={(id) => setSelectedCategoryId(id)}
         authStatus={authStatus}
       />
       <div className="ml-[260px] flex-1 flex flex-col min-w-0">
@@ -44,15 +40,17 @@ export default function Layout({ subscriptions, categories, onDataChange, authSt
             }
           />
           <Route
-            path="/*"
+            path="/category/:id"
             element={
-              <Dashboard
-                selectedCategoryId={selectedCategoryId}
-                onClearCategory={() => setSelectedCategoryId(null)}
+              <CategoryPage
                 subscriptions={subscriptions}
                 categories={categories}
               />
             }
+          />
+          <Route
+            path="/*"
+            element={<Dashboard subscriptions={subscriptions} categories={categories} />}
           />
         </Routes>
       </div>

@@ -23,7 +23,7 @@ function saveBool(key, val) {
   try { localStorage.setItem(key, String(val)); } catch {}
 }
 
-export default function Sidebar({ subscriptions, categories, onDataChange, selectedCategoryId, onSelectCategory, authStatus }) {
+export default function Sidebar({ subscriptions, categories, onDataChange, authStatus }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
@@ -219,7 +219,7 @@ export default function Sidebar({ subscriptions, categories, onDataChange, selec
             <div className="flex items-center gap-2 w-full px-4 py-1.5 hover:bg-[#242424] transition-colors">
               <button
                 className="flex items-center gap-2 flex-1 text-left min-w-0"
-                onClick={() => { onSelectCategory?.(null); navigate('/'); }}
+                onClick={() => navigate('/')}
               >
                 <Star size={14} className="flex-shrink-0 text-yellow-400" fill="currentColor" />
                 <span className="text-white text-sm font-semibold flex-1 truncate">Favourites</span>
@@ -253,10 +253,10 @@ export default function Sidebar({ subscriptions, categories, onDataChange, selec
 
           return (
             <div key={cat.id}>
-              <div className={`flex items-center gap-2 w-full px-4 py-1.5 transition-colors ${selectedCategoryId === cat.id ? 'bg-[#2e2e2e]' : 'hover:bg-[#242424]'}`}>
+              <div className={`flex items-center gap-2 w-full px-4 py-1.5 transition-colors ${location.pathname === `/category/${cat.id}` ? 'bg-[#2e2e2e]' : 'hover:bg-[#242424]'}`}>
                 <button
                   className="flex items-center gap-2 flex-1 text-left min-w-0"
-                  onClick={() => { onSelectCategory?.(selectedCategoryId === cat.id ? null : cat.id); navigate('/'); }}
+                  onClick={() => navigate(`/category/${cat.id}`)}
                 >
                   <i className={`ti ti-${tablerName} flex-shrink-0`} style={{ fontSize: 14, color: cat.color }} />
                   <span className="text-white text-sm font-semibold flex-1 truncate">{cat.name}</span>
