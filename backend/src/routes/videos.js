@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { pool } from '../db/index.js';
-import { fetchAllVideos, fetchVideosForChannel } from '../services/youtube.js';
+import { fetchAllVideos, fetchVideosForChannel } from '../services/ytdlp.js';
 
 const router = Router();
 
