@@ -53,6 +53,7 @@ export const getVideos = (params = {}) => {
   return request('GET', `/videos${qs ? '?' + qs : ''}`);
 };
 export const fetchVideos = () => request('POST', '/videos/fetch');
+export const getFetchStatus = () => request('GET', '/videos/fetch-status');
 export const markWatched = (videoId) => request('POST', '/videos/watched', { videoId });
 export const unmarkWatched = (videoId) => request('DELETE', `/videos/watched/${videoId}`);
 

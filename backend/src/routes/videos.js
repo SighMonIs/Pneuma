@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { pool } from '../db/index.js';
-import { fetchAllVideos, fetchVideosForChannel } from '../services/ytdlp.js';
+import { fetchAllVideos, fetchVideosForChannel, fetchProgress } from '../services/ytdlp.js';
 
 const router = Router();
 
@@ -109,18 +109,21 @@ router.get('/', async (req, res) => {
   }
 });
 
-// POST /api/videos/fetch — fetch videos for all channels
-router.post('/fetch', async (req, res) => {
-  try {
-    const count = await fetchAllVideos();
-    res.json({ count, message: `Fetched ${count} videos` });
-  } catch (err) {
-    console.error('[Videos] Fetch all failed:', err.message);
-    if (err.message === 'Not authenticated') {
-      return res.status(401).json({ error: 'Not authenticated with YouTube' });
-    }
-    res.status(500).json({ error: 'Failed to fetch videos' });
+// POST /api/videos/fetch — start background fetch, returns immediately
+router.post('/fetch', (req, res) => {
+  if (fetchProgress.running) {
+    return res.json({ alreadyRunning: true, ...fetchProgress });
   }
+  fetchAllVideos().catch(err => {
+    console.error('[Videos] Fetch all failed:', err.message);
+    fetchProgress.running = false;
+  });
+  res.json({ started: true });
+});
+
+// GET /api/videos/fetch-status — current fetch progress
+router.get('/fetch-status', (req, res) => {
+  res.json({ ...fetchProgress });
 });
 
 // POST /api/videos/watched — mark video as watched

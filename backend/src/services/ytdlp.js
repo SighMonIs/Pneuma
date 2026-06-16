@@ -8,6 +8,14 @@ const execFileAsync = promisify(execFile);
 const DATA_DIR = process.env.DATA_DIR || '/app/data';
 const COOKIES_FILE = path.join(DATA_DIR, 'cookies.txt');
 
+export const fetchProgress = {
+  running: false,
+  total: 0,
+  done: 0,
+  errors: 0,
+  startedAt: null,
+};
+
 export async function hasCookies() {
   try { await fs.access(COOKIES_FILE); return true; }
   catch { return false; }
@@ -34,7 +42,6 @@ async function runYtDlp(args) {
     if (stderr) console.log('[yt-dlp]', stderr.slice(0, 300));
     return stdout;
   } catch (err) {
-    // yt-dlp exits non-zero on some warnings but still has stdout
     if (err.stdout) return err.stdout;
     throw new Error(`yt-dlp failed: ${err.stderr?.slice(0, 200) || err.message}`);
   }
@@ -54,6 +61,27 @@ function detectShort(title, desc, secs) {
   return false;
 }
 
+function bestThumbnail(thumbnails) {
+  if (!thumbnails?.length) return null;
+  return [...thumbnails].sort((a, b) => (b.width || 0) - (a.width || 0))[0]?.url ?? null;
+}
+
+async function fetchChannelThumbnail(channelId) {
+  const args = [
+    '-J', '--flat-playlist', '--no-warnings', '--quiet',
+    '--playlist-end', '1',
+    ...(await cookieArgs()),
+    `https://www.youtube.com/channel/${channelId}`,
+  ];
+  try {
+    const output = await runYtDlp(args);
+    const data = JSON.parse(output.trim());
+    return bestThumbnail(data.thumbnails);
+  } catch {
+    return null;
+  }
+}
+
 export async function syncSubscriptions() {
   const args = [
     '--flat-playlist', '--dump-json', '--no-warnings', '--quiet',
@@ -68,8 +96,7 @@ export async function syncSubscriptions() {
   for (const item of items) {
     const id = item.channel_id || item.id;
     const title = item.channel || item.uploader || item.title;
-    const thumbs = [...(item.thumbnails || [])].sort((a, b) => (b.width || 0) - (a.width || 0));
-    const thumbnail = thumbs[0]?.url ?? null;
+    const thumbnail = bestThumbnail(item.thumbnails);
     if (!id) continue;
 
     await pool.query(`
@@ -109,7 +136,7 @@ export async function fetchVideosForChannel(channelId, maxResults = 20) {
 
     let publishedAt = null;
     if (item.upload_date) {
-      const d = item.upload_date; // YYYYMMDD
+      const d = item.upload_date;
       publishedAt = new Date(`${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}`);
     }
 
@@ -128,11 +155,30 @@ export async function fetchVideosForChannel(channelId, maxResults = 20) {
     `, [item.id, channelId, title, desc, thumbnail, publishedAt, duration, isShort, item.view_count || 0]);
     count++;
   }
+
+  // Backfill channel thumbnail if missing
+  try {
+    const { rows } = await pool.query('SELECT thumbnail_url FROM subscriptions WHERE id = $1', [channelId]);
+    if (rows[0] && !rows[0].thumbnail_url) {
+      const thumb = await fetchChannelThumbnail(channelId);
+      if (thumb) {
+        await pool.query('UPDATE subscriptions SET thumbnail_url = $1 WHERE id = $2', [thumb, channelId]);
+      }
+    }
+  } catch {}
+
   return count;
 }
 
 export async function fetchAllVideos() {
   const { rows } = await pool.query('SELECT id FROM subscriptions ORDER BY title');
+
+  fetchProgress.running = true;
+  fetchProgress.total = rows.length;
+  fetchProgress.done = 0;
+  fetchProgress.errors = 0;
+  fetchProgress.startedAt = new Date();
+
   let total = 0;
   const batchSize = 3;
 
@@ -140,15 +186,17 @@ export async function fetchAllVideos() {
     const batch = rows.slice(i, i + batchSize);
     const results = await Promise.allSettled(batch.map(r => fetchVideosForChannel(r.id)));
     results.forEach((r, j) => {
-      if (r.status === 'fulfilled') total += r.value;
-      else console.error(`[yt-dlp] Failed ${batch[j].id}:`, r.reason?.message);
+      if (r.status === 'fulfilled') { total += r.value; }
+      else { console.error(`[yt-dlp] Failed ${batch[j].id}:`, r.reason?.message); fetchProgress.errors++; }
+      fetchProgress.done++;
     });
   }
+
+  fetchProgress.running = false;
   return total;
 }
 
 export async function addChannelByUrl(url) {
-  // Treat as a channel/playlist; append /videos for handle/channel URLs
   const isVideo = /watch\?v=|\/shorts\/|\/live\//.test(url);
   const target = isVideo ? url : url.replace(/\/?$/, '/videos');
 
@@ -176,5 +224,11 @@ export async function addChannelByUrl(url) {
       last_synced_at = NOW()
   `, [channelId, title]);
 
-  return { id: channelId, title, thumbnail_url: null };
+  // Fetch channel thumbnail
+  const thumbnail = await fetchChannelThumbnail(channelId);
+  if (thumbnail) {
+    await pool.query('UPDATE subscriptions SET thumbnail_url = $1 WHERE id = $2', [thumbnail, channelId]);
+  }
+
+  return { id: channelId, title, thumbnail_url: thumbnail };
 }

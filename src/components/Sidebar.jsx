@@ -106,9 +106,9 @@ export default function Sidebar({ subscriptions, categories, onDataChange, selec
   );
 
   return (
-    <aside className="fixed top-0 left-0 bottom-0 w-[260px] bg-[#1a1a1a] border-r border-gray-800 flex flex-col z-10">
+    <aside className="fixed top-0 left-0 bottom-0 w-[260px] bg-[#1a1a1a] border-r border-gray-700 flex flex-col z-10">
       {/* Logo */}
-      <div className="p-4 border-b border-gray-800">
+      <div className="p-4 border-b border-gray-700">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center flex-shrink-0">
             <LucideIcons.Tv2 size={16} className="text-white" />
@@ -118,7 +118,7 @@ export default function Sidebar({ subscriptions, categories, onDataChange, selec
       </div>
 
       {/* Nav links */}
-      <nav className="p-2 border-b border-gray-800">
+      <nav className="p-2 border-b border-gray-700">
         <Link
           to="/"
           className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -150,11 +150,14 @@ export default function Sidebar({ subscriptions, categories, onDataChange, selec
       </nav>
 
       {/* Subscriptions header + search */}
-      <div className="p-3 border-b border-gray-800">
+      <div className="p-3 border-b border-gray-700">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">
-            Channels ({subscriptions.length})
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">Channels</span>
+            <span className="bg-gray-800 text-gray-300 rounded-full px-2 py-0.5 text-[10px] font-medium border border-gray-700">
+              {subscriptions.length}
+            </span>
+          </div>
           {authStatus?.hasCookies && (
             <button
               onClick={handleSync}
@@ -196,7 +199,7 @@ export default function Sidebar({ subscriptions, categories, onDataChange, selec
                 >
                   <Icon size={14} style={{ color: cat.color }} className="flex-shrink-0" />
                   <span className="text-gray-300 text-xs font-medium flex-1 truncate">{cat.name}</span>
-                  <span className="text-gray-600 text-xs">{allChannels.length}</span>
+                  <span className="bg-gray-800 text-gray-400 rounded px-1.5 py-0.5 text-[10px] border border-gray-700/50">{allChannels.length}</span>
                   {isExpanded
                     ? <ChevronDown size={12} className="text-gray-600 flex-shrink-0" />
                     : <ChevronRight size={12} className="text-gray-600 flex-shrink-0" />
@@ -251,10 +254,9 @@ export default function Sidebar({ subscriptions, categories, onDataChange, selec
         {/* Uncategorized */}
         {uncategorized.filter(filterChannel).length > 0 && (
           <div>
-            <div className="px-4 py-1.5">
-              <span className="text-gray-600 text-xs font-medium uppercase tracking-wider">
-                Uncategorized ({uncategorized.length})
-              </span>
+            <div className="px-4 py-1.5 flex items-center gap-2">
+              <span className="text-gray-500 text-xs font-medium uppercase tracking-wider">Uncategorized</span>
+              <span className="bg-gray-800 text-gray-400 rounded px-1.5 py-0.5 text-[10px] border border-gray-700/50">{uncategorized.length}</span>
             </div>
             {uncategorized.filter(filterChannel).map(sub => (
               <ChannelRow
@@ -279,7 +281,7 @@ export default function Sidebar({ subscriptions, categories, onDataChange, selec
       </div>
 
       {/* Add Category button */}
-      <div className="p-3 border-t border-gray-800">
+      <div className="p-3 border-t border-gray-700">
         <button
           onClick={() => { setEditingCategory(null); setShowCategoryModal(true); }}
           className="flex items-center gap-2 w-full px-3 py-2 text-gray-500 hover:text-white hover:bg-[#242424] rounded-lg text-xs transition-colors"
