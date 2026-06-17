@@ -188,8 +188,8 @@ function DisplayTab() {
       <SectionCard title="Sidebar" description="Controls for the channel list" icon={Eye}>
         <div className="flex items-center justify-between p-3 bg-[#242424] border border-gray-700 rounded-lg">
           <div>
-            <p className="text-white text-sm font-medium">Show watched count badge</p>
-            <p className="text-gray-500 text-xs mt-0.5">Display a number next to each channel showing how many videos you've watched</p>
+            <p className="text-white text-sm font-medium">Show unwatched count badge</p>
+            <p className="text-gray-500 text-xs mt-0.5">Display a red badge next to each channel showing how many unwatched videos remain</p>
           </div>
           <Toggle checked={showWatchedBadge} onChange={setShowWatchedBadge} />
         </div>

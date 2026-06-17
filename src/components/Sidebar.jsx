@@ -345,9 +345,9 @@ function ChannelRow({ channel, showWatchedBadge, indent }) {
       )}
       <span className="text-gray-300 text-xs truncate flex-1">{channel.title}</span>
 
-      {showWatchedBadge && channel.watched_count > 0 && (
-        <span className="text-[10px] text-gray-600 bg-gray-800 rounded px-1.5 py-0.5 flex-shrink-0 border border-gray-700/50 mr-1">
-          {channel.watched_count}
+      {showWatchedBadge && ((channel.video_count || 0) - (channel.watched_count || 0)) > 0 && (
+        <span className="text-[10px] bg-red-900/60 text-red-300 rounded-full px-1.5 py-0.5 flex-shrink-0 font-semibold">
+          {(channel.video_count || 0) - (channel.watched_count || 0)}
         </span>
       )}
     </Link>
