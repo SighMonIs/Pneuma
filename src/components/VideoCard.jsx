@@ -56,10 +56,9 @@ export default function VideoCard({ video, onWatchedChange, videoMode = 'youtube
 
   const handleVideoClick = (e) => {
     e.preventDefault();
-    if (videoMode === 'embed') {
-      onVideoSelect?.(video);
+    if (videoMode === 'embed' && onVideoSelect) {
+      onVideoSelect(video);
     } else {
-      // Use window.open to maximise chance of opening in browser rather than YouTube app
       window.open(`https://www.youtube.com/watch?v=${video.id}`, '_blank', 'noopener,noreferrer');
     }
   };
@@ -129,6 +128,7 @@ export default function VideoCard({ video, onWatchedChange, videoMode = 'youtube
           className={`absolute top-1.5 right-1.5 p-1.5 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity ${
             isWatched ? 'bg-green-600 hover:bg-gray-700' : 'bg-black/70 hover:bg-green-600'
           }`}
+          aria-label={isWatched ? 'Mark as unwatched' : 'Mark as watched'}
           title={isWatched ? 'Mark as unwatched' : 'Mark as watched'}
         >
           {isWatched ? <RotateCcw size={14} /> : <Check size={14} />}

@@ -671,7 +671,8 @@ function CategoriesTab({ categories, onDataChange }) {
                   <button
                     onClick={() => handleReorder(cat, 'up')}
                     disabled={idx === 0}
-                    className="text-gray-600 hover:text-gray-400 p-1 rounded disabled:opacity-30 transition-colors"
+                    className="text-gray-600 hover:text-gray-400 p-1.5 rounded disabled:opacity-30 transition-colors"
+                    aria-label={`Move ${cat.name} up`}
                     title="Move up"
                   >
                     <ChevronUp size={14} />
@@ -679,21 +680,24 @@ function CategoriesTab({ categories, onDataChange }) {
                   <button
                     onClick={() => handleReorder(cat, 'down')}
                     disabled={idx === sorted.length - 1}
-                    className="text-gray-600 hover:text-gray-400 p-1 rounded disabled:opacity-30 transition-colors"
+                    className="text-gray-600 hover:text-gray-400 p-1.5 rounded disabled:opacity-30 transition-colors"
+                    aria-label={`Move ${cat.name} down`}
                     title="Move down"
                   >
                     <ChevronDown size={14} />
                   </button>
                   <button
                     onClick={() => { setEditingCat(cat); setShowModal(true); }}
-                    className="text-gray-600 hover:text-gray-300 p-1 rounded transition-colors ml-1"
+                    className="text-gray-600 hover:text-gray-300 p-1.5 rounded transition-colors ml-1"
+                    aria-label={`Edit ${cat.name}`}
                     title="Edit"
                   >
                     <Settings size={14} />
                   </button>
                   <button
                     onClick={() => handleDelete(cat)}
-                    className="text-gray-600 hover:text-red-400 p-1 rounded transition-colors"
+                    className="text-gray-600 hover:text-red-400 p-1.5 rounded transition-colors"
+                    aria-label={`Delete ${cat.name}`}
                     title="Delete"
                   >
                     <Trash2 size={14} />

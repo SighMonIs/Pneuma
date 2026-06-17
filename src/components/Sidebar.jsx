@@ -3,7 +3,7 @@ import { version } from '../../package.json';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Settings, RefreshCw, Search,
-  ChevronDown, ChevronRight, Star,
+  ChevronDown, ChevronRight, Star, Minus, Plus,
 } from 'lucide-react';
 import { syncSubscriptions, updateSubscription } from '../services/api.js';
 
@@ -185,16 +185,18 @@ export default function Sidebar({ subscriptions, categories, onDataChange, authS
           <div className="flex items-center gap-1">
             <button
               onClick={allExpanded ? collapseAll : expandAll}
-              className="flex items-center justify-center w-5 h-5 rounded border border-gray-700 bg-[#242424] hover:bg-[#2e2e2e] hover:border-gray-500 text-gray-400 hover:text-white transition-colors text-[11px] font-bold leading-none"
+              className="flex items-center justify-center p-1.5 rounded border border-gray-700 bg-[#242424] hover:bg-[#2e2e2e] hover:border-gray-500 text-gray-400 hover:text-white transition-colors"
+              aria-label={allExpanded ? 'Collapse all categories' : 'Expand all categories'}
               title={allExpanded ? 'Collapse all' : 'Expand all'}
             >
-              {allExpanded ? '−' : '+'}
+              {allExpanded ? <Minus size={11} /> : <Plus size={11} />}
             </button>
             {authStatus?.hasCookies && (
               <button
                 onClick={handleSync}
                 disabled={syncing}
-                className="text-gray-500 hover:text-white p-1 rounded hover:bg-[#242424] transition-colors"
+                className="text-gray-500 hover:text-white p-1.5 rounded hover:bg-[#242424] transition-colors"
+                aria-label="Sync subscriptions"
                 title="Sync subscriptions"
               >
                 <RefreshCw size={14} className={syncing ? 'animate-spin' : ''} />
@@ -235,7 +237,11 @@ export default function Sidebar({ subscriptions, categories, onDataChange, authS
                   </span>
                 )}
               </button>
-              <button onClick={() => setFavouritesExpanded(v => !v)} className="flex-shrink-0 p-0.5 text-gray-500 hover:text-gray-300 transition-colors">
+              <button
+                onClick={() => setFavouritesExpanded(v => !v)}
+                className="flex-shrink-0 p-1.5 text-gray-500 hover:text-gray-300 transition-colors"
+                aria-label={favouritesExpanded ? 'Collapse favourites' : 'Expand favourites'}
+              >
                 {favouritesExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
               </button>
             </div>
@@ -271,7 +277,11 @@ export default function Sidebar({ subscriptions, categories, onDataChange, authS
                     </span>
                   )}
                 </button>
-                <button onClick={() => toggleCategory(cat.id)} className="flex-shrink-0 p-0.5 text-gray-500 hover:text-gray-300 transition-colors">
+                <button
+                  onClick={() => toggleCategory(cat.id)}
+                  className="flex-shrink-0 p-1.5 text-gray-500 hover:text-gray-300 transition-colors"
+                  aria-label={isExpanded ? `Collapse ${cat.name}` : `Expand ${cat.name}`}
+                >
                   {isExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
                 </button>
               </div>

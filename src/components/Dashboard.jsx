@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
-  Search, Scissors, Eye, EyeOff, RefreshCw, X,
+  Search, Scissors, Eye, RefreshCw, X,
   ArrowLeft, ExternalLink, Maximize2, Minimize2, PictureInPicture2,
   LayoutGrid, List, ArrowDown, ArrowUp, Check, RotateCcw, AlertCircle,
 } from 'lucide-react';
@@ -75,7 +75,7 @@ function formatViewCount(count) {
   return `${count}`;
 }
 
-function VideoTableRow({ video, onWatchedChange, videoMode, onVideoSelect }) {
+function VideoTableRow({ video, onWatchedChange, videoMode, onVideoSelect, thumbnailQuality }) {
   const [isWatched, setIsWatched] = useState(video.is_watched);
   const [toggling, setToggling] = useState(false);
 
@@ -93,19 +93,18 @@ function VideoTableRow({ video, onWatchedChange, videoMode, onVideoSelect }) {
 
   const handleClick = (e) => {
     e.preventDefault();
-    if (videoMode === 'embed') { onVideoSelect?.(video); }
+    if (videoMode === 'embed' && onVideoSelect) { onVideoSelect(video); }
     else { window.open(`https://www.youtube.com/watch?v=${video.id}`, '_blank', 'noopener,noreferrer'); }
   };
 
-  const quality = loadStr('pneuma_thumbnail_quality', 'hqdefault');
-  const thumbnailUrl = `https://i.ytimg.com/vi/${video.id}/${quality}.jpg`;
+  const thumbnailUrl = `https://i.ytimg.com/vi/${video.id}/${thumbnailQuality}.jpg`;
 
   return (
     <tr className={`border-b border-gray-800/50 hover:bg-[#1a1a1a] transition-colors group ${isWatched ? 'opacity-50' : ''}`}>
       <td className="py-2 px-3">
         <div onClick={handleClick} className="cursor-pointer">
           <div className="relative w-20 rounded overflow-hidden bg-gray-800" style={{ aspectRatio: '16/9' }}>
-            <img src={thumbnailUrl} className="w-full h-full object-cover" loading="lazy" decoding="async" onError={e => { e.currentTarget.src = `https://i.ytimg.com/vi/${video.id}/mqdefault.jpg`; }} />
+            <img src={thumbnailUrl} alt={video.title} className="w-full h-full object-cover" loading="lazy" decoding="async" onError={e => { e.currentTarget.src = `https://i.ytimg.com/vi/${video.id}/mqdefault.jpg`; }} />
             {!isWatched && (video.percent_watched || 0) > 0.01 && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black/40">
                 <div className="h-full bg-red-500" style={{ width: `${Math.min((video.percent_watched || 0) * 100, 100)}%` }} />
@@ -136,6 +135,7 @@ function VideoTableRow({ video, onWatchedChange, videoMode, onVideoSelect }) {
           onClick={handleWatchedToggle}
           disabled={toggling}
           className={`p-1.5 rounded-full transition-colors ${isWatched ? 'text-green-400 hover:text-gray-400' : 'text-gray-700 group-hover:text-gray-500 hover:text-green-400'}`}
+          aria-label={isWatched ? 'Mark unwatched' : 'Mark watched'}
           title={isWatched ? 'Mark unwatched' : 'Mark watched'}
         >
           {isWatched ? <RotateCcw size={13} /> : <Check size={13} />}
@@ -174,6 +174,7 @@ export default function Dashboard({ subscriptions, categories }) {
   const [playerSize, setPlayerSize] = useState('normal');
   const videoMode = loadStr('pneuma_video_mode', 'youtube');
   const showComments = loadBool('pneuma_show_comments');
+  const thumbnailQuality = loadStr('pneuma_thumbnail_quality', 'hqdefault');
   const [error, setError] = useState('');
   const pollRef = useRef(null);
 
@@ -292,7 +293,7 @@ export default function Dashboard({ subscriptions, categories }) {
               className="w-full bg-[#1a1a1a] border border-gray-700 rounded-lg pl-9 pr-3 py-2 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-red-600/60 transition-colors"
             />
             {search && (
-              <button onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white">
+              <button onClick={() => setSearch('')} aria-label="Clear search" className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white">
                 <X size={14} />
               </button>
             )}
@@ -324,8 +325,8 @@ export default function Dashboard({ subscriptions, categories }) {
               hideWatched ? 'bg-indigo-600/20 border-indigo-600/50 text-indigo-400' : 'bg-[#1a1a1a] border-gray-700 text-gray-400 hover:text-white hover:border-gray-500'
             }`}
           >
-            {hideWatched ? <EyeOff size={13} /> : <Eye size={13} />}
-            {hideWatched ? 'Show Watched' : 'Hide Watched'}
+            <Eye size={13} />
+            Hide Watched
           </button>
 
           <div className="flex-1" />
@@ -343,6 +344,7 @@ export default function Dashboard({ subscriptions, categories }) {
             <button
               onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
               className="flex items-center gap-1 px-2.5 py-1.5 bg-[#1a1a1a] border border-gray-700 text-gray-400 hover:text-white rounded-lg text-xs transition-colors"
+              aria-label={sortOrder === 'desc' ? 'Sort ascending' : 'Sort descending'}
               title={sortOrder === 'desc' ? 'Descending' : 'Ascending'}
             >
               {sortOrder === 'desc' ? <ArrowDown size={13} /> : <ArrowUp size={13} />}
@@ -351,18 +353,20 @@ export default function Dashboard({ subscriptions, categories }) {
           </div>
 
           {/* View toggle */}
-          <div className="flex items-center bg-[#1a1a1a] border border-gray-700 rounded-lg overflow-hidden">
+          <div className="flex items-center bg-[#1a1a1a] border border-gray-700 rounded-lg overflow-hidden" role="group" aria-label="View mode">
             <button
               onClick={() => setViewMode('grid')}
               className={`flex items-center gap-1 px-2.5 py-1.5 text-xs transition-colors ${viewMode === 'grid' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-white'}`}
-              title="Grid view"
+              aria-pressed={viewMode === 'grid'}
+              aria-label="Grid view"
             >
               <LayoutGrid size={13} /> Grid
             </button>
             <button
               onClick={() => setViewMode('table')}
               className={`flex items-center gap-1 px-2.5 py-1.5 text-xs transition-colors ${viewMode === 'table' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-white'}`}
-              title="Table view"
+              aria-pressed={viewMode === 'table'}
+              aria-label="Table view"
             >
               <List size={13} /> Table
             </button>
@@ -472,6 +476,7 @@ export default function Dashboard({ subscriptions, categories }) {
                     onWatchedChange={handleWatchedChange}
                     videoMode={videoMode}
                     onVideoSelect={v => { setSelectedVideo(v); setPlayerSize('normal'); }}
+                    thumbnailQuality={thumbnailQuality}
                   />
                 ))}
               </tbody>
@@ -518,15 +523,15 @@ export default function Dashboard({ subscriptions, categories }) {
 
       {/* Fetch error modal */}
       {showErrorModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" role="dialog" aria-modal="true" aria-labelledby="error-modal-title">
           <div className="bg-[#1a1a1a] border border-gray-800 rounded-xl w-full max-w-lg flex flex-col max-h-[80vh]">
             <div className="flex items-center justify-between p-5 border-b border-gray-800 flex-shrink-0">
               <div className="flex items-center gap-2">
                 <AlertCircle size={16} className="text-red-400" />
-                <h2 className="text-white font-semibold">Fetch Errors</h2>
+                <h2 id="error-modal-title" className="text-white font-semibold">Fetch Errors</h2>
                 <span className="text-gray-500 text-sm">({fetchErrors.length})</span>
               </div>
-              <button onClick={() => setShowErrorModal(false)} className="text-gray-500 hover:text-white p-1 rounded-lg hover:bg-gray-800 transition-colors">
+              <button onClick={() => setShowErrorModal(false)} aria-label="Close" className="text-gray-500 hover:text-white p-1 rounded-lg hover:bg-gray-800 transition-colors">
                 <X size={18} />
               </button>
             </div>
@@ -837,10 +842,10 @@ function FloatingPlayer({ video, showComments, onClose, onExpand, onWatchedChang
     <div className="fixed bottom-4 right-4 z-50 rounded-xl overflow-hidden shadow-2xl border border-gray-700 bg-black w-72">
       <div className="bg-[#1a1a1a] px-3 py-2 flex items-center gap-2">
         <p className="text-white text-xs truncate flex-1">{video.title}</p>
-        <button onClick={handleExpand} className="text-gray-400 hover:text-white transition-colors flex-shrink-0" title="Expand">
+        <button onClick={handleExpand} aria-label="Expand player" className="text-gray-400 hover:text-white transition-colors flex-shrink-0">
           <Maximize2 size={13} />
         </button>
-        <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors flex-shrink-0" title="Close">
+        <button onClick={onClose} aria-label="Close player" className="text-gray-400 hover:text-white transition-colors flex-shrink-0">
           <X size={13} />
         </button>
       </div>

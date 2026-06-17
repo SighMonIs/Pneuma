@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, ExternalLink, RefreshCw, Check, Eye, EyeOff, Scissors,
   ChevronDown, ChevronRight, Settings, Trash2, Star, LayoutGrid, List,
-  ArrowDown, ArrowUp, AlertTriangle, X, AlertCircle,
+  ArrowDown, ArrowUp, AlertTriangle, X, AlertCircle, RotateCcw, PlaySquare,
 } from 'lucide-react';
 import {
   getChannel, getVideos, fetchChannel, refreshChannelInfo,
@@ -58,7 +58,7 @@ function saveStr(key, val) {
   try { localStorage.setItem(key, val); } catch {}
 }
 
-function VideoTableRow({ video, onWatchedChange, videoMode, onVideoSelect }) {
+function VideoTableRow({ video, onWatchedChange, videoMode, onVideoSelect, thumbnailQuality }) {
   const [isWatched, setIsWatched] = useState(video.is_watched);
   const [toggling, setToggling] = useState(false);
 
@@ -75,11 +75,14 @@ function VideoTableRow({ video, onWatchedChange, videoMode, onVideoSelect }) {
   };
 
   const handleClick = (e) => {
-    if (videoMode === 'embed') { e.preventDefault(); onVideoSelect?.(video); }
+    if (videoMode === 'embed') {
+      e.preventDefault();
+      if (onVideoSelect) onVideoSelect(video);
+      else window.open(`https://www.youtube.com/watch?v=${video.id}`, '_blank', 'noopener,noreferrer');
+    }
   };
 
-  const quality = loadStr('pneuma_thumbnail_quality', 'hqdefault');
-  const thumbnailUrl = `https://i.ytimg.com/vi/${video.id}/${quality}.jpg`;
+  const thumbnailUrl = `https://i.ytimg.com/vi/${video.id}/${thumbnailQuality}.jpg`;
   const ytUrl = `https://www.youtube.com/watch?v=${video.id}`;
 
   return (
@@ -87,7 +90,7 @@ function VideoTableRow({ video, onWatchedChange, videoMode, onVideoSelect }) {
       <td className="py-2 px-3">
         <a href={ytUrl} onClick={handleClick} className="block" target="_blank" rel="noopener noreferrer">
           <div className="relative w-20 rounded overflow-hidden bg-gray-800" style={{ aspectRatio: '16/9' }}>
-            <img src={thumbnailUrl} className="w-full h-full object-cover" loading="lazy" decoding="async" />
+            <img src={thumbnailUrl} alt={video.title} className="w-full h-full object-cover" loading="lazy" decoding="async" />
             {!isWatched && (video.percent_watched || 0) > 0.01 && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black/40">
                 <div className="h-full bg-red-500" style={{ width: `${Math.min((video.percent_watched || 0) * 100, 100)}%` }} />
@@ -109,8 +112,10 @@ function VideoTableRow({ video, onWatchedChange, videoMode, onVideoSelect }) {
           onClick={handleWatchedToggle}
           disabled={toggling}
           className={`p-1.5 rounded-full transition-colors ${isWatched ? 'text-green-400 hover:text-gray-400' : 'text-gray-700 group-hover:text-gray-500 hover:text-green-400'}`}
+          aria-label={isWatched ? 'Mark unwatched' : 'Mark watched'}
+          title={isWatched ? 'Mark unwatched' : 'Mark watched'}
         >
-          {isWatched ? <ArrowLeft size={13} /> : <Check size={13} />}
+          {isWatched ? <RotateCcw size={13} /> : <Check size={13} />}
         </button>
       </td>
     </tr>
@@ -164,6 +169,7 @@ export default function ChannelPage({ subscriptions, categories, onDataChange })
   const [viewMode, setViewModeRaw] = useState(() => loadStr('pneuma_view_mode', 'grid'));
 
   const videoMode = loadStr('pneuma_video_mode', 'youtube');
+  const thumbnailQuality = loadStr('pneuma_thumbnail_quality', 'hqdefault');
 
   const setHideShorts = (v) => { setHideShortsRaw(v); saveBool('pneuma_hide_shorts', v); };
   const setHideWatched = (v) => { setHideWatchedRaw(v); saveBool('pneuma_hide_watched', v); };
@@ -219,6 +225,12 @@ export default function ChannelPage({ subscriptions, categories, onDataChange })
 
   useEffect(() => { loadChannel(); }, [loadChannel]);
   useEffect(() => { loadVideos(1, false); }, [loadVideos]);
+
+  useEffect(() => {
+    if (!fetchDone) return;
+    const t = setTimeout(() => setFetchDone(false), 3000);
+    return () => clearTimeout(t);
+  }, [fetchDone]);
 
   // Auto-refresh channel info if banner/about missing
   const autoRefreshedRef = useRef(false);
@@ -462,6 +474,7 @@ export default function ChannelPage({ subscriptions, categories, onDataChange })
               <button
                 onClick={handleToggleFavourite}
                 className={`flex-shrink-0 transition-colors ${isFavourite ? 'text-yellow-400' : 'text-gray-600 hover:text-yellow-400'}`}
+                aria-label={isFavourite ? 'Remove from favourites' : 'Add to favourites'}
                 title={isFavourite ? 'Remove from favourites' : 'Add to favourites'}
               >
                 <Star size={16} fill={isFavourite ? 'currentColor' : 'none'} />
@@ -526,7 +539,7 @@ export default function ChannelPage({ subscriptions, categories, onDataChange })
               className="w-full bg-[#1a1a1a] border border-gray-700 rounded-lg pl-3 pr-3 py-2 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-red-600/60 transition-colors"
             />
             {search && (
-              <button onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white">
+              <button onClick={() => setSearch('')} aria-label="Clear search" className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white">
                 <X size={13} />
               </button>
             )}
@@ -567,8 +580,8 @@ export default function ChannelPage({ subscriptions, categories, onDataChange })
               hideWatched ? 'bg-indigo-600/20 border-indigo-600/50 text-indigo-400' : 'bg-[#1a1a1a] border-gray-700 text-gray-400 hover:text-white hover:border-gray-500'
             }`}
           >
-            {hideWatched ? <EyeOff size={12} /> : <Eye size={12} />}
-            {hideWatched ? 'Show Watched' : 'Hide Watched'}
+            <Eye size={12} />
+            Hide Watched
           </button>
 
           <div className="flex-1" />
@@ -586,6 +599,7 @@ export default function ChannelPage({ subscriptions, categories, onDataChange })
             <button
               onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
               className="flex items-center gap-1 px-2.5 py-1.5 bg-[#1a1a1a] border border-gray-700 text-gray-400 hover:text-white rounded-lg text-xs transition-colors"
+              aria-label={sortOrder === 'desc' ? 'Sort ascending' : 'Sort descending'}
             >
               {sortOrder === 'desc' ? <ArrowDown size={12} /> : <ArrowUp size={12} />}
               {sortOrder === 'desc' ? 'Desc' : 'Asc'}
@@ -593,16 +607,20 @@ export default function ChannelPage({ subscriptions, categories, onDataChange })
           </div>
 
           {/* View toggle */}
-          <div className="flex items-center bg-[#1a1a1a] border border-gray-700 rounded-lg overflow-hidden">
+          <div className="flex items-center bg-[#1a1a1a] border border-gray-700 rounded-lg overflow-hidden" role="group" aria-label="View mode">
             <button
               onClick={() => setViewMode('grid')}
               className={`flex items-center gap-1 px-2.5 py-1.5 text-xs transition-colors ${viewMode === 'grid' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-white'}`}
+              aria-pressed={viewMode === 'grid'}
+              aria-label="Grid view"
             >
               <LayoutGrid size={12} /> Grid
             </button>
             <button
               onClick={() => setViewMode('table')}
               className={`flex items-center gap-1 px-2.5 py-1.5 text-xs transition-colors ${viewMode === 'table' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-white'}`}
+              aria-pressed={viewMode === 'table'}
+              aria-label="Table view"
             >
               <List size={12} /> Table
             </button>
@@ -633,42 +651,19 @@ export default function ChannelPage({ subscriptions, categories, onDataChange })
       {/* Fetch progress bar */}
       {fetching && (
         <div className="h-0.5 w-full bg-gray-800 overflow-hidden">
-          <div className="h-full bg-red-500 animate-[progress_1.4s_ease-in-out_infinite]" style={{ width: '40%', animation: 'indeterminate 1.4s ease-in-out infinite' }} />
+          <div className="h-full bg-red-500" style={{ width: '40%', animation: 'indeterminate 1.4s ease-in-out infinite' }} />
         </div>
       )}
       <style>{`@keyframes indeterminate{0%{transform:translateX(-100%)}100%{transform:translateX(350%)}}`}</style>
 
       {/* Delete confirmation modal */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => !deleting && setShowDeleteConfirm(false)}>
-          <div className="bg-[#1a1a1a] border border-gray-700 rounded-xl shadow-2xl w-full max-w-sm mx-4 p-6" onClick={e => e.stopPropagation()}>
-            <div className="flex items-start gap-3 mb-4">
-              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center">
-                <AlertTriangle size={18} className="text-red-400" />
-              </div>
-              <div>
-                <h3 className="text-white font-semibold text-base">Remove channel?</h3>
-                <p className="text-gray-400 text-sm mt-1">This will permanently delete <span className="text-white font-medium">{channel.title}</span> and all its video data. This cannot be undone.</p>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                disabled={deleting}
-                className="px-4 py-2 text-sm text-gray-400 hover:text-white bg-[#242424] border border-gray-700 rounded-lg transition-colors disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={deleting}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1.5"
-              >
-                {deleting ? <><RefreshCw size={12} className="animate-spin" /> Deleting…</> : <><Trash2 size={12} /> Remove channel</>}
-              </button>
-            </div>
-          </div>
-        </div>
+        <DeleteModal
+          channelTitle={channel.title}
+          deleting={deleting}
+          onCancel={() => setShowDeleteConfirm(false)}
+          onConfirm={handleDelete}
+        />
       )}
 
       {/* Video content */}
@@ -696,6 +691,7 @@ export default function ChannelPage({ subscriptions, categories, onDataChange })
           )
         ) : videos.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
+            <div className="text-gray-700 mb-3"><PlaySquare size={40} /></div>
             <p className="text-gray-400 font-medium mb-2">No videos found</p>
             <p className="text-gray-600 text-sm max-w-sm">
               {debouncedSearch ? `No results for "${debouncedSearch}".` : 'Click "Fetch this channel" to import videos.'}
@@ -721,6 +717,7 @@ export default function ChannelPage({ subscriptions, categories, onDataChange })
                     video={video}
                     onWatchedChange={handleWatchedChange}
                     videoMode={videoMode}
+                    thumbnailQuality={thumbnailQuality}
                   />
                 ))}
               </tbody>
@@ -764,5 +761,71 @@ export default function ChannelPage({ subscriptions, categories, onDataChange })
         )}
       </div>
     </main>
+  );
+}
+
+function DeleteModal({ channelTitle, deleting, onCancel, onConfirm }) {
+  const modalRef = useRef(null);
+
+  useEffect(() => {
+    const modal = modalRef.current;
+    if (!modal) return;
+    const focusable = Array.from(modal.querySelectorAll('button:not([disabled])'));
+    focusable[0]?.focus();
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && !deleting) { onCancel(); return; }
+      if (e.key === 'Tab' && focusable.length > 0) {
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [deleting, onCancel]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="delete-modal-title"
+      onClick={() => !deleting && onCancel()}
+    >
+      <div
+        ref={modalRef}
+        className="bg-[#1a1a1a] border border-gray-700 rounded-xl shadow-2xl w-full max-w-sm p-6"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-start gap-3 mb-4">
+          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center">
+            <AlertTriangle size={18} className="text-red-400" />
+          </div>
+          <div>
+            <h3 id="delete-modal-title" className="text-white font-semibold text-base">Remove channel?</h3>
+            <p className="text-gray-400 text-sm mt-1">
+              This will permanently delete <span className="text-white font-medium">{channelTitle}</span> and all its video data. This cannot be undone.
+            </p>
+          </div>
+        </div>
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={onCancel}
+            disabled={deleting}
+            className="px-4 py-2 text-sm text-gray-400 hover:text-white bg-[#242424] border border-gray-700 rounded-lg transition-colors disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={deleting}
+            className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1.5"
+          >
+            {deleting ? <><RefreshCw size={12} className="animate-spin" /> Deleting…</> : <><Trash2 size={12} /> Remove channel</>}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

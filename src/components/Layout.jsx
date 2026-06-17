@@ -8,13 +8,19 @@ import CategoryPage from './CategoryPage.jsx';
 export default function Layout({ subscriptions, categories, onDataChange, authStatus, onAuthChange }) {
   return (
     <div className="flex min-h-screen bg-[#0f0f0f]">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:bg-black focus:text-white focus:px-4 focus:py-2 focus:rounded-lg focus:text-sm focus:font-medium"
+      >
+        Skip to content
+      </a>
       <Sidebar
         subscriptions={subscriptions}
         categories={categories}
         onDataChange={onDataChange}
         authStatus={authStatus}
       />
-      <div className="ml-[260px] flex-1 flex flex-col min-w-0">
+      <div id="main-content" className="ml-[260px] flex-1 flex flex-col min-w-0">
         <Routes>
           <Route
             path="/settings"
