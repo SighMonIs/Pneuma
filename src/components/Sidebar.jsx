@@ -313,6 +313,7 @@ function ChannelRow({ channel, showWatchedBadge, indent }) {
   const isActive = location.pathname === `/channel/${channel.id}`;
 
   return (
+    <div style={{ contentVisibility: 'auto', containIntrinsicSize: '0 36px' }}>
     <Link
       to={`/channel/${channel.id}`}
       className={`flex items-center gap-2 py-1.5 rounded-lg mx-1 transition-colors ${
@@ -340,5 +341,6 @@ function ChannelRow({ channel, showWatchedBadge, indent }) {
         </span>
       )}
     </Link>
+    </div>
   );
 }
