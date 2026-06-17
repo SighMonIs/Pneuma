@@ -191,7 +191,7 @@ export default function CategoryPage({ subscriptions, categories }) {
   return (
     <main className="flex-1 min-h-screen flex flex-col">
       {/* Sticky header: category title + filter bar */}
-      <div className="sticky top-0 z-10 bg-[#0f0f0f]/95 backdrop-blur border-b border-gray-700">
+      <div className="sticky top-0 z-10 bg-[#0f0f0f] border-b border-gray-700">
         {/* Title bar */}
         <div className="flex items-center gap-3 px-6 py-3">
           {category ? (

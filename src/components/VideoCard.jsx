@@ -36,7 +36,6 @@ function getThumbnailUrl(videoId) {
 
 export default function VideoCard({ video, onWatchedChange, videoMode = 'youtube', onVideoSelect }) {
   const [isWatched, setIsWatched] = useState(video.is_watched);
-  const [hovered, setHovered] = useState(false);
   const [toggling, setToggling] = useState(false);
 
   const handleWatchedToggle = async (e) => {
@@ -71,11 +70,7 @@ export default function VideoCard({ video, onWatchedChange, videoMode = 'youtube
   const publishDate = formatPublishDate(video.published_at);
 
   return (
-    <div
-      className="flex flex-col bg-[#242424] rounded-lg overflow-hidden hover:bg-[#2e2e2e] cursor-pointer group transition-colors"
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
+    <div className="flex flex-col bg-[#242424] rounded-lg overflow-hidden hover:bg-[#2e2e2e] cursor-pointer group transition-colors">
       <div className="relative aspect-video bg-[#1a1a1a]">
         <div className="block w-full h-full" onClick={handleVideoClick}>
           <img
@@ -99,13 +94,11 @@ export default function VideoCard({ video, onWatchedChange, videoMode = 'youtube
             </div>
           )}
 
-          {hovered && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="bg-red-600/75 rounded-full p-3">
-                <Play size={26} className="text-white fill-white ml-0.5" />
-              </div>
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="bg-red-600/75 rounded-full p-3">
+              <Play size={26} className="text-white fill-white ml-0.5" />
             </div>
-          )}
+          </div>
 
           {duration && (
             <div className="absolute bottom-1.5 right-1.5 bg-black/80 text-white text-xs px-1.5 py-0.5 rounded font-mono">
@@ -129,18 +122,16 @@ export default function VideoCard({ video, onWatchedChange, videoMode = 'youtube
           )}
         </div>
 
-        {hovered && (
-          <button
-            onClick={handleWatchedToggle}
-            disabled={toggling}
-            className={`absolute top-1.5 right-1.5 p-1.5 rounded-full text-white transition-colors ${
-              isWatched ? 'bg-green-600 hover:bg-gray-700' : 'bg-black/70 hover:bg-green-600'
-            }`}
-            title={isWatched ? 'Mark as unwatched' : 'Mark as watched'}
-          >
-            {isWatched ? <RotateCcw size={14} /> : <Check size={14} />}
-          </button>
-        )}
+        <button
+          onClick={handleWatchedToggle}
+          disabled={toggling}
+          className={`absolute top-1.5 right-1.5 p-1.5 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity ${
+            isWatched ? 'bg-green-600 hover:bg-gray-700' : 'bg-black/70 hover:bg-green-600'
+          }`}
+          title={isWatched ? 'Mark as unwatched' : 'Mark as watched'}
+        >
+          {isWatched ? <RotateCcw size={14} /> : <Check size={14} />}
+        </button>
       </div>
 
       <div className="p-3 flex flex-col gap-2">

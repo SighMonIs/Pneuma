@@ -279,7 +279,7 @@ export default function Dashboard({ subscriptions, categories }) {
   return (
     <main className="flex-1 min-h-screen flex flex-col">
       {/* Filter bar */}
-      <div className="sticky top-0 z-10 bg-[#0f0f0f]/95 backdrop-blur border-b border-gray-700 px-6 py-3">
+      <div className="sticky top-0 z-10 bg-[#0f0f0f] border-b border-gray-700 px-6 py-3">
         {/* Row 1: search + fetch */}
         <div className="flex items-center gap-3">
           <div className="relative flex-1 min-w-[200px]">
@@ -664,7 +664,7 @@ function VideoPlayerView({ video, showComments, onBack, onWatchedChange, onProgr
 
   return (
     <main className="flex-1 min-h-screen flex flex-col">
-      <div className="sticky top-0 z-10 bg-[#0f0f0f]/95 backdrop-blur border-b border-gray-700 px-6 py-3 flex items-center gap-3">
+      <div className="sticky top-0 z-10 bg-[#0f0f0f] border-b border-gray-700 px-6 py-3 flex items-center gap-3">
         <button onClick={handleBack} className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors text-sm flex-shrink-0">
           <ArrowLeft size={16} /> Back
         </button>

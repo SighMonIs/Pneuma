@@ -351,7 +351,7 @@ export default function ChannelPage({ subscriptions, categories, onDataChange })
   return (
     <main className="flex-1 min-h-screen flex flex-col">
       {/* Channel settings toggle bar */}
-      <div className="sticky top-0 z-20 bg-[#0f0f0f]/95 backdrop-blur border-b border-gray-700 px-4 py-2 flex items-center gap-3">
+      <div className="sticky top-0 z-20 bg-[#0f0f0f] border-b border-gray-700 px-4 py-2 flex items-center gap-3">
         <span className="text-gray-400 text-sm truncate flex-1 min-w-0 font-medium">{channel.title}</span>
         <button
           onClick={() => setShowSettings(v => !v)}
@@ -514,7 +514,7 @@ export default function ChannelPage({ subscriptions, categories, onDataChange })
       </div>
 
       {/* Action bar */}
-      <div className="sticky top-[41px] z-10 bg-[#0f0f0f]/95 backdrop-blur border-b border-gray-700 px-6 py-3">
+      <div className="sticky top-[41px] z-10 bg-[#0f0f0f] border-b border-gray-700 px-6 py-3">
         {/* Row 1: search + fetch + mark all */}
         <div className="flex items-center gap-2 flex-wrap">
           <div className="relative flex-1 min-w-[160px]">
