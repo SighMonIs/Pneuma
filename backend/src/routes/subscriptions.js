@@ -16,6 +16,7 @@ router.get('/', async (req, res) => {
           JSON_AGG(DISTINCT cc.category_id) FILTER (WHERE cc.category_id IS NOT NULL),
           '[]'::json
         ) AS category_ids,
+        COUNT(DISTINCT v.id)::int AS video_count,
         COUNT(DISTINCT wv.video_id)::int AS watched_count
       FROM subscriptions s
       LEFT JOIN channel_categories cc ON cc.channel_id = s.id

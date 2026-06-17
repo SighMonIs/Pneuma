@@ -116,6 +116,11 @@ export default function Sidebar({ subscriptions, categories, onDataChange, authS
     [subscriptions]
   );
 
+  const unwatchedFor = (subs) =>
+    subs.reduce((sum, s) => sum + Math.max(0, (s.video_count || 0) - (s.watched_count || 0)), 0);
+
+  const totalUnwatched = useMemo(() => unwatchedFor(subscriptions), [subscriptions]);
+
   const [favouritesExpanded, setFavouritesExpanded] = useState(true);
 
   const filterChannel = (sub) => {
@@ -146,7 +151,14 @@ export default function Sidebar({ subscriptions, categories, onDataChange, authS
           }`}
         >
           <LayoutDashboard size={16} />
-          Dashboard
+          <span className="flex-1">Dashboard</span>
+          {totalUnwatched > 0 && (
+            <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold flex-shrink-0 ${
+              isActive('/') ? 'bg-red-500/40 text-red-100' : 'bg-red-900/60 text-red-300'
+            }`}>
+              {totalUnwatched}
+            </span>
+          )}
         </Link>
         <Link
           to="/settings"
@@ -215,6 +227,11 @@ export default function Sidebar({ subscriptions, categories, onDataChange, authS
                 <span className="bg-gray-800 text-gray-400 rounded px-1.5 py-0.5 text-[10px] border border-gray-700/50 flex-shrink-0">
                   {favourites.length}
                 </span>
+                {unwatchedFor(favourites) > 0 && (
+                  <span className="bg-red-900/60 text-red-300 rounded-full px-1.5 py-0.5 text-[10px] font-semibold flex-shrink-0">
+                    {unwatchedFor(favourites)}
+                  </span>
+                )}
               </button>
               <button onClick={() => setFavouritesExpanded(v => !v)} className="flex-shrink-0 p-0.5 text-gray-500 hover:text-gray-300 transition-colors">
                 {favouritesExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
@@ -230,6 +247,7 @@ export default function Sidebar({ subscriptions, categories, onDataChange, authS
         {sortedCategories.map((cat) => {
           const channels = (categorizedChannels[cat.id] || []).filter(filterChannel);
           const allChannels = categorizedChannels[cat.id] || [];
+          const catUnwatched = unwatchedFor(allChannels);
           const isExpanded = expanded.has(cat.id);
           const tablerName = tablerClass(cat.icon);
 
@@ -245,6 +263,11 @@ export default function Sidebar({ subscriptions, categories, onDataChange, authS
                   <span className="bg-gray-800 text-gray-400 rounded px-1.5 py-0.5 text-[10px] border border-gray-700/50 flex-shrink-0">
                     {allChannels.length}
                   </span>
+                  {catUnwatched > 0 && (
+                    <span className="bg-red-900/60 text-red-300 rounded-full px-1.5 py-0.5 text-[10px] font-semibold flex-shrink-0">
+                      {catUnwatched}
+                    </span>
+                  )}
                 </button>
                 <button onClick={() => toggleCategory(cat.id)} className="flex-shrink-0 p-0.5 text-gray-500 hover:text-gray-300 transition-colors">
                   {isExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
