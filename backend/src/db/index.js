@@ -21,22 +21,31 @@ export async function initDb() {
   const retryDelay = 3000;
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    let client;
     try {
-      const client = await pool.connect();
+      client = await pool.connect();
       console.log(`[DB] Connected to PostgreSQL (attempt ${attempt})`);
-
-      const schemaPath = join(__dirname, 'schema.sql');
-      const schema = readFileSync(schemaPath, 'utf8');
-      await client.query(schema);
-      console.log('[DB] Schema initialized');
-      client.release();
-      return;
     } catch (err) {
       console.error(`[DB] Connection attempt ${attempt}/${maxRetries} failed:`, err.message);
-      if (attempt === maxRetries) {
-        throw new Error(`Failed to connect to database after ${maxRetries} attempts`);
-      }
+      if (attempt === maxRetries) throw new Error(`Failed to connect to database after ${maxRetries} attempts`);
       await new Promise(resolve => setTimeout(resolve, retryDelay));
+      continue;
+    }
+
+    try {
+      const schemaPath = join(__dirname, 'schema.sql');
+      const schema = readFileSync(schemaPath, 'utf8');
+      const statements = schema.split(/;\s*\n/).map(s => s.trim()).filter(s => s.length > 0);
+      for (const stmt of statements) {
+        await client.query(stmt);
+      }
+      console.log('[DB] Schema initialized');
+      return;
+    } catch (err) {
+      console.error('[DB] Schema error (not retrying):', err.message);
+      throw err;
+    } finally {
+      client.release();
     }
   }
 }
