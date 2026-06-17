@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+﻿import { useState, useMemo, useEffect } from 'react';
 import { version } from '../../package.json';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -148,7 +148,7 @@ export default function Sidebar({ subscriptions, categories, onDataChange, authS
       <nav className="p-2 border-b border-gray-700">
         <Link
           to="/"
-          className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+          className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium ${
             isActive('/') ? 'bg-red-600 text-white' : 'text-gray-400 hover:text-white hover:bg-[#242424]'
           }`}
         >
@@ -164,7 +164,7 @@ export default function Sidebar({ subscriptions, categories, onDataChange, authS
         </Link>
         <Link
           to="/settings"
-          className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+          className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium ${
             isActive('/settings') ? 'bg-red-600 text-white' : 'text-gray-400 hover:text-white hover:bg-[#242424]'
           }`}
         >
@@ -185,7 +185,7 @@ export default function Sidebar({ subscriptions, categories, onDataChange, authS
           <div className="flex items-center gap-1">
             <button
               onClick={allExpanded ? collapseAll : expandAll}
-              className="flex items-center justify-center p-1.5 rounded border border-gray-700 bg-[#242424] hover:bg-[#2e2e2e] hover:border-gray-500 text-gray-400 hover:text-white transition-colors"
+              className="flex items-center justify-center p-1.5 rounded border border-gray-700 bg-[#242424] hover:bg-[#2e2e2e] hover:border-gray-500 text-gray-400 hover:text-white"
               aria-label={allExpanded ? 'Collapse all categories' : 'Expand all categories'}
               title={allExpanded ? 'Collapse all' : 'Expand all'}
             >
@@ -195,7 +195,7 @@ export default function Sidebar({ subscriptions, categories, onDataChange, authS
               <button
                 onClick={handleSync}
                 disabled={syncing}
-                className="text-gray-500 hover:text-white p-1.5 rounded hover:bg-[#242424] transition-colors"
+                className="text-gray-500 hover:text-white p-1.5 rounded hover:bg-[#242424]"
                 aria-label="Sync subscriptions"
                 title="Sync subscriptions"
               >
@@ -221,7 +221,7 @@ export default function Sidebar({ subscriptions, categories, onDataChange, authS
         {/* Favourites virtual category */}
         {favourites.length > 0 && (
           <div>
-            <div className="flex items-center gap-2 w-full px-4 py-1.5 hover:bg-[#242424] transition-colors">
+            <div className="flex items-center gap-2 w-full px-4 py-1.5 hover:bg-[#242424]">
               <button
                 className="flex items-center gap-2 flex-1 text-left min-w-0"
                 onClick={() => navigate('/')}
@@ -239,7 +239,7 @@ export default function Sidebar({ subscriptions, categories, onDataChange, authS
               </button>
               <button
                 onClick={() => setFavouritesExpanded(v => !v)}
-                className="flex-shrink-0 p-1.5 text-gray-500 hover:text-gray-300 transition-colors"
+                className="flex-shrink-0 p-1.5 text-gray-500 hover:text-gray-300"
                 aria-label={favouritesExpanded ? 'Collapse favourites' : 'Expand favourites'}
               >
                 {favouritesExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
@@ -261,7 +261,7 @@ export default function Sidebar({ subscriptions, categories, onDataChange, authS
 
           return (
             <div key={cat.id}>
-              <div className={`flex items-center gap-2 w-full px-4 py-1.5 transition-colors ${location.pathname === `/category/${cat.id}` ? 'bg-[#2e2e2e]' : 'hover:bg-[#242424]'}`}>
+              <div className={`flex items-center gap-2 w-full px-4 py-1.5 ${location.pathname === `/category/${cat.id}` ? 'bg-[#2e2e2e]' : 'hover:bg-[#242424]'}`}>
                 <button
                   className="flex items-center gap-2 flex-1 text-left min-w-0"
                   onClick={() => navigate(`/category/${cat.id}`)}
@@ -279,7 +279,7 @@ export default function Sidebar({ subscriptions, categories, onDataChange, authS
                 </button>
                 <button
                   onClick={() => toggleCategory(cat.id)}
-                  className="flex-shrink-0 p-1.5 text-gray-500 hover:text-gray-300 transition-colors"
+                  className="flex-shrink-0 p-1.5 text-gray-500 hover:text-gray-300"
                   aria-label={isExpanded ? `Collapse ${cat.name}` : `Expand ${cat.name}`}
                 >
                   {isExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
@@ -326,7 +326,7 @@ function ChannelRow({ channel, showWatchedBadge, indent }) {
     <div style={{ contentVisibility: 'auto', containIntrinsicSize: '0 36px' }}>
     <Link
       to={`/channel/${channel.id}`}
-      className={`flex items-center gap-2 py-1.5 rounded-lg mx-1 transition-colors ${
+      className={`flex items-center gap-2 py-1.5 rounded-lg mx-1 ${
         isActive ? 'bg-[#2e2e2e]' : 'hover:bg-[#242424]'
       } ${indent ? 'pl-7 pr-3' : 'px-3'}`}
     >

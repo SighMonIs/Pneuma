@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+﻿import { useState, useMemo } from 'react';
 import { X, Search } from 'lucide-react';
 
 const TABLER_ICONS = [
@@ -66,7 +66,7 @@ export default function CategoryModal({ category, onSave, onClose }) {
           <h2 className="text-white font-semibold text-lg">
             {category ? 'Edit Category' : 'New Category'}
           </h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-white p-1 rounded-lg hover:bg-gray-800 transition-colors">
+          <button onClick={onClose} className="text-gray-500 hover:text-white p-1 rounded-lg hover:bg-gray-800">
             <X size={18} />
           </button>
         </div>
@@ -93,7 +93,7 @@ export default function CategoryModal({ category, onSave, onClose }) {
                 <button
                   key={c}
                   onClick={() => setColor(c)}
-                  className="w-7 h-7 rounded-full border-2 transition-all"
+                  className="w-7 h-7 rounded-full border-2"
                   style={{
                     backgroundColor: c,
                     borderColor: color === c ? 'white' : 'transparent',
@@ -135,7 +135,7 @@ export default function CategoryModal({ category, onSave, onClose }) {
                     key={iconName}
                     onClick={() => setSelectedIcon(iconName)}
                     title={iconName}
-                    className={`flex items-center justify-center w-8 h-8 rounded-lg transition-colors ${
+                    className={`flex items-center justify-center w-8 h-8 rounded-lg ${
                       isSelected ? 'text-white' : 'text-gray-400 hover:bg-[#2e2e2e] hover:text-white'
                     }`}
                     style={isSelected ? { backgroundColor: color } : {}}
@@ -164,13 +164,13 @@ export default function CategoryModal({ category, onSave, onClose }) {
         <div className="p-5 border-t border-gray-800 flex flex-col gap-3">
           {error && <p className="text-red-400 text-sm">{error}</p>}
           <div className="flex gap-3 justify-end">
-            <button onClick={onClose} className="px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg text-sm transition-colors">
+            <button onClick={onClose} className="px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg text-sm">
               Cancel
             </button>
             <button
               onClick={handleSave}
               disabled={saving}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors"
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-lg text-sm font-medium"
             >
               {saving ? 'Saving...' : 'Save'}
             </button>

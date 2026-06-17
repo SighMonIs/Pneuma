@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { Plus, Play, Trash2, RefreshCw, Clock, ToggleLeft, ToggleRight, X } from 'lucide-react';
 import { getJobs, createJob, updateJob, deleteJob, runJob } from '../services/api.js';
 
@@ -103,7 +103,7 @@ function JobForm({ onSave, onCancel }) {
             <button
               key={ex.value}
               onClick={() => setCronExpression(ex.value)}
-              className={`px-2 py-1 rounded text-xs transition-colors border ${
+              className={`px-2 py-1 rounded text-xs border ${
                 cronExpression === ex.value
                   ? 'bg-indigo-600/20 border-indigo-600/40 text-indigo-300'
                   : 'bg-[#242424] border-gray-700 text-gray-400 hover:text-white hover:border-gray-500'
@@ -120,14 +120,14 @@ function JobForm({ onSave, onCancel }) {
       <div className="flex gap-3 justify-end mt-4">
         <button
           onClick={onCancel}
-          className="px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg text-sm transition-colors"
+          className="px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg text-sm"
         >
           Cancel
         </button>
         <button
           onClick={handleSave}
           disabled={saving}
-          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors"
+          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-lg text-sm font-medium"
         >
           {saving ? 'Creating...' : 'Create Job'}
         </button>
@@ -159,7 +159,7 @@ function JobCard({ job, onUpdate, onDelete, onRun }) {
   };
 
   return (
-    <div className={`bg-[#1a1a1a] border rounded-xl p-4 transition-colors ${
+    <div className={`bg-[#1a1a1a] border rounded-xl p-4 ${
       job.enabled ? 'border-gray-800' : 'border-gray-800/50 opacity-60'
     }`}>
       <div className="flex items-start justify-between gap-4">
@@ -200,7 +200,7 @@ function JobCard({ job, onUpdate, onDelete, onRun }) {
           <button
             onClick={handleToggle}
             disabled={toggling}
-            className="text-gray-500 hover:text-white p-1.5 rounded-lg hover:bg-[#242424] transition-colors disabled:opacity-50"
+            className="text-gray-500 hover:text-white p-1.5 rounded-lg hover:bg-[#242424] disabled:opacity-50"
             title={job.enabled ? 'Disable job' : 'Enable job'}
           >
             {job.enabled
@@ -213,7 +213,7 @@ function JobCard({ job, onUpdate, onDelete, onRun }) {
           <button
             onClick={handleRun}
             disabled={running}
-            className="text-gray-500 hover:text-green-400 p-1.5 rounded-lg hover:bg-[#242424] transition-colors disabled:opacity-50"
+            className="text-gray-500 hover:text-green-400 p-1.5 rounded-lg hover:bg-[#242424] disabled:opacity-50"
             title="Run now"
           >
             {running
@@ -225,7 +225,7 @@ function JobCard({ job, onUpdate, onDelete, onRun }) {
           {/* Delete */}
           <button
             onClick={() => onDelete(job.id)}
-            className="text-gray-500 hover:text-red-400 p-1.5 rounded-lg hover:bg-[#242424] transition-colors"
+            className="text-gray-500 hover:text-red-400 p-1.5 rounded-lg hover:bg-[#242424]"
             title="Delete job"
           >
             <Trash2 size={15} />
@@ -291,7 +291,7 @@ export default function SchedulerPage() {
           {!showForm && (
             <button
               onClick={() => setShowForm(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium"
             >
               <Plus size={15} />
               Add Job

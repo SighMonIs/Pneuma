@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import * as LucideIcons from 'lucide-react';
 import { saveCookies, importCsv, addChannel } from '../services/api.js';
 
@@ -34,7 +34,7 @@ export default function SetupPage({ onComplete }) {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3.5 text-sm font-medium transition-colors ${
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3.5 text-sm font-medium ${
                   activeTab === tab.id
                     ? 'text-white border-b-2 border-red-500 bg-[#242424]'
                     : 'text-gray-500 hover:text-gray-300'
@@ -111,7 +111,7 @@ function CookiesPanel({ onComplete }) {
       <button
         onClick={handleSave}
         disabled={!content.trim() || saving}
-        className="flex items-center justify-center gap-2 w-full py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg text-sm font-medium transition-colors"
+        className="flex items-center justify-center gap-2 w-full py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg text-sm font-medium"
       >
         {saving ? (
           <><LucideIcons.RefreshCw size={14} className="animate-spin" /> Saving...</>
@@ -169,7 +169,7 @@ function CsvPanel({ onComplete }) {
         </p>
       </div>
 
-      <label className="flex items-center gap-2 px-3 py-2 bg-[#242424] border border-gray-700 rounded-lg text-gray-400 text-sm cursor-pointer hover:border-gray-500 hover:text-gray-200 transition-colors w-fit">
+      <label className="flex items-center gap-2 px-3 py-2 bg-[#242424] border border-gray-700 rounded-lg text-gray-400 text-sm cursor-pointer hover:border-gray-500 hover:text-gray-200 w-fit">
         <LucideIcons.Upload size={14} />
         Choose file
         <input type="file" accept=".csv" onChange={handleFile} className="hidden" />
@@ -198,7 +198,7 @@ function CsvPanel({ onComplete }) {
       <button
         onClick={handleImport}
         disabled={!content.trim() || importing}
-        className="flex items-center justify-center gap-2 w-full py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg text-sm font-medium transition-colors"
+        className="flex items-center justify-center gap-2 w-full py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg text-sm font-medium"
       >
         {importing ? (
           <><LucideIcons.RefreshCw size={14} className="animate-spin" /> Importing...</>
@@ -252,7 +252,7 @@ function ManualPanel({ onComplete }) {
         <button
           onClick={handleAdd}
           disabled={!url.trim() || adding}
-          className="flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg text-sm font-medium transition-colors"
+          className="flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg text-sm font-medium"
         >
           {adding
             ? <LucideIcons.RefreshCw size={14} className="animate-spin" />
@@ -281,7 +281,7 @@ function ManualPanel({ onComplete }) {
       {added.length > 0 && (
         <button
           onClick={onComplete}
-          className="flex items-center justify-center gap-2 w-full py-2.5 bg-[#242424] hover:bg-[#2e2e2e] border border-gray-700 text-white rounded-lg text-sm font-medium transition-colors"
+          className="flex items-center justify-center gap-2 w-full py-2.5 bg-[#242424] hover:bg-[#2e2e2e] border border-gray-700 text-white rounded-lg text-sm font-medium"
         >
           <LucideIcons.ArrowRight size={14} />
           Go to app ({added.length} channel{added.length !== 1 ? 's' : ''} added)

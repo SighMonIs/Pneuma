@@ -44,7 +44,7 @@ export default function SettingsPage({ authStatus, onAuthChange, onDataChange, c
           <button
             key={id}
             onClick={() => setActiveTab(id)}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px ${
               activeTab === id
                 ? 'border-red-500 text-white'
                 : 'border-transparent text-gray-500 hover:text-gray-300'
@@ -87,9 +87,9 @@ function Toggle({ checked, onChange }) {
   return (
     <button
       onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ${checked ? 'bg-red-600' : 'bg-gray-700'}`}
+      className={`relative inline-flex h-6 w-11 items-center rounded-full flex-shrink-0 ${checked ? 'bg-red-600' : 'bg-gray-700'}`}
     >
-      <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${checked ? 'translate-x-6' : 'translate-x-1'}`} />
+      <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow ${checked ? 'translate-x-6' : 'translate-x-1'}`} />
     </button>
   );
 }
@@ -122,7 +122,7 @@ function DisplayTab() {
           ].map(opt => (
             <label
               key={opt.value}
-              className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+              className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer ${
                 videoMode === opt.value
                   ? 'border-red-600/50 bg-red-600/10'
                   : 'border-gray-700 hover:border-gray-600 bg-[#242424]'
@@ -161,7 +161,7 @@ function DisplayTab() {
           {QUALITY_OPTIONS.map(opt => (
             <label
               key={opt.value}
-              className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+              className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer ${
                 quality === opt.value
                   ? 'border-red-600/50 bg-red-600/10'
                   : 'border-gray-700 hover:border-gray-600 bg-[#242424]'
@@ -254,7 +254,7 @@ function ChannelDefaultsSection() {
         <button
           onClick={handleReset}
           disabled={resetting}
-          className="flex items-center gap-1.5 px-3 py-2 bg-[#242424] hover:bg-[#2e2e2e] border border-gray-700 text-gray-300 rounded-lg text-sm transition-colors disabled:opacity-50 w-fit"
+          className="flex items-center gap-1.5 px-3 py-2 bg-[#242424] hover:bg-[#2e2e2e] border border-gray-700 text-gray-300 rounded-lg text-sm disabled:opacity-50 w-fit"
         >
           {resetting ? <RefreshCw size={13} className="animate-spin" /> : <RotateCcw size={13} />}
           Reset all channels to defaults
@@ -335,7 +335,7 @@ function JobForm({ onSave, onCancel }) {
         <div className="flex flex-wrap gap-1.5">
           {CRON_EXAMPLES.map(ex => (
             <button key={ex.value} onClick={() => setCronExpression(ex.value)}
-              className={`px-2 py-1 rounded text-xs transition-colors border ${cronExpression === ex.value ? 'bg-indigo-600/20 border-indigo-600/40 text-indigo-300' : 'bg-[#242424] border-gray-700 text-gray-400 hover:text-white hover:border-gray-500'}`}>
+              className={`px-2 py-1 rounded text-xs border ${cronExpression === ex.value ? 'bg-indigo-600/20 border-indigo-600/40 text-indigo-300' : 'bg-[#242424] border-gray-700 text-gray-400 hover:text-white hover:border-gray-500'}`}>
               {ex.label} <span className="font-mono text-gray-600 ml-1">{ex.value}</span>
             </button>
           ))}
@@ -343,9 +343,9 @@ function JobForm({ onSave, onCancel }) {
       </div>
       {error && <p className="text-red-400 text-sm mt-3">{error}</p>}
       <div className="flex gap-3 justify-end mt-4">
-        <button onClick={onCancel} className="px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg text-sm transition-colors">Cancel</button>
+        <button onClick={onCancel} className="px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg text-sm">Cancel</button>
         <button onClick={handleSave} disabled={saving}
-          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors">
+          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-lg text-sm font-medium">
           {saving ? 'Creatingâ€¦' : 'Create Job'}
         </button>
       </div>
@@ -368,7 +368,7 @@ function JobCard({ job, onUpdate, onDelete, onRun }) {
   };
 
   return (
-    <div className={`bg-[#1a1a1a] border rounded-xl p-4 transition-colors ${job.enabled ? 'border-gray-700' : 'border-gray-800/50 opacity-60'}`}>
+    <div className={`bg-[#1a1a1a] border rounded-xl p-4 ${job.enabled ? 'border-gray-700' : 'border-gray-800/50 opacity-60'}`}>
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
@@ -388,15 +388,15 @@ function JobCard({ job, onUpdate, onDelete, onRun }) {
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">
           <button onClick={handleToggle} disabled={toggling} title={job.enabled ? 'Disable' : 'Enable'}
-            className="text-gray-500 hover:text-white p-1.5 rounded-lg hover:bg-[#242424] transition-colors disabled:opacity-50">
+            className="text-gray-500 hover:text-white p-1.5 rounded-lg hover:bg-[#242424] disabled:opacity-50">
             {job.enabled ? <ToggleRight size={18} className="text-green-500" /> : <ToggleLeft size={18} />}
           </button>
           <button onClick={handleRun} disabled={running} title="Run now"
-            className="text-gray-500 hover:text-green-400 p-1.5 rounded-lg hover:bg-[#242424] transition-colors disabled:opacity-50">
+            className="text-gray-500 hover:text-green-400 p-1.5 rounded-lg hover:bg-[#242424] disabled:opacity-50">
             {running ? <RefreshCw size={15} className="animate-spin" /> : <Play size={15} />}
           </button>
           <button onClick={() => onDelete(job.id)} title="Delete"
-            className="text-gray-500 hover:text-red-400 p-1.5 rounded-lg hover:bg-[#242424] transition-colors">
+            className="text-gray-500 hover:text-red-400 p-1.5 rounded-lg hover:bg-[#242424]">
             <Trash2 size={15} />
           </button>
         </div>
@@ -447,7 +447,7 @@ function SchedulerTab() {
         <p className="text-gray-400 text-sm">Automate subscription syncs and video fetching</p>
         {!showForm && (
           <button onClick={() => setShowForm(true)}
-            className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition-colors">
+            className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium">
             <Plus size={14} /> Add Job
           </button>
         )}
@@ -572,7 +572,7 @@ function FetchSettingsSection() {
             <button
               onClick={handleSave}
               disabled={saving || (mode === 'date' && !date)}
-              className="flex items-center gap-1.5 px-3 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg text-sm font-medium transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg text-sm font-medium"
             >
               {saving ? <RefreshCw size={13} className="animate-spin" /> : <Check size={13} />}
               Save default
@@ -580,7 +580,7 @@ function FetchSettingsSection() {
             <button
               onClick={handleApplyAll}
               disabled={applying}
-              className="flex items-center gap-1.5 px-3 py-2 bg-[#242424] hover:bg-[#2e2e2e] border border-gray-700 text-gray-300 rounded-lg text-sm transition-colors disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3 py-2 bg-[#242424] hover:bg-[#2e2e2e] border border-gray-700 text-gray-300 rounded-lg text-sm disabled:opacity-50"
             >
               {applying ? <RefreshCw size={13} className="animate-spin" /> : <RotateCcw size={13} />}
               Apply to all channels
@@ -636,14 +636,14 @@ function CategoriesTab({ categories, onDataChange }) {
         <div className="flex gap-2">
           <button
             onClick={() => setManageMode(true)}
-            className="flex items-center gap-1.5 px-3 py-2 bg-[#242424] hover:bg-[#2e2e2e] border border-gray-700 text-gray-300 rounded-lg text-sm transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 bg-[#242424] hover:bg-[#2e2e2e] border border-gray-700 text-gray-300 rounded-lg text-sm"
           >
             <ListChecks size={14} />
             Manage Feeds
           </button>
           <button
             onClick={() => { setEditingCat(null); setShowModal(true); }}
-            className="flex items-center gap-1.5 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium"
           >
             <Plus size={14} />
             New Category
@@ -671,7 +671,7 @@ function CategoriesTab({ categories, onDataChange }) {
                   <button
                     onClick={() => handleReorder(cat, 'up')}
                     disabled={idx === 0}
-                    className="text-gray-600 hover:text-gray-400 p-1.5 rounded disabled:opacity-30 transition-colors"
+                    className="text-gray-600 hover:text-gray-400 p-1.5 rounded disabled:opacity-30"
                     aria-label={`Move ${cat.name} up`}
                     title="Move up"
                   >
@@ -680,7 +680,7 @@ function CategoriesTab({ categories, onDataChange }) {
                   <button
                     onClick={() => handleReorder(cat, 'down')}
                     disabled={idx === sorted.length - 1}
-                    className="text-gray-600 hover:text-gray-400 p-1.5 rounded disabled:opacity-30 transition-colors"
+                    className="text-gray-600 hover:text-gray-400 p-1.5 rounded disabled:opacity-30"
                     aria-label={`Move ${cat.name} down`}
                     title="Move down"
                   >
@@ -688,7 +688,7 @@ function CategoriesTab({ categories, onDataChange }) {
                   </button>
                   <button
                     onClick={() => { setEditingCat(cat); setShowModal(true); }}
-                    className="text-gray-600 hover:text-gray-300 p-1.5 rounded transition-colors ml-1"
+                    className="text-gray-600 hover:text-gray-300 p-1.5 rounded ml-1"
                     aria-label={`Edit ${cat.name}`}
                     title="Edit"
                   >
@@ -696,7 +696,7 @@ function CategoriesTab({ categories, onDataChange }) {
                   </button>
                   <button
                     onClick={() => handleDelete(cat)}
-                    className="text-gray-600 hover:text-red-400 p-1.5 rounded transition-colors"
+                    className="text-gray-600 hover:text-red-400 p-1.5 rounded"
                     aria-label={`Delete ${cat.name}`}
                     title="Delete"
                   >
@@ -784,11 +784,11 @@ function ManageFeedsView({ categories, onBack, onDataChange }) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <button onClick={onBack} className="flex items-center gap-1.5 text-gray-400 hover:text-white text-sm transition-colors">
+        <button onClick={onBack} className="flex items-center gap-1.5 text-gray-400 hover:text-white text-sm">
           <ArrowLeft size={14} />
           Back to categories
         </button>
-        <button onClick={toggleAll} className="text-xs text-gray-500 hover:text-gray-300 transition-colors">
+        <button onClick={toggleAll} className="text-xs text-gray-500 hover:text-gray-300">
           {allSelected ? 'Deselect all' : 'Select all'}
         </button>
       </div>
@@ -821,12 +821,12 @@ function ManageFeedsView({ categories, onBack, onDataChange }) {
             <button
               onClick={handleSave}
               disabled={!setCatId || applying}
-              className="flex items-center gap-1 px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg text-sm font-medium transition-colors flex-shrink-0"
+              className="flex items-center gap-1 px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg text-sm font-medium flex-shrink-0"
             >
               {applying ? <RefreshCw size={12} className="animate-spin" /> : <Check size={12} />}
               Save
             </button>
-            <button onClick={handleCancel} className="px-3 py-1.5 bg-[#242424] hover:bg-[#2e2e2e] border border-gray-700 text-gray-400 rounded-lg text-sm transition-colors flex-shrink-0">
+            <button onClick={handleCancel} className="px-3 py-1.5 bg-[#242424] hover:bg-[#2e2e2e] border border-gray-700 text-gray-400 rounded-lg text-sm flex-shrink-0">
               Cancel
             </button>
           </div>
@@ -849,7 +849,7 @@ function ManageFeedsView({ categories, onBack, onDataChange }) {
             return (
               <div
                 key={sub.id}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg ${
                   isSelected ? 'bg-red-600/10 border border-red-600/30' : 'hover:bg-[#1e1e1e] border border-transparent'
                 }`}
               >
@@ -870,7 +870,7 @@ function ManageFeedsView({ categories, onBack, onDataChange }) {
                 {label && <span className="text-gray-600 text-xs truncate max-w-[120px] flex-shrink-0">{label}</span>}
                 <button
                   onClick={() => navigate(`/channel/${sub.id}`)}
-                  className="text-gray-600 hover:text-gray-400 p-1 rounded transition-colors flex-shrink-0"
+                  className="text-gray-600 hover:text-gray-400 p-1 rounded flex-shrink-0"
                   title="Open channel page"
                 >
                   <ExternalLink size={12} />
@@ -964,7 +964,7 @@ function ChannelErrorsSection() {
         <button
           onClick={handleClearAll}
           disabled={clearingAll}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-400 hover:text-white bg-[#242424] border border-gray-700 rounded-lg transition-colors disabled:opacity-50 flex-shrink-0"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-400 hover:text-white bg-[#242424] border border-gray-700 rounded-lg disabled:opacity-50 flex-shrink-0"
         >
           {clearingAll ? <RefreshCw size={11} className="animate-spin" /> : <X size={11} />}
           Dismiss all
@@ -1003,7 +1003,7 @@ function ChannelErrorsSection() {
                   <button
                     onClick={() => handleRemove(ch.id)}
                     disabled={isRemoving || isDismissing}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium bg-red-600 hover:bg-red-700 text-white rounded-lg disabled:opacity-50"
                   >
                     {isRemoving ? <RefreshCw size={11} className="animate-spin" /> : <Trash2 size={11} />}
                     Remove channel
@@ -1012,7 +1012,7 @@ function ChannelErrorsSection() {
                 <button
                   onClick={() => handleDismiss(ch.id)}
                   disabled={isDismissing || isRemoving}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-gray-400 hover:text-white bg-[#1a1a1a] border border-gray-700 rounded-lg transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-gray-400 hover:text-white bg-[#1a1a1a] border border-gray-700 rounded-lg disabled:opacity-50"
                 >
                   {isDismissing ? <RefreshCw size={11} className="animate-spin" /> : <X size={11} />}
                   Dismiss
@@ -1056,7 +1056,7 @@ function DangerAction({ title, description, confirmText, onConfirm, buttonLabel,
         {!confirming && !done && (
           <button
             onClick={() => setConfirming(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-950 hover:bg-red-900/60 border border-red-800 text-red-400 hover:text-red-300 rounded-lg text-xs font-medium transition-colors flex-shrink-0"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-950 hover:bg-red-900/60 border border-red-800 text-red-400 hover:text-red-300 rounded-lg text-xs font-medium flex-shrink-0"
           >
             <Trash2 size={12} />
             {buttonLabel}
@@ -1090,7 +1090,7 @@ function DangerAction({ title, description, confirmText, onConfirm, buttonLabel,
             <button
               onClick={handleRun}
               disabled={running || (needsDate && !date)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white rounded-lg text-xs font-medium transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white rounded-lg text-xs font-medium"
             >
               {running ? <RefreshCw size={11} className="animate-spin" /> : <AlertTriangle size={11} />}
               {running ? 'Runningâ€¦' : 'Confirm'}
@@ -1098,7 +1098,7 @@ function DangerAction({ title, description, confirmText, onConfirm, buttonLabel,
             <button
               onClick={() => { setConfirming(false); setError(''); setDate(''); }}
               disabled={running}
-              className="px-3 py-1.5 bg-[#242424] hover:bg-[#2e2e2e] border border-gray-700 text-gray-400 rounded-lg text-xs transition-colors disabled:opacity-50"
+              className="px-3 py-1.5 bg-[#242424] hover:bg-[#2e2e2e] border border-gray-700 text-gray-400 rounded-lg text-xs disabled:opacity-50"
             >
               Cancel
             </button>
@@ -1174,7 +1174,7 @@ function DangerZoneSection() {
             {!purgeAllConfirming && !purgeAllDone && (
               <button
                 onClick={() => setPurgeAllConfirming(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-red-950 hover:bg-red-900/60 border border-red-800 text-red-400 hover:text-red-300 rounded-lg text-xs font-medium transition-colors flex-shrink-0"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-red-950 hover:bg-red-900/60 border border-red-800 text-red-400 hover:text-red-300 rounded-lg text-xs font-medium flex-shrink-0"
               >
                 <Trash2 size={12} />
                 Purge &amp; Fetch
@@ -1202,7 +1202,7 @@ function DangerZoneSection() {
                 <button
                   onClick={handlePurgeAll}
                   disabled={purgeAllRunning}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white rounded-lg text-xs font-medium transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white rounded-lg text-xs font-medium"
                 >
                   {purgeAllRunning ? <RefreshCw size={11} className="animate-spin" /> : <AlertTriangle size={11} />}
                   {purgeAllRunning ? 'Purgingâ€¦' : 'Yes, purge everything'}
@@ -1210,7 +1210,7 @@ function DangerZoneSection() {
                 <button
                   onClick={() => { setPurgeAllConfirming(false); setPurgeAllError(''); }}
                   disabled={purgeAllRunning}
-                  className="px-3 py-1.5 bg-[#242424] hover:bg-[#2e2e2e] border border-gray-700 text-gray-400 rounded-lg text-xs transition-colors disabled:opacity-50"
+                  className="px-3 py-1.5 bg-[#242424] hover:bg-[#2e2e2e] border border-gray-700 text-gray-400 rounded-lg text-xs disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -1260,7 +1260,7 @@ export function FetchSincePicker({ mode, date, onModeChange, onDateChange, showD
       {options.map(opt => (
         <label
           key={opt.value}
-          className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+          className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer ${
             mode === opt.value
               ? 'border-red-600/50 bg-red-600/10'
               : 'border-gray-700 hover:border-gray-600 bg-[#242424]'
@@ -1353,25 +1353,25 @@ function CookiesSection({ authStatus, onAuthChange, onDataChange }) {
         <div className="flex flex-col gap-3">
           <textarea value={content} onChange={e => setContent(e.target.value)} placeholder="# Netscape HTTP Cookie File&#10;..." rows={6} className="w-full bg-[#0f0f0f] border border-gray-700 rounded-lg p-3 text-gray-300 text-xs font-mono placeholder-gray-700 focus:outline-none focus:border-gray-600 resize-none" />
           <div className="flex gap-2">
-            <button onClick={handleSave} disabled={!content.trim() || saving} className="flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg text-sm font-medium transition-colors">
+            <button onClick={handleSave} disabled={!content.trim() || saving} className="flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg text-sm font-medium">
               {saving ? <RefreshCw size={13} className="animate-spin" /> : <Check size={13} />} Save
             </button>
-            <button onClick={() => { setEditing(false); setContent(''); setError(''); }} className="px-4 py-2 bg-[#242424] hover:bg-[#2e2e2e] text-gray-400 rounded-lg text-sm transition-colors">Cancel</button>
+            <button onClick={() => { setEditing(false); setContent(''); setError(''); }} className="px-4 py-2 bg-[#242424] hover:bg-[#2e2e2e] text-gray-400 rounded-lg text-sm">Cancel</button>
           </div>
         </div>
       ) : (
         <div className="flex flex-col gap-3">
           <div className="flex flex-wrap gap-2">
             {authStatus?.hasCookies && (
-              <button onClick={() => setShowSyncOptions(v => !v)} className="flex items-center gap-1.5 px-3 py-2 bg-[#242424] hover:bg-[#2e2e2e] border border-gray-700 text-gray-300 rounded-lg text-sm transition-colors">
+              <button onClick={() => setShowSyncOptions(v => !v)} className="flex items-center gap-1.5 px-3 py-2 bg-[#242424] hover:bg-[#2e2e2e] border border-gray-700 text-gray-300 rounded-lg text-sm">
                 <RefreshCw size={13} />Sync subscriptions
               </button>
             )}
-            <button onClick={() => setEditing(true)} className="flex items-center gap-1.5 px-3 py-2 bg-[#242424] hover:bg-[#2e2e2e] border border-gray-700 text-gray-300 rounded-lg text-sm transition-colors">
+            <button onClick={() => setEditing(true)} className="flex items-center gap-1.5 px-3 py-2 bg-[#242424] hover:bg-[#2e2e2e] border border-gray-700 text-gray-300 rounded-lg text-sm">
               <Cookie size={13} />{authStatus?.hasCookies ? 'Update cookies' : 'Set cookies'}
             </button>
             {authStatus?.hasCookies && (
-              <button onClick={handleDelete} disabled={removing} className="flex items-center gap-1.5 px-3 py-2 bg-[#242424] hover:bg-red-900/30 border border-gray-700 hover:border-red-800 text-gray-500 hover:text-red-400 rounded-lg text-sm transition-colors">
+              <button onClick={handleDelete} disabled={removing} className="flex items-center gap-1.5 px-3 py-2 bg-[#242424] hover:bg-red-900/30 border border-gray-700 hover:border-red-800 text-gray-500 hover:text-red-400 rounded-lg text-sm">
                 <Trash2 size={13} />Remove
               </button>
             )}
@@ -1383,7 +1383,7 @@ function CookiesSection({ authStatus, onAuthChange, onDataChange }) {
               <button
                 onClick={handleSync}
                 disabled={syncing || (syncMode === 'date' && !syncDate)}
-                className="flex items-center gap-1.5 px-3 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg text-sm font-medium transition-colors w-fit"
+                className="flex items-center gap-1.5 px-3 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg text-sm font-medium w-fit"
               >
                 {syncing ? <RefreshCw size={13} className="animate-spin" /> : <RefreshCw size={13} />}
                 {syncing ? 'Syncing...' : 'Sync now'}
@@ -1424,11 +1424,11 @@ function AddChannelSection({ onDataChange }) {
     <SectionCard title="Add Channel" description="Add a YouTube channel by URL or @handle" icon={Plus}>
       <div className="flex gap-2 mb-3">
         <input type="text" value={url} onChange={e => setUrl(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAdd()} placeholder="https://youtube.com/@channelname" className="flex-1 bg-[#0f0f0f] border border-gray-700 rounded-lg px-3 py-2 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-gray-600" />
-        <button onClick={handleAdd} disabled={!url.trim() || adding || (mode === 'date' && !date)} className="flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg text-sm font-medium transition-colors">
+        <button onClick={handleAdd} disabled={!url.trim() || adding || (mode === 'date' && !date)} className="flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg text-sm font-medium">
           {adding ? <RefreshCw size={13} className="animate-spin" /> : <Plus size={13} />} Add
         </button>
       </div>
-      <button onClick={() => setShowOptions(v => !v)} className="flex items-center gap-1.5 text-gray-500 hover:text-gray-300 text-xs mb-3 transition-colors">
+      <button onClick={() => setShowOptions(v => !v)} className="flex items-center gap-1.5 text-gray-500 hover:text-gray-300 text-xs mb-3">
         <Calendar size={12} />
         {showOptions ? 'Hide fetch options' : 'Set fetch range'}
       </button>
@@ -1478,12 +1478,12 @@ function ImportCsvSection({ onDataChange }) {
 
   return (
     <SectionCard title="Import from Google Takeout" description="Import your subscription list from a Google Takeout subscriptions.csv export" icon={FileSpreadsheet}>
-      <label className="flex items-center gap-2 px-3 py-2 bg-[#242424] border border-gray-700 rounded-lg text-gray-400 text-sm cursor-pointer hover:border-gray-600 hover:text-gray-200 transition-colors w-fit mb-3">
+      <label className="flex items-center gap-2 px-3 py-2 bg-[#242424] border border-gray-700 rounded-lg text-gray-400 text-sm cursor-pointer hover:border-gray-600 hover:text-gray-200 w-fit mb-3">
         <Upload size={13} />Choose CSV file
         <input type="file" accept=".csv" onChange={handleFile} className="hidden" />
       </label>
       <textarea value={content} onChange={e => setContent(e.target.value)} placeholder="Channel Id,Channel Url,Channel Title&#10;UCxxxxxx,..." rows={4} className="w-full bg-[#0f0f0f] border border-gray-700 rounded-lg p-3 text-gray-300 text-xs font-mono placeholder-gray-700 focus:outline-none focus:border-gray-600 resize-none mb-3" />
-      <button onClick={() => setShowOptions(v => !v)} className="flex items-center gap-1.5 text-gray-500 hover:text-gray-300 text-xs mb-3 transition-colors">
+      <button onClick={() => setShowOptions(v => !v)} className="flex items-center gap-1.5 text-gray-500 hover:text-gray-300 text-xs mb-3">
         <Calendar size={12} />
         {showOptions ? 'Hide fetch options' : 'Set fetch range'}
       </button>
@@ -1495,7 +1495,7 @@ function ImportCsvSection({ onDataChange }) {
       )}
       {error && <div className="flex items-center gap-2 text-red-400 text-sm bg-red-900/20 border border-red-800 rounded-lg p-3 mb-3"><AlertCircle size={13} />{error}</div>}
       {result && <div className="flex items-center gap-2 text-green-400 text-sm bg-green-900/20 border border-green-800 rounded-lg p-3 mb-3"><Check size={13} />Imported {result.count} channels{result.errors?.length > 0 ? ` (${result.errors.length} failed)` : ''}</div>}
-      <button onClick={handleImport} disabled={!content.trim() || importing || (mode === 'date' && !date)} className="flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg text-sm font-medium transition-colors">
+      <button onClick={handleImport} disabled={!content.trim() || importing || (mode === 'date' && !date)} className="flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg text-sm font-medium">
         {importing ? <RefreshCw size={13} className="animate-spin" /> : <ArrowRight size={13} />}{importing ? 'Importing...' : 'Import'}
       </button>
     </SectionCard>

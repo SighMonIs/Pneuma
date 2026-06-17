@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Check, RotateCcw, Play } from 'lucide-react';
 import { markWatched, unmarkWatched } from '../services/api.js';
 
@@ -69,13 +69,13 @@ export default function VideoCard({ video, onWatchedChange, videoMode = 'youtube
   const publishDate = formatPublishDate(video.published_at);
 
   return (
-    <div className="flex flex-col bg-[#242424] rounded-lg overflow-hidden hover:bg-[#2e2e2e] cursor-pointer group transition-colors">
+    <div className="flex flex-col bg-[#242424] rounded-lg overflow-hidden hover:bg-[#2e2e2e] cursor-pointer group">
       <div className="relative aspect-video bg-[#1a1a1a]">
         <div className="block w-full h-full" onClick={handleVideoClick}>
           <img
             src={thumbnailUrl}
             alt={video.title}
-            className={`w-full h-full object-cover transition-opacity ${isWatched ? 'opacity-50' : 'opacity-100'}`}
+            className={`w-full h-full object-cover ${isWatched ? 'opacity-50' : 'opacity-100'}`}
             loading="lazy"
             decoding="async"
             onError={e => {
@@ -94,7 +94,7 @@ export default function VideoCard({ video, onWatchedChange, videoMode = 'youtube
             </div>
           )}
 
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 group-hover:opacity-100">
             <div className="bg-red-600/75 rounded-full p-3">
               <Play size={26} className="text-white fill-white ml-0.5" />
             </div>
@@ -125,7 +125,7 @@ export default function VideoCard({ video, onWatchedChange, videoMode = 'youtube
         <button
           onClick={handleWatchedToggle}
           disabled={toggling}
-          className={`absolute top-1.5 right-1.5 p-1.5 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity ${
+          className={`absolute top-1.5 right-1.5 p-1.5 rounded-full text-white opacity-0 group-hover:opacity-100 ${
             isWatched ? 'bg-green-600 hover:bg-gray-700' : 'bg-black/70 hover:bg-green-600'
           }`}
           aria-label={isWatched ? 'Mark as unwatched' : 'Mark as watched'}

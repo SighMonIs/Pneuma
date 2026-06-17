@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+﻿import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Search, Scissors, Eye, RefreshCw, X,
   ArrowLeft, ExternalLink, Maximize2, Minimize2, PictureInPicture2,
@@ -100,7 +100,7 @@ function VideoTableRow({ video, onWatchedChange, videoMode, onVideoSelect, thumb
   const thumbnailUrl = `https://i.ytimg.com/vi/${video.id}/${thumbnailQuality}.jpg`;
 
   return (
-    <tr className={`border-b border-gray-800/50 hover:bg-[#1a1a1a] transition-colors group ${isWatched ? 'opacity-50' : ''}`}>
+    <tr className={`border-b border-gray-800/50 hover:bg-[#1a1a1a] group ${isWatched ? 'opacity-50' : ''}`}>
       <td className="py-2 px-3">
         <div onClick={handleClick} className="cursor-pointer">
           <div className="relative w-20 rounded overflow-hidden bg-gray-800" style={{ aspectRatio: '16/9' }}>
@@ -134,7 +134,7 @@ function VideoTableRow({ video, onWatchedChange, videoMode, onVideoSelect, thumb
         <button
           onClick={handleWatchedToggle}
           disabled={toggling}
-          className={`p-1.5 rounded-full transition-colors ${isWatched ? 'text-green-400 hover:text-gray-400' : 'text-gray-700 group-hover:text-gray-500 hover:text-green-400'}`}
+          className={`p-1.5 rounded-full ${isWatched ? 'text-green-400 hover:text-gray-400' : 'text-gray-700 group-hover:text-gray-500 hover:text-green-400'}`}
           aria-label={isWatched ? 'Mark unwatched' : 'Mark watched'}
           title={isWatched ? 'Mark unwatched' : 'Mark watched'}
         >
@@ -290,7 +290,7 @@ export default function Dashboard({ subscriptions, categories }) {
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search videos, channels..."
-              className="w-full bg-[#1a1a1a] border border-gray-700 rounded-lg pl-9 pr-3 py-2 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-red-600/60 transition-colors"
+              className="w-full bg-[#1a1a1a] border border-gray-700 rounded-lg pl-9 pr-3 py-2 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-red-600/60"
             />
             {search && (
               <button onClick={() => setSearch('')} aria-label="Clear search" className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white">
@@ -301,7 +301,7 @@ export default function Dashboard({ subscriptions, categories }) {
           <button
             onClick={handleFetchVideos}
             disabled={fetching}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm bg-[#1a1a1a] border border-gray-700 text-gray-400 hover:text-white hover:border-gray-500 disabled:opacity-50 transition-colors flex-shrink-0"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm bg-[#1a1a1a] border border-gray-700 text-gray-400 hover:text-white hover:border-gray-500 disabled:opacity-50 flex-shrink-0"
           >
             <RefreshCw size={14} className={fetching ? 'animate-spin' : ''} />
             {fetching ? 'Fetching...' : 'Fetch Videos'}
@@ -312,7 +312,7 @@ export default function Dashboard({ subscriptions, categories }) {
         <div className="flex items-center gap-2 mt-2 flex-wrap">
           <button
             onClick={() => setHideShorts(!hideShorts)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-colors border ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border ${
               hideShorts ? 'bg-red-600/20 border-red-600/50 text-red-400' : 'bg-[#1a1a1a] border-gray-700 text-gray-400 hover:text-white hover:border-gray-500'
             }`}
           >
@@ -321,7 +321,7 @@ export default function Dashboard({ subscriptions, categories }) {
 
           <button
             onClick={() => setHideWatched(!hideWatched)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-colors border ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border ${
               hideWatched ? 'bg-indigo-600/20 border-indigo-600/50 text-indigo-400' : 'bg-[#1a1a1a] border-gray-700 text-gray-400 hover:text-white hover:border-gray-500'
             }`}
           >
@@ -343,7 +343,7 @@ export default function Dashboard({ subscriptions, categories }) {
             </select>
             <button
               onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
-              className="flex items-center gap-1 px-2.5 py-1.5 bg-[#1a1a1a] border border-gray-700 text-gray-400 hover:text-white rounded-lg text-xs transition-colors"
+              className="flex items-center gap-1 px-2.5 py-1.5 bg-[#1a1a1a] border border-gray-700 text-gray-400 hover:text-white rounded-lg text-xs"
               aria-label={sortOrder === 'desc' ? 'Sort ascending' : 'Sort descending'}
               title={sortOrder === 'desc' ? 'Descending' : 'Ascending'}
             >
@@ -356,7 +356,7 @@ export default function Dashboard({ subscriptions, categories }) {
           <div className="flex items-center bg-[#1a1a1a] border border-gray-700 rounded-lg overflow-hidden" role="group" aria-label="View mode">
             <button
               onClick={() => setViewMode('grid')}
-              className={`flex items-center gap-1 px-2.5 py-1.5 text-xs transition-colors ${viewMode === 'grid' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-white'}`}
+              className={`flex items-center gap-1 px-2.5 py-1.5 text-xs ${viewMode === 'grid' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-white'}`}
               aria-pressed={viewMode === 'grid'}
               aria-label="Grid view"
             >
@@ -364,7 +364,7 @@ export default function Dashboard({ subscriptions, categories }) {
             </button>
             <button
               onClick={() => setViewMode('table')}
-              className={`flex items-center gap-1 px-2.5 py-1.5 text-xs transition-colors ${viewMode === 'table' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-white'}`}
+              className={`flex items-center gap-1 px-2.5 py-1.5 text-xs ${viewMode === 'table' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-white'}`}
               aria-pressed={viewMode === 'table'}
               aria-label="Table view"
             >
@@ -385,7 +385,7 @@ export default function Dashboard({ subscriptions, categories }) {
               <span className="text-gray-500">{progressPct}%</span>
             </div>
             <div className="w-full bg-gray-800 rounded-full h-1.5 overflow-hidden">
-              <div className="bg-red-600 h-1.5 rounded-full transition-all duration-500" style={{ width: `${progressPct}%` }} />
+              <div className="bg-red-600 h-1.5 rounded-full" style={{ width: `${progressPct}%` }} />
             </div>
           </div>
         )}
@@ -397,11 +397,11 @@ export default function Dashboard({ subscriptions, categories }) {
             <span className="text-red-400 text-xs">{fetchErrors.length} channel{fetchErrors.length !== 1 ? 's' : ''} failed to fetch</span>
             <button
               onClick={() => setShowErrorModal(true)}
-              className="text-xs text-gray-400 hover:text-white underline transition-colors"
+              className="text-xs text-gray-400 hover:text-white underline"
             >
               Show errors
             </button>
-            <button onClick={() => setFetchErrors([])} className="ml-auto text-gray-700 hover:text-gray-400 transition-colors">
+            <button onClick={() => setFetchErrors([])} className="ml-auto text-gray-700 hover:text-gray-400">
               <X size={13} />
             </button>
           </div>
@@ -486,7 +486,7 @@ export default function Dashboard({ subscriptions, categories }) {
                 <button
                   onClick={() => { if (page < totalPages && !loadingMore) loadVideos(page + 1, true); }}
                   disabled={loadingMore}
-                  className="px-6 py-3 bg-[#1a1a1a] border border-gray-700 text-gray-300 hover:text-white hover:border-gray-500 rounded-lg text-sm transition-colors disabled:opacity-50"
+                  className="px-6 py-3 bg-[#1a1a1a] border border-gray-700 text-gray-300 hover:text-white hover:border-gray-500 rounded-lg text-sm disabled:opacity-50"
                 >
                   {loadingMore ? <span className="flex items-center gap-2"><RefreshCw size={14} className="animate-spin" />Loading...</span> : `Load More (${total - videos.length} remaining)`}
                 </button>
@@ -511,7 +511,7 @@ export default function Dashboard({ subscriptions, categories }) {
                 <button
                   onClick={() => { if (page < totalPages && !loadingMore) loadVideos(page + 1, true); }}
                   disabled={loadingMore}
-                  className="px-6 py-3 bg-[#1a1a1a] border border-gray-700 text-gray-300 hover:text-white hover:border-gray-500 rounded-lg text-sm transition-colors disabled:opacity-50"
+                  className="px-6 py-3 bg-[#1a1a1a] border border-gray-700 text-gray-300 hover:text-white hover:border-gray-500 rounded-lg text-sm disabled:opacity-50"
                 >
                   {loadingMore ? <span className="flex items-center gap-2"><RefreshCw size={14} className="animate-spin" />Loading...</span> : `Load More (${total - videos.length} remaining)`}
                 </button>
@@ -531,20 +531,20 @@ export default function Dashboard({ subscriptions, categories }) {
                 <h2 id="error-modal-title" className="text-white font-semibold">Fetch Errors</h2>
                 <span className="text-gray-500 text-sm">({fetchErrors.length})</span>
               </div>
-              <button onClick={() => setShowErrorModal(false)} aria-label="Close" className="text-gray-500 hover:text-white p-1 rounded-lg hover:bg-gray-800 transition-colors">
+              <button onClick={() => setShowErrorModal(false)} aria-label="Close" className="text-gray-500 hover:text-white p-1 rounded-lg hover:bg-gray-800">
                 <X size={18} />
               </button>
             </div>
             <div className="overflow-y-auto flex-1 p-2">
               {fetchErrors.map((e, i) => (
-                <div key={i} className="flex flex-col gap-1 px-3 py-3 rounded-lg hover:bg-[#242424] transition-colors">
+                <div key={i} className="flex flex-col gap-1 px-3 py-3 rounded-lg hover:bg-[#242424]">
                   <span className="text-white text-sm font-medium">{e.channelTitle}</span>
                   <span className="text-red-400 text-xs font-mono break-all">{e.message}</span>
                 </div>
               ))}
             </div>
             <div className="p-4 border-t border-gray-800 flex-shrink-0">
-              <button onClick={() => setShowErrorModal(false)} className="px-4 py-2 bg-[#242424] hover:bg-[#2e2e2e] border border-gray-700 text-gray-300 rounded-lg text-sm transition-colors">
+              <button onClick={() => setShowErrorModal(false)} className="px-4 py-2 bg-[#242424] hover:bg-[#2e2e2e] border border-gray-700 text-gray-300 rounded-lg text-sm">
                 Close
               </button>
             </div>
@@ -670,7 +670,7 @@ function VideoPlayerView({ video, showComments, onBack, onWatchedChange, onProgr
   return (
     <main className="flex-1 min-h-screen flex flex-col">
       <div className="sticky top-0 z-10 bg-[#0f0f0f] border-b border-gray-700 px-6 py-3 flex items-center gap-3">
-        <button onClick={handleBack} className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors text-sm flex-shrink-0">
+        <button onClick={handleBack} className="flex items-center gap-2 text-gray-400 hover:text-white text-sm flex-shrink-0">
           <ArrowLeft size={16} /> Back
         </button>
         <div className="flex-1 min-w-0">
@@ -679,27 +679,27 @@ function VideoPlayerView({ video, showComments, onBack, onWatchedChange, onProgr
         <div className="flex items-center gap-1 bg-[#1a1a1a] border border-gray-700 rounded-lg overflow-hidden flex-shrink-0">
           <button
             onClick={() => onSizeChange('normal')}
-            className={`flex items-center gap-1 px-2.5 py-1.5 text-xs transition-colors ${!isFull ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-white'}`}
+            className={`flex items-center gap-1 px-2.5 py-1.5 text-xs ${!isFull ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-white'}`}
             title="Normal"
           >
             <Minimize2 size={12} /> Normal
           </button>
           <button
             onClick={() => onSizeChange('full')}
-            className={`flex items-center gap-1 px-2.5 py-1.5 text-xs transition-colors ${isFull ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-white'}`}
+            className={`flex items-center gap-1 px-2.5 py-1.5 text-xs ${isFull ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-white'}`}
             title="Full view"
           >
             <Maximize2 size={12} /> Full
           </button>
           <button
             onClick={handleSwitchToFloat}
-            className="flex items-center gap-1 px-2.5 py-1.5 text-xs text-gray-500 hover:text-white transition-colors"
+            className="flex items-center gap-1 px-2.5 py-1.5 text-xs text-gray-500 hover:text-white"
             title="Float"
           >
             <PictureInPicture2 size={12} /> Float
           </button>
         </div>
-        <a href={ytUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-gray-500 hover:text-white text-sm transition-colors flex-shrink-0">
+        <a href={ytUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-gray-500 hover:text-white text-sm flex-shrink-0">
           <ExternalLink size={14} /> YouTube
         </a>
       </div>
@@ -733,7 +733,7 @@ function VideoPlayerView({ video, showComments, onBack, onWatchedChange, onProgr
             {showComments && (
               <div className="mt-2 flex items-center justify-between bg-[#1a1a1a] border border-gray-700 rounded-xl px-4 py-3">
                 <p className="text-gray-500 text-sm">Comments are only available on YouTube.</p>
-                <a href={ytUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium flex-shrink-0 ml-4 transition-colors">
+                <a href={ytUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium flex-shrink-0 ml-4">
                   <ExternalLink size={13} /> View comments
                 </a>
               </div>
@@ -842,10 +842,10 @@ function FloatingPlayer({ video, showComments, onClose, onExpand, onWatchedChang
     <div className="fixed bottom-4 right-4 z-50 rounded-xl overflow-hidden shadow-2xl border border-gray-700 bg-black w-72">
       <div className="bg-[#1a1a1a] px-3 py-2 flex items-center gap-2">
         <p className="text-white text-xs truncate flex-1">{video.title}</p>
-        <button onClick={handleExpand} aria-label="Expand player" className="text-gray-400 hover:text-white transition-colors flex-shrink-0">
+        <button onClick={handleExpand} aria-label="Expand player" className="text-gray-400 hover:text-white flex-shrink-0">
           <Maximize2 size={13} />
         </button>
-        <button onClick={onClose} aria-label="Close player" className="text-gray-400 hover:text-white transition-colors flex-shrink-0">
+        <button onClick={onClose} aria-label="Close player" className="text-gray-400 hover:text-white flex-shrink-0">
           <X size={13} />
         </button>
       </div>

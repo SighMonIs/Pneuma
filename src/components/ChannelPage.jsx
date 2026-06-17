@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+﻿import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, ExternalLink, RefreshCw, Check, Eye, EyeOff, Scissors,
@@ -86,7 +86,7 @@ function VideoTableRow({ video, onWatchedChange, videoMode, onVideoSelect, thumb
   const ytUrl = `https://www.youtube.com/watch?v=${video.id}`;
 
   return (
-    <tr className={`border-b border-gray-800/50 hover:bg-[#1a1a1a] transition-colors group ${isWatched ? 'opacity-50' : ''}`}>
+    <tr className={`border-b border-gray-800/50 hover:bg-[#1a1a1a] group ${isWatched ? 'opacity-50' : ''}`}>
       <td className="py-2 px-3">
         <a href={ytUrl} onClick={handleClick} className="block" target="_blank" rel="noopener noreferrer">
           <div className="relative w-20 rounded overflow-hidden bg-gray-800" style={{ aspectRatio: '16/9' }}>
@@ -111,7 +111,7 @@ function VideoTableRow({ video, onWatchedChange, videoMode, onVideoSelect, thumb
         <button
           onClick={handleWatchedToggle}
           disabled={toggling}
-          className={`p-1.5 rounded-full transition-colors ${isWatched ? 'text-green-400 hover:text-gray-400' : 'text-gray-700 group-hover:text-gray-500 hover:text-green-400'}`}
+          className={`p-1.5 rounded-full ${isWatched ? 'text-green-400 hover:text-gray-400' : 'text-gray-700 group-hover:text-gray-500 hover:text-green-400'}`}
           aria-label={isWatched ? 'Mark unwatched' : 'Mark watched'}
           title={isWatched ? 'Mark unwatched' : 'Mark watched'}
         >
@@ -367,7 +367,7 @@ export default function ChannelPage({ subscriptions, categories, onDataChange })
         <span className="text-gray-400 text-sm truncate flex-1 min-w-0 font-medium">{channel.title}</span>
         <button
           onClick={() => setShowSettings(v => !v)}
-          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs transition-colors border ${
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs border ${
             showSettings
               ? 'bg-gray-700 border-gray-600 text-white'
               : 'bg-[#1a1a1a] border-gray-700 text-gray-400 hover:text-white hover:border-gray-600'
@@ -392,9 +392,9 @@ export default function ChannelPage({ subscriptions, categories, onDataChange })
                 </div>
                 <button
                   onClick={() => handleToggleBanner(!showBanner)}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ml-3 ${showBanner ? 'bg-red-600' : 'bg-gray-700'}`}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full flex-shrink-0 ml-3 ${showBanner ? 'bg-red-600' : 'bg-gray-700'}`}
                 >
-                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${showBanner ? 'translate-x-6' : 'translate-x-1'}`} />
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow ${showBanner ? 'translate-x-6' : 'translate-x-1'}`} />
                 </button>
               </div>
 
@@ -406,9 +406,9 @@ export default function ChannelPage({ subscriptions, categories, onDataChange })
                 </div>
                 <button
                   onClick={() => handleToggleAbout(!showAboutSection)}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ml-3 ${showAboutSection ? 'bg-red-600' : 'bg-gray-700'}`}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full flex-shrink-0 ml-3 ${showAboutSection ? 'bg-red-600' : 'bg-gray-700'}`}
                 >
-                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${showAboutSection ? 'translate-x-6' : 'translate-x-1'}`} />
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow ${showAboutSection ? 'translate-x-6' : 'translate-x-1'}`} />
                 </button>
               </div>
             </div>
@@ -417,7 +417,7 @@ export default function ChannelPage({ subscriptions, categories, onDataChange })
               <button
                 onClick={handleRefreshInfo}
                 disabled={refreshingInfo}
-                className="flex items-center gap-1.5 px-3 py-2 bg-[#242424] hover:bg-[#2e2e2e] border border-gray-700 text-gray-300 rounded-lg text-sm transition-colors disabled:opacity-50"
+                className="flex items-center gap-1.5 px-3 py-2 bg-[#242424] hover:bg-[#2e2e2e] border border-gray-700 text-gray-300 rounded-lg text-sm disabled:opacity-50"
               >
                 <RefreshCw size={13} className={refreshingInfo ? 'animate-spin' : ''} />
                 Refresh channel info
@@ -425,7 +425,7 @@ export default function ChannelPage({ subscriptions, categories, onDataChange })
 
               <button
                 onClick={() => setShowDeleteConfirm(true)}
-                className="flex items-center gap-1.5 px-3 py-2 bg-red-950/50 hover:bg-red-900/40 border border-red-800 text-red-400 hover:text-red-300 rounded-lg text-sm transition-colors"
+                className="flex items-center gap-1.5 px-3 py-2 bg-red-950/50 hover:bg-red-900/40 border border-red-800 text-red-400 hover:text-red-300 rounded-lg text-sm"
               >
                 <Trash2 size={13} /> Remove channel
               </button>
@@ -473,7 +473,7 @@ export default function ChannelPage({ subscriptions, categories, onDataChange })
               <h1 className="text-white text-xl font-bold truncate">{channel.title}</h1>
               <button
                 onClick={handleToggleFavourite}
-                className={`flex-shrink-0 transition-colors ${isFavourite ? 'text-yellow-400' : 'text-gray-600 hover:text-yellow-400'}`}
+                className={`flex-shrink-0 ${isFavourite ? 'text-yellow-400' : 'text-gray-600 hover:text-yellow-400'}`}
                 aria-label={isFavourite ? 'Remove from favourites' : 'Add to favourites'}
                 title={isFavourite ? 'Remove from favourites' : 'Add to favourites'}
               >
@@ -501,7 +501,7 @@ export default function ChannelPage({ subscriptions, categories, onDataChange })
             href={ytChannelUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors"
+            className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium"
           >
             <ExternalLink size={13} /> YouTube
           </a>
@@ -512,7 +512,7 @@ export default function ChannelPage({ subscriptions, categories, onDataChange })
           <div className="mt-4">
             <button
               onClick={() => setShowAbout(v => !v)}
-              className="flex items-center gap-1.5 text-gray-400 hover:text-white text-sm transition-colors mb-2"
+              className="flex items-center gap-1.5 text-gray-400 hover:text-white text-sm mb-2"
             >
               {showAbout ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
               About
@@ -536,7 +536,7 @@ export default function ChannelPage({ subscriptions, categories, onDataChange })
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search videos…"
-              className="w-full bg-[#1a1a1a] border border-gray-700 rounded-lg pl-3 pr-3 py-2 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-red-600/60 transition-colors"
+              className="w-full bg-[#1a1a1a] border border-gray-700 rounded-lg pl-3 pr-3 py-2 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-red-600/60"
             />
             {search && (
               <button onClick={() => setSearch('')} aria-label="Clear search" className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white">
@@ -548,7 +548,7 @@ export default function ChannelPage({ subscriptions, categories, onDataChange })
           <button
             onClick={handleFetchChannel}
             disabled={fetching}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm bg-[#1a1a1a] border border-gray-700 text-gray-400 hover:text-white hover:border-gray-500 disabled:opacity-50 transition-colors flex-shrink-0"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm bg-[#1a1a1a] border border-gray-700 text-gray-400 hover:text-white hover:border-gray-500 disabled:opacity-50 flex-shrink-0"
           >
             <RefreshCw size={13} className={fetching ? 'animate-spin' : ''} />
             {fetching ? 'Fetching…' : 'Fetch this channel'}
@@ -557,7 +557,7 @@ export default function ChannelPage({ subscriptions, categories, onDataChange })
           <button
             onClick={handleMarkAllWatched}
             disabled={markingAll}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm bg-[#1a1a1a] border border-gray-700 text-gray-400 hover:text-white hover:border-gray-500 disabled:opacity-50 transition-colors flex-shrink-0"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm bg-[#1a1a1a] border border-gray-700 text-gray-400 hover:text-white hover:border-gray-500 disabled:opacity-50 flex-shrink-0"
           >
             <Check size={13} />
             {markingAll ? 'Marking…' : 'Mark all watched'}
@@ -568,7 +568,7 @@ export default function ChannelPage({ subscriptions, categories, onDataChange })
         <div className="flex items-center gap-2 mt-2 flex-wrap">
           <button
             onClick={() => setHideShorts(!hideShorts)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-colors border ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border ${
               hideShorts ? 'bg-red-600/20 border-red-600/50 text-red-400' : 'bg-[#1a1a1a] border-gray-700 text-gray-400 hover:text-white hover:border-gray-500'
             }`}
           >
@@ -576,7 +576,7 @@ export default function ChannelPage({ subscriptions, categories, onDataChange })
           </button>
           <button
             onClick={() => setHideWatched(!hideWatched)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-colors border ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border ${
               hideWatched ? 'bg-indigo-600/20 border-indigo-600/50 text-indigo-400' : 'bg-[#1a1a1a] border-gray-700 text-gray-400 hover:text-white hover:border-gray-500'
             }`}
           >
@@ -598,7 +598,7 @@ export default function ChannelPage({ subscriptions, categories, onDataChange })
             </select>
             <button
               onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
-              className="flex items-center gap-1 px-2.5 py-1.5 bg-[#1a1a1a] border border-gray-700 text-gray-400 hover:text-white rounded-lg text-xs transition-colors"
+              className="flex items-center gap-1 px-2.5 py-1.5 bg-[#1a1a1a] border border-gray-700 text-gray-400 hover:text-white rounded-lg text-xs"
               aria-label={sortOrder === 'desc' ? 'Sort ascending' : 'Sort descending'}
             >
               {sortOrder === 'desc' ? <ArrowDown size={12} /> : <ArrowUp size={12} />}
@@ -610,7 +610,7 @@ export default function ChannelPage({ subscriptions, categories, onDataChange })
           <div className="flex items-center bg-[#1a1a1a] border border-gray-700 rounded-lg overflow-hidden" role="group" aria-label="View mode">
             <button
               onClick={() => setViewMode('grid')}
-              className={`flex items-center gap-1 px-2.5 py-1.5 text-xs transition-colors ${viewMode === 'grid' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-white'}`}
+              className={`flex items-center gap-1 px-2.5 py-1.5 text-xs ${viewMode === 'grid' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-white'}`}
               aria-pressed={viewMode === 'grid'}
               aria-label="Grid view"
             >
@@ -618,7 +618,7 @@ export default function ChannelPage({ subscriptions, categories, onDataChange })
             </button>
             <button
               onClick={() => setViewMode('table')}
-              className={`flex items-center gap-1 px-2.5 py-1.5 text-xs transition-colors ${viewMode === 'table' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-white'}`}
+              className={`flex items-center gap-1 px-2.5 py-1.5 text-xs ${viewMode === 'table' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-white'}`}
               aria-pressed={viewMode === 'table'}
               aria-label="Table view"
             >
@@ -727,7 +727,7 @@ export default function ChannelPage({ subscriptions, categories, onDataChange })
                 <button
                   onClick={() => { if (!loadingMore) loadVideos(page + 1, true); }}
                   disabled={loadingMore}
-                  className="px-6 py-3 bg-[#1a1a1a] border border-gray-700 text-gray-300 hover:text-white hover:border-gray-500 rounded-lg text-sm transition-colors disabled:opacity-50"
+                  className="px-6 py-3 bg-[#1a1a1a] border border-gray-700 text-gray-300 hover:text-white hover:border-gray-500 rounded-lg text-sm disabled:opacity-50"
                 >
                   {loadingMore ? 'Loading…' : `Load More (${total - videos.length} remaining)`}
                 </button>
@@ -751,7 +751,7 @@ export default function ChannelPage({ subscriptions, categories, onDataChange })
                 <button
                   onClick={() => { if (!loadingMore) loadVideos(page + 1, true); }}
                   disabled={loadingMore}
-                  className="px-6 py-3 bg-[#1a1a1a] border border-gray-700 text-gray-300 hover:text-white hover:border-gray-500 rounded-lg text-sm transition-colors disabled:opacity-50"
+                  className="px-6 py-3 bg-[#1a1a1a] border border-gray-700 text-gray-300 hover:text-white hover:border-gray-500 rounded-lg text-sm disabled:opacity-50"
                 >
                   {loadingMore ? 'Loading…' : `Load More (${total - videos.length} remaining)`}
                 </button>
@@ -813,14 +813,14 @@ function DeleteModal({ channelTitle, deleting, onCancel, onConfirm }) {
           <button
             onClick={onCancel}
             disabled={deleting}
-            className="px-4 py-2 text-sm text-gray-400 hover:text-white bg-[#242424] border border-gray-700 rounded-lg transition-colors disabled:opacity-50"
+            className="px-4 py-2 text-sm text-gray-400 hover:text-white bg-[#242424] border border-gray-700 rounded-lg disabled:opacity-50"
           >
             Cancel
           </button>
           <button
             onClick={onConfirm}
             disabled={deleting}
-            className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1.5"
+            className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg disabled:opacity-50 flex items-center gap-1.5"
           >
             {deleting ? <><RefreshCw size={12} className="animate-spin" /> Deleting…</> : <><Trash2 size={12} /> Remove channel</>}
           </button>

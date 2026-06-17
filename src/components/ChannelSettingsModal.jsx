@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { X, Plus, RotateCcw, Calendar } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { updateSubscription, updateChannelCategories, createCategory, getSettings } from '../services/api.js';
@@ -79,7 +79,7 @@ export default function ChannelSettingsModal({ channel, categories, onSave, onCl
           <h2 className="text-white font-semibold">Channel Settings</h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-white p-1 rounded-lg hover:bg-gray-800 transition-colors"
+            className="text-gray-500 hover:text-white p-1 rounded-lg hover:bg-gray-800"
           >
             <X size={18} />
           </button>
@@ -118,12 +118,12 @@ export default function ChannelSettingsModal({ channel, categories, onSave, onCl
             </div>
             <button
               onClick={() => setHideShorts(!hideShorts)}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+              className={`relative inline-flex h-6 w-11 items-center rounded-full ${
                 hideShorts ? 'bg-red-600' : 'bg-gray-700'
               }`}
             >
               <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                className={`inline-block h-4 w-4 transform rounded-full bg-white shadow ${
                   hideShorts ? 'translate-x-6' : 'translate-x-1'
                 }`}
               />
@@ -140,7 +140,7 @@ export default function ChannelSettingsModal({ channel, categories, onSave, onCl
               {fetchMode !== 'default' && (
                 <button
                   onClick={() => { setFetchMode('default'); setFetchDate(''); }}
-                  className="flex items-center gap-1 text-gray-500 hover:text-gray-300 text-xs transition-colors"
+                  className="flex items-center gap-1 text-gray-500 hover:text-gray-300 text-xs"
                   title="Reset to default"
                 >
                   <RotateCcw size={11} />
@@ -164,7 +164,7 @@ export default function ChannelSettingsModal({ channel, categories, onSave, onCl
               <p className="text-white text-sm font-medium">Categories</p>
               <button
                 onClick={() => setShowNewCatModal(true)}
-                className="text-gray-500 hover:text-white p-1 rounded hover:bg-gray-800 transition-colors"
+                className="text-gray-500 hover:text-white p-1 rounded hover:bg-gray-800"
                 title="New category"
               >
                 <Plus size={14} />
@@ -178,7 +178,7 @@ export default function ChannelSettingsModal({ channel, categories, onSave, onCl
                   return (
                     <label
                       key={cat.id}
-                      className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[#242424] cursor-pointer transition-colors"
+                      className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[#242424] cursor-pointer"
                     >
                       <input
                         type="checkbox"
@@ -204,14 +204,14 @@ export default function ChannelSettingsModal({ channel, categories, onSave, onCl
           <div className="flex gap-3 justify-end">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg text-sm transition-colors"
+              className="px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg text-sm"
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
               disabled={saving || (fetchMode === 'date' && !fetchDate)}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors"
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-lg text-sm font-medium"
             >
               {saving ? 'Saving...' : 'Save'}
             </button>
