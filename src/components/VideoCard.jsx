@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { Check, RotateCcw, Play } from 'lucide-react';
 import { markWatched, unmarkWatched } from '../services/api.js';
 

@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Search, Scissors, Eye, RefreshCw, X,
   ArrowLeft, ExternalLink, Maximize2, Minimize2, PictureInPicture2,

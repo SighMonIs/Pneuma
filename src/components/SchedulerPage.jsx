@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Play, Trash2, RefreshCw, Clock, ToggleLeft, ToggleRight, X } from 'lucide-react';
 import { getJobs, createJob, updateJob, deleteJob, runJob } from '../services/api.js';
 

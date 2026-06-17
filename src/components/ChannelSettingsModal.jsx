@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Plus, RotateCcw, Calendar } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { updateSubscription, updateChannelCategories, createCategory, getSettings } from '../services/api.js';

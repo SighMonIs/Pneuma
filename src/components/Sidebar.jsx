@@ -1,4 +1,4 @@
-﻿import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { version } from '../../package.json';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
