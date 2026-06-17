@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import {
-  ArrowLeft, Search, Scissors, Eye, EyeOff, RefreshCw,
+  Search, Scissors, Eye, EyeOff, RefreshCw,
   ArrowDown, ArrowUp, LayoutGrid, List, Check, RotateCcw, X,
 } from 'lucide-react';
 import { getVideos } from '../services/api.js';
@@ -52,7 +52,7 @@ function formatViewCount(count) {
 
 import { markWatched, unmarkWatched } from '../services/api.js';
 
-function VideoTableRow({ video, onWatchedChange, videoMode }) {
+function VideoTableRow({ video, onWatchedChange }) {
   const [isWatched, setIsWatched] = useState(video.is_watched);
   const [toggling, setToggling] = useState(false);
 
@@ -118,11 +118,9 @@ const SORT_OPTIONS = [
 
 export default function CategoryPage({ subscriptions, categories }) {
   const { id } = useParams();
-  const navigate = useNavigate();
   const categoryId = parseInt(id);
 
   const category = categories?.find(c => c.id === categoryId);
-  const channelsInCategory = (subscriptions || []).filter(s => (s.category_ids || []).includes(categoryId));
 
   const [videos, setVideos] = useState([]);
   const [total, setTotal] = useState(0);
@@ -192,47 +190,31 @@ export default function CategoryPage({ subscriptions, categories }) {
 
   return (
     <main className="flex-1 min-h-screen flex flex-col">
-      {/* Header */}
+      {/* Sticky header: category title + filter bar */}
       <div className="sticky top-0 z-10 bg-[#0f0f0f]/95 backdrop-blur border-b border-gray-700">
-        {/* Top bar */}
+        {/* Title bar */}
         <div className="flex items-center gap-3 px-6 py-3">
-          <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors text-sm flex-shrink-0">
-            <ArrowLeft size={16} /> Back
-          </button>
-          <div className="flex items-center gap-2.5 flex-1 min-w-0">
-            {category ? (
-              <>
-                <i className={`ti ti-${tablerName} flex-shrink-0`} style={{ fontSize: 20, color: category.color }} />
-                <h1 className="text-white font-semibold text-lg truncate">{category.name}</h1>
-                <span className="text-gray-500 text-sm flex-shrink-0">{total.toLocaleString()} video{total !== 1 ? 's' : ''}</span>
-              </>
-            ) : (
-              <span className="text-gray-500 text-sm">Category not found</span>
-            )}
-          </div>
+          {category ? (
+            <>
+              <i className={`ti ti-${tablerName} flex-shrink-0`} style={{ fontSize: 20, color: category.color }} />
+              <h1 className="text-white font-semibold text-lg truncate flex-1 min-w-0">{category.name}</h1>
+              {!loading && <span className="text-gray-500 text-sm flex-shrink-0">{total.toLocaleString()} video{total !== 1 ? 's' : ''}</span>}
+            </>
+          ) : (
+            <span className="text-gray-500 text-sm">Category not found</span>
+          )}
         </div>
 
-        {/* Channels in this category */}
-        {channelsInCategory.length > 0 && (
-          <div className="px-6 pb-3 flex gap-2 overflow-x-auto scrollbar-none">
-            {channelsInCategory.map(sub => (
-              <Link
-                key={sub.id}
-                to={`/channel/${sub.id}`}
-                className="flex items-center gap-1.5 bg-[#1a1a1a] border border-gray-700 hover:border-gray-500 rounded-full px-2.5 py-1 text-xs text-gray-300 hover:text-white transition-colors flex-shrink-0"
-              >
-                {sub.thumbnail_url
-                  ? <img src={sub.thumbnail_url} className="w-4 h-4 rounded-full object-cover" />
-                  : <div className="w-4 h-4 rounded-full bg-gray-700 flex items-center justify-center"><span className="text-[8px] text-gray-400">{sub.title?.[0]}</span></div>
-                }
-                {sub.title}
-              </Link>
-            ))}
+        {/* Progress bar */}
+        {loading && (
+          <div className="h-0.5 w-full bg-gray-800 overflow-hidden">
+            <div className="h-full bg-red-500" style={{ width: '40%', animation: 'indeterminate 1.4s ease-in-out infinite' }} />
           </div>
         )}
+        <style>{`@keyframes indeterminate{0%{transform:translateX(-100%)}100%{transform:translateX(350%)}}`}</style>
 
         {/* Filter bar */}
-        <div className="px-6 pb-3 flex items-center gap-2 flex-wrap border-t border-gray-800 pt-3">
+        <div className="px-6 py-3 flex items-center gap-2 flex-wrap border-t border-gray-800">
           <div className="relative flex-1 min-w-[180px]">
             <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
             <input
@@ -240,7 +222,7 @@ export default function CategoryPage({ subscriptions, categories }) {
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search videos..."
-              className="w-full bg-[#1a1a1a] border border-gray-700 rounded-lg pl-8 pr-3 py-1.5 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-red-600/60 transition-colors"
+              className="w-full bg-[#1a1a1a] border border-gray-700 rounded-lg pl-8 pr-3 py-2 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-red-600/60 transition-colors"
             />
             {search && (
               <button onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white">
@@ -255,7 +237,7 @@ export default function CategoryPage({ subscriptions, categories }) {
               hideShorts ? 'bg-red-600/20 border-red-600/50 text-red-400' : 'bg-[#1a1a1a] border-gray-700 text-gray-400 hover:text-white hover:border-gray-500'
             }`}
           >
-            <Scissors size={13} /> Hide Shorts
+            <Scissors size={12} /> Hide Shorts
           </button>
 
           <button
@@ -264,7 +246,7 @@ export default function CategoryPage({ subscriptions, categories }) {
               hideWatched ? 'bg-indigo-600/20 border-indigo-600/50 text-indigo-400' : 'bg-[#1a1a1a] border-gray-700 text-gray-400 hover:text-white hover:border-gray-500'
             }`}
           >
-            {hideWatched ? <EyeOff size={13} /> : <Eye size={13} />}
+            {hideWatched ? <EyeOff size={12} /> : <Eye size={12} />}
             {hideWatched ? 'Show Watched' : 'Hide Watched'}
           </button>
 
@@ -283,7 +265,7 @@ export default function CategoryPage({ subscriptions, categories }) {
               onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
               className="flex items-center gap-1 px-2.5 py-1.5 bg-[#1a1a1a] border border-gray-700 text-gray-400 hover:text-white rounded-lg text-xs transition-colors"
             >
-              {sortOrder === 'desc' ? <ArrowDown size={13} /> : <ArrowUp size={13} />}
+              {sortOrder === 'desc' ? <ArrowDown size={12} /> : <ArrowUp size={12} />}
               {sortOrder === 'desc' ? 'Desc' : 'Asc'}
             </button>
           </div>
@@ -293,13 +275,13 @@ export default function CategoryPage({ subscriptions, categories }) {
               onClick={() => setViewMode('grid')}
               className={`flex items-center gap-1 px-2.5 py-1.5 text-xs transition-colors ${viewMode === 'grid' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-white'}`}
             >
-              <LayoutGrid size={13} /> Grid
+              <LayoutGrid size={12} /> Grid
             </button>
             <button
               onClick={() => setViewMode('table')}
               className={`flex items-center gap-1 px-2.5 py-1.5 text-xs transition-colors ${viewMode === 'table' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-white'}`}
             >
-              <List size={13} /> Table
+              <List size={12} /> Table
             </button>
           </div>
         </div>

@@ -1,10 +1,9 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
-  LayoutDashboard, Clock, Settings, RefreshCw, Search,
+  LayoutDashboard, Settings, RefreshCw, Search,
   ChevronDown, ChevronRight, Star,
 } from 'lucide-react';
-import ChannelSettingsModal from './ChannelSettingsModal.jsx';
 import { syncSubscriptions, updateSubscription } from '../services/api.js';
 
 function tablerClass(iconName) {
@@ -28,7 +27,6 @@ export default function Sidebar({ subscriptions, categories, onDataChange, authS
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [syncing, setSyncing] = useState(false);
-  const [channelSettingsModal, setChannelSettingsModal] = useState(null);
   const showWatchedBadge = loadBool('pneuma_show_watched_badge', true);
 
   const isActive = (path) => location.pathname === path;
@@ -151,15 +149,6 @@ export default function Sidebar({ subscriptions, categories, onDataChange, authS
           Dashboard
         </Link>
         <Link
-          to="/scheduler"
-          className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-            isActive('/scheduler') ? 'bg-red-600 text-white' : 'text-gray-400 hover:text-white hover:bg-[#242424]'
-          }`}
-        >
-          <Clock size={16} />
-          Scheduler
-        </Link>
-        <Link
           to="/settings"
           className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
             isActive('/settings') ? 'bg-red-600 text-white' : 'text-gray-400 hover:text-white hover:bg-[#242424]'
@@ -182,7 +171,7 @@ export default function Sidebar({ subscriptions, categories, onDataChange, authS
           <div className="flex items-center gap-1">
             <button
               onClick={allExpanded ? collapseAll : expandAll}
-              className="text-gray-500 hover:text-white p-1 rounded hover:bg-[#242424] transition-colors text-[10px] font-medium"
+              className="flex items-center justify-center w-5 h-5 rounded border border-gray-700 bg-[#242424] hover:bg-[#2e2e2e] hover:border-gray-500 text-gray-400 hover:text-white transition-colors text-[11px] font-bold leading-none"
               title={allExpanded ? 'Collapse all' : 'Expand all'}
             >
               {allExpanded ? '−' : '+'}
@@ -227,19 +216,12 @@ export default function Sidebar({ subscriptions, categories, onDataChange, authS
                   {favourites.length}
                 </span>
               </button>
-              <button onClick={() => setFavouritesExpanded(v => !v)} className="flex-shrink-0 p-0.5 text-gray-600 hover:text-gray-400">
-                {favouritesExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+              <button onClick={() => setFavouritesExpanded(v => !v)} className="flex-shrink-0 p-0.5 text-gray-500 hover:text-gray-300 transition-colors">
+                {favouritesExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
               </button>
             </div>
             {favouritesExpanded && favourites.filter(filterChannel).map(sub => (
-              <ChannelRow
-                key={sub.id}
-                channel={sub}
-                onSettings={() => setChannelSettingsModal(sub)}
-                onToggleFavourite={handleToggleFavourite}
-                showWatchedBadge={showWatchedBadge}
-                indent
-              />
+              <ChannelRow key={sub.id} channel={sub} showWatchedBadge={showWatchedBadge} indent />
             ))}
           </div>
         )}
@@ -264,20 +246,13 @@ export default function Sidebar({ subscriptions, categories, onDataChange, authS
                     {allChannels.length}
                   </span>
                 </button>
-                <button onClick={() => toggleCategory(cat.id)} className="flex-shrink-0 p-0.5 text-gray-600 hover:text-gray-400">
-                  {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                <button onClick={() => toggleCategory(cat.id)} className="flex-shrink-0 p-0.5 text-gray-500 hover:text-gray-300 transition-colors">
+                  {isExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
                 </button>
               </div>
 
               {isExpanded && channels.map(sub => (
-                <ChannelRow
-                  key={sub.id}
-                  channel={sub}
-                  onSettings={() => setChannelSettingsModal(sub)}
-                  onToggleFavourite={handleToggleFavourite}
-                  showWatchedBadge={showWatchedBadge}
-                  indent
-                />
+                <ChannelRow key={sub.id} channel={sub} showWatchedBadge={showWatchedBadge} indent />
               ))}
             </div>
           );
@@ -291,13 +266,7 @@ export default function Sidebar({ subscriptions, categories, onDataChange, authS
               <span className="bg-gray-800 text-gray-400 rounded px-1.5 py-0.5 text-[10px] border border-gray-700/50">{uncategorized.length}</span>
             </div>
             {uncategorized.filter(filterChannel).map(sub => (
-              <ChannelRow
-                key={sub.id}
-                channel={sub}
-                onSettings={() => setChannelSettingsModal(sub)}
-                onToggleFavourite={handleToggleFavourite}
-                showWatchedBadge={showWatchedBadge}
-              />
+              <ChannelRow key={sub.id} channel={sub} showWatchedBadge={showWatchedBadge} />
             ))}
           </div>
         )}
@@ -310,28 +279,20 @@ export default function Sidebar({ subscriptions, categories, onDataChange, authS
         )}
       </div>
 
-      {channelSettingsModal && (
-        <ChannelSettingsModal
-          channel={channelSettingsModal}
-          categories={categories}
-          onSave={onDataChange}
-          onClose={() => setChannelSettingsModal(null)}
-        />
-      )}
     </aside>
   );
 }
 
-function ChannelRow({ channel, onSettings, onToggleFavourite, showWatchedBadge, indent }) {
+function ChannelRow({ channel, showWatchedBadge, indent }) {
   const location = useLocation();
   const isActive = location.pathname === `/channel/${channel.id}`;
 
   return (
     <Link
       to={`/channel/${channel.id}`}
-      className={`flex items-center gap-2 py-1.5 group rounded-lg mx-1 transition-colors ${
+      className={`flex items-center gap-2 py-1.5 rounded-lg mx-1 transition-colors ${
         isActive ? 'bg-[#2e2e2e]' : 'hover:bg-[#242424]'
-      } ${indent ? 'pl-7 pr-3' : 'px-4'}`}
+      } ${indent ? 'pl-7 pr-3' : 'px-3'}`}
     >
       {channel.thumbnail_url ? (
         <img
@@ -346,30 +307,11 @@ function ChannelRow({ channel, onSettings, onToggleFavourite, showWatchedBadge, 
       )}
       <span className="text-gray-300 text-xs truncate flex-1">{channel.title}</span>
 
-      {/* Watched count badge */}
       {showWatchedBadge && channel.watched_count > 0 && (
-        <span className="text-[10px] text-gray-600 bg-gray-800 rounded px-1 py-0.5 flex-shrink-0 border border-gray-700/50">
+        <span className="text-[10px] text-gray-600 bg-gray-800 rounded px-1.5 py-0.5 flex-shrink-0 border border-gray-700/50 mr-1">
           {channel.watched_count}
         </span>
       )}
-
-      {/* Favourite + settings (shown on hover) */}
-      <button
-        onClick={(e) => onToggleFavourite(e, channel)}
-        className={`hidden group-hover:flex items-center text-xs p-0.5 rounded flex-shrink-0 transition-colors ${
-          channel.is_favourite ? 'text-yellow-400' : 'text-gray-600 hover:text-yellow-400'
-        }`}
-        title={channel.is_favourite ? 'Remove favourite' : 'Add to favourites'}
-      >
-        <Star size={10} fill={channel.is_favourite ? 'currentColor' : 'none'} />
-      </button>
-      <button
-        onClick={(e) => { e.preventDefault(); e.stopPropagation(); onSettings(); }}
-        className="hidden group-hover:flex items-center text-gray-600 hover:text-gray-400 p-0.5 rounded flex-shrink-0"
-        title="Channel settings"
-      >
-        <Settings size={11} />
-      </button>
     </Link>
   );
 }

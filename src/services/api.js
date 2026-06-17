@@ -42,6 +42,7 @@ export const updateSubscription = (id, data) => request('PATCH', `/subscriptions
 export const updateChannelCategories = (channelId, categoryIds) =>
   request('POST', `/subscriptions/${channelId}/categories`, { categoryIds });
 export const deleteSubscription = (id) => request('DELETE', `/subscriptions/${id}`);
+export const resetDisplayDefaults = (show_banner, show_about) => request('POST', '/subscriptions/reset-display', { show_banner, show_about });
 export const refreshChannelInfo = (id) => request('POST', `/subscriptions/${id}/refresh-info`);
 export const markAllWatched = (id) => request('POST', `/subscriptions/${id}/mark-all-watched`);
 export const fetchChannel = (id) => request('POST', `/subscriptions/${id}/fetch`);

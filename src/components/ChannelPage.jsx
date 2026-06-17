@@ -350,15 +350,9 @@ export default function ChannelPage({ subscriptions, categories, onDataChange })
 
   return (
     <main className="flex-1 min-h-screen flex flex-col">
-      {/* Back nav */}
+      {/* Channel settings toggle bar */}
       <div className="sticky top-0 z-20 bg-[#0f0f0f]/95 backdrop-blur border-b border-gray-700 px-4 py-2 flex items-center gap-3">
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-1.5 text-gray-400 hover:text-white text-sm transition-colors"
-        >
-          <ArrowLeft size={15} /> Back
-        </button>
-        <span className="text-gray-600 text-xs truncate flex-1 min-w-0">{channel.title}</span>
+        <span className="text-gray-400 text-sm truncate flex-1 min-w-0 font-medium">{channel.title}</span>
         <button
           onClick={() => setShowSettings(v => !v)}
           className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs transition-colors border ${
@@ -417,32 +411,12 @@ export default function ChannelPage({ subscriptions, categories, onDataChange })
                 Refresh channel info
               </button>
 
-              {!showDeleteConfirm ? (
-                <button
-                  onClick={() => setShowDeleteConfirm(true)}
-                  className="flex items-center gap-1.5 px-3 py-2 bg-red-950/50 hover:bg-red-900/40 border border-red-800 text-red-400 hover:text-red-300 rounded-lg text-sm transition-colors"
-                >
-                  <Trash2 size={13} /> Delete channel
-                </button>
-              ) : (
-                <div className="flex items-center gap-2 bg-red-950/30 border border-red-800 rounded-lg px-3 py-2">
-                  <AlertTriangle size={13} className="text-red-400" />
-                  <span className="text-red-300 text-sm">Delete all data for this channel?</span>
-                  <button
-                    onClick={handleDelete}
-                    disabled={deleting}
-                    className="px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-medium transition-colors disabled:opacity-50 flex-shrink-0"
-                  >
-                    {deleting ? 'Deleting…' : 'Confirm'}
-                  </button>
-                  <button
-                    onClick={() => setShowDeleteConfirm(false)}
-                    className="text-gray-500 hover:text-gray-300 transition-colors flex-shrink-0"
-                  >
-                    <X size={13} />
-                  </button>
-                </div>
-              )}
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="flex items-center gap-1.5 px-3 py-2 bg-red-950/50 hover:bg-red-900/40 border border-red-800 text-red-400 hover:text-red-300 rounded-lg text-sm transition-colors"
+              >
+                <Trash2 size={13} /> Remove channel
+              </button>
             </div>
           </div>
         </div>
@@ -655,6 +629,47 @@ export default function ChannelPage({ subscriptions, categories, onDataChange })
           </div>
         )}
       </div>
+
+      {/* Fetch progress bar */}
+      {fetching && (
+        <div className="h-0.5 w-full bg-gray-800 overflow-hidden">
+          <div className="h-full bg-red-500 animate-[progress_1.4s_ease-in-out_infinite]" style={{ width: '40%', animation: 'indeterminate 1.4s ease-in-out infinite' }} />
+        </div>
+      )}
+      <style>{`@keyframes indeterminate{0%{transform:translateX(-100%)}100%{transform:translateX(350%)}}`}</style>
+
+      {/* Delete confirmation modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => !deleting && setShowDeleteConfirm(false)}>
+          <div className="bg-[#1a1a1a] border border-gray-700 rounded-xl shadow-2xl w-full max-w-sm mx-4 p-6" onClick={e => e.stopPropagation()}>
+            <div className="flex items-start gap-3 mb-4">
+              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center">
+                <AlertTriangle size={18} className="text-red-400" />
+              </div>
+              <div>
+                <h3 className="text-white font-semibold text-base">Remove channel?</h3>
+                <p className="text-gray-400 text-sm mt-1">This will permanently delete <span className="text-white font-medium">{channel.title}</span> and all its video data. This cannot be undone.</p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={deleting}
+                className="px-4 py-2 text-sm text-gray-400 hover:text-white bg-[#242424] border border-gray-700 rounded-lg transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1.5"
+              >
+                {deleting ? <><RefreshCw size={12} className="animate-spin" /> Deleting…</> : <><Trash2 size={12} /> Remove channel</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Video content */}
       <div className={`${viewMode === 'table' ? 'p-0' : 'p-6'} flex-1`}>

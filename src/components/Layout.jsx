@@ -1,7 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import Sidebar from './Sidebar.jsx';
 import Dashboard from './Dashboard.jsx';
-import SchedulerPage from './SchedulerPage.jsx';
 import SettingsPage from './SettingsPage.jsx';
 import ChannelPage from './ChannelPage.jsx';
 import CategoryPage from './CategoryPage.jsx';
@@ -17,7 +16,6 @@ export default function Layout({ subscriptions, categories, onDataChange, authSt
       />
       <div className="ml-[260px] flex-1 flex flex-col min-w-0">
         <Routes>
-          <Route path="/scheduler" element={<SchedulerPage />} />
           <Route
             path="/settings"
             element={

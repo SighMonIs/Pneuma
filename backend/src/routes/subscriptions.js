@@ -104,6 +104,21 @@ router.post('/import-csv', async (req, res) => {
   res.json({ count, errors });
 });
 
+// POST /api/subscriptions/reset-display — apply banner/about defaults to all channels
+router.post('/reset-display', async (req, res) => {
+  const { show_banner = true, show_about = false } = req.body;
+  try {
+    const result = await pool.query(
+      'UPDATE subscriptions SET show_banner = $1, show_about = $2',
+      [show_banner, show_about]
+    );
+    res.json({ updated: result.rowCount });
+  } catch (err) {
+    console.error('[Subscriptions] reset-display failed:', err.message);
+    res.status(500).json({ error: 'Failed to reset display defaults' });
+  }
+});
+
 // GET /api/subscriptions/:id — single channel with video/watched counts
 router.get('/:id', async (req, res) => {
   const { id } = req.params;
