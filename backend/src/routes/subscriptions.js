@@ -1,6 +1,6 @@
 ﻿import { Router } from 'express';
 import { pool } from '../db/index.js';
-import { syncSubscriptions, addChannelByUrl, fetchChannelInfo, fetchVideosForChannel, resolveDateAfter } from '../services/ytdlp.js';
+import { syncSubscriptions, addChannelByUrl, fetchChannelInfo, fetchVideosForChannel, resolveDateAfter, resolveDateAfterForUpdate } from '../services/ytdlp.js';
 
 const VALID_MODES = ['default', 'added', 'date', 'beginning'];
 
@@ -282,9 +282,11 @@ router.post('/:id/mark-all-watched', async (req, res) => {
   }
 });
 
-// POST /api/subscriptions/:id/fetch â€” fetch videos for a specific channel
+// POST /api/subscriptions/:id/fetch — fetch videos for a specific channel
+// Body: { fetch_mode: 'update' | 'full' }  (default: 'update')
 router.post('/:id/fetch', async (req, res) => {
   const { id } = req.params;
+  const fetchMode = req.body?.fetch_mode === 'full' ? 'full' : 'update';
   try {
     const subResult = await pool.query('SELECT * FROM subscriptions WHERE id = $1', [id]);
     if (subResult.rows.length === 0) return res.status(404).json({ error: 'Channel not found' });
@@ -296,7 +298,8 @@ router.post('/:id/fetch', async (req, res) => {
     const globalMode = gs.fetch_since_mode || 'added';
     const globalDate = gs.fetch_since_date || null;
 
-    const dateAfter = resolveDateAfter(sub, globalMode, globalDate);
+    const resolveDate = fetchMode === 'update' ? resolveDateAfterForUpdate : resolveDateAfter;
+    const dateAfter = resolveDate(sub, globalMode, globalDate);
     const count = await fetchVideosForChannel(id, { dateAfter });
     res.json({ count, channelId: id });
   } catch (err) {

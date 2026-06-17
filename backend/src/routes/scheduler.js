@@ -20,7 +20,7 @@ router.get('/', async (req, res) => {
 
 // POST /api/scheduler — create job
 router.post('/', async (req, res) => {
-  const { name, action, cron_expression, enabled = true } = req.body;
+  const { name, action, cron_expression, enabled = true, fetch_mode = 'update' } = req.body;
 
   if (!name || !name.trim()) {
     return res.status(400).json({ error: 'Name is required' });
@@ -31,13 +31,14 @@ router.post('/', async (req, res) => {
   if (!cron_expression || !cron.validate(cron_expression)) {
     return res.status(400).json({ error: 'Invalid cron expression' });
   }
+  const safeFetchMode = fetch_mode === 'full' ? 'full' : 'update';
 
   try {
     const result = await pool.query(
-      `INSERT INTO scheduled_jobs (name, action, cron_expression, enabled)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO scheduled_jobs (name, action, cron_expression, enabled, fetch_mode)
+       VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
-      [name.trim(), action, cron_expression, enabled]
+      [name.trim(), action, cron_expression, enabled, safeFetchMode]
     );
 
     const job = result.rows[0];
@@ -58,7 +59,7 @@ router.post('/', async (req, res) => {
 // PATCH /api/scheduler/:id — update job
 router.patch('/:id', async (req, res) => {
   const { id } = req.params;
-  const { name, action, cron_expression, enabled } = req.body;
+  const { name, action, cron_expression, enabled, fetch_mode } = req.body;
 
   // Validate if provided
   if (action !== undefined && !VALID_ACTIONS.includes(action)) {
@@ -76,6 +77,7 @@ router.patch('/:id', async (req, res) => {
   if (action !== undefined) { updates.push(`action = $${paramCount++}`); values.push(action); }
   if (cron_expression !== undefined) { updates.push(`cron_expression = $${paramCount++}`); values.push(cron_expression); }
   if (enabled !== undefined) { updates.push(`enabled = $${paramCount++}`); values.push(enabled); }
+  if (fetch_mode !== undefined) { updates.push(`fetch_mode = $${paramCount++}`); values.push(fetch_mode === 'full' ? 'full' : 'update'); }
 
   if (updates.length === 0) {
     return res.status(400).json({ error: 'No fields to update' });

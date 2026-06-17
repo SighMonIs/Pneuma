@@ -48,7 +48,8 @@ export const clearFetchError = (id) => request('DELETE', `/subscriptions/${id}/f
 export const clearAllFetchErrors = () => request('DELETE', '/subscriptions/fetch-errors');
 export const refreshChannelInfo = (id) => request('POST', `/subscriptions/${id}/refresh-info`);
 export const markAllWatched = (id) => request('POST', `/subscriptions/${id}/mark-all-watched`);
-export const fetchChannel = (id) => request('POST', `/subscriptions/${id}/fetch`);
+export const fetchChannel = (id, fetchMode = 'update') =>
+  request('POST', `/subscriptions/${id}/fetch`, { fetch_mode: fetchMode });
 
 // Categories
 export const getCategories = () => request('GET', '/categories');
@@ -67,7 +68,8 @@ export const getVideos = (params = {}) => {
   const qs = query.toString();
   return request('GET', `/videos${qs ? '?' + qs : ''}`);
 };
-export const fetchVideos = () => request('POST', '/videos/fetch');
+export const fetchVideos = (fetchMode = 'update') =>
+  request('POST', '/videos/fetch', { fetch_mode: fetchMode });
 export const purgeAndFetch = () => request('POST', '/videos/purge-and-fetch');
 export const purgeWatch = () => request('POST', '/videos/purge-watch');
 export const purgeCategories = () => request('POST', '/videos/purge-categories');

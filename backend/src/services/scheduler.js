@@ -83,12 +83,12 @@ function matchField(field, value, min, max) {
   return parseInt(field) === value;
 }
 
-async function runAction(action) {
-  console.log(`[Scheduler] Running action: ${action}`);
+async function runAction(action, fetchMode = 'update') {
+  console.log(`[Scheduler] Running action: ${action}${action === 'fetch_videos' ? ` (${fetchMode})` : ''}`);
   if (action === 'sync_subscriptions') {
     return await syncSubscriptions();
   } else if (action === 'fetch_videos') {
-    return await fetchAllVideos();
+    return await fetchAllVideos(fetchMode);
   } else {
     throw new Error(`Unknown action: ${action}`);
   }
@@ -117,7 +117,7 @@ export async function scheduleJob(job) {
     const startTime = new Date();
 
     try {
-      await runAction(job.action);
+      await runAction(job.action, job.fetch_mode || 'update');
     } catch (err) {
       console.error(`[Scheduler] Job ${job.id} failed:`, err.message);
     }
@@ -171,7 +171,7 @@ export async function rescheduleAll() {
 export async function runJobNow(job) {
   const startTime = new Date();
   try {
-    await runAction(job.action);
+    await runAction(job.action, job.fetch_mode || 'update');
   } catch (err) {
     console.error(`[Scheduler] Manual run of job ${job.id} failed:`, err.message);
     throw err;

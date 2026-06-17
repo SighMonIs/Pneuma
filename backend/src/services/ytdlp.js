@@ -132,6 +132,17 @@ export function resolveDateAfter(sub, globalMode, globalDate) {
   return null;
 }
 
+export function resolveDateAfterForUpdate(sub, globalMode, globalDate) {
+  if (!sub.last_fetched_at) {
+    // Never fetched — fall back to the configured full-fetch range
+    return resolveDateAfter(sub, globalMode, globalDate);
+  }
+  // Use last_fetched_at minus 1 day as a buffer so day-boundary videos are never missed
+  const d = new Date(sub.last_fetched_at);
+  d.setDate(d.getDate() - 1);
+  return formatYtdlpDate(d);
+}
+
 export async function fetchChannelInfo(channelId) {
   const args = [
     '-J', '--flat-playlist', '--playlist-end', '1',
@@ -230,13 +241,16 @@ export async function fetchVideosForChannel(channelId, { dateAfter = null } = {}
     }
   } catch {}
 
-  await pool.query('UPDATE subscriptions SET last_fetch_error = NULL WHERE id = $1', [channelId]);
+  await pool.query(
+    'UPDATE subscriptions SET last_fetch_error = NULL, last_fetched_at = NOW() WHERE id = $1',
+    [channelId],
+  );
   return count;
 }
 
-export async function fetchAllVideos() {
+export async function fetchAllVideos(fetchMode = 'update') {
   const { rows: subs } = await pool.query(
-    'SELECT id, fetch_since_mode, fetch_since_date, created_at FROM subscriptions ORDER BY title',
+    'SELECT id, fetch_since_mode, fetch_since_date, created_at, last_fetched_at FROM subscriptions ORDER BY title',
   );
 
   const { rows: settingRows } = await pool.query('SELECT key, value FROM app_settings');
@@ -244,6 +258,8 @@ export async function fetchAllVideos() {
   settingRows.forEach(r => (globalSettings[r.key] = r.value));
   const globalMode = globalSettings.fetch_since_mode || 'added';
   const globalDate = globalSettings.fetch_since_date || null;
+
+  const resolveDate = fetchMode === 'update' ? resolveDateAfterForUpdate : resolveDateAfter;
 
   fetchProgress.running = true;
   fetchProgress.total = subs.length;
@@ -258,7 +274,7 @@ export async function fetchAllVideos() {
   for (let i = 0; i < subs.length; i += batchSize) {
     const batch = subs.slice(i, i + batchSize);
     const results = await Promise.allSettled(
-      batch.map(sub => fetchVideosForChannel(sub.id, { dateAfter: resolveDateAfter(sub, globalMode, globalDate) })),
+      batch.map(sub => fetchVideosForChannel(sub.id, { dateAfter: resolveDate(sub, globalMode, globalDate) })),
     );
     await Promise.all(results.map(async (r, j) => {
       const sub = batch[j];

@@ -16,6 +16,7 @@ import {
   resetDisplayDefaults,
   getJobs, createJob, updateJob, deleteJob, runJob,
   getFetchErrors, clearFetchError, clearAllFetchErrors, deleteSubscription,
+  fetchVideos,
 } from '../services/api.js';
 import CategoryModal from './CategoryModal.jsx';
 
@@ -291,6 +292,7 @@ function JobForm({ onSave, onCancel }) {
   const [name, setName] = useState('');
   const [action, setAction] = useState('fetch_videos');
   const [cronExpression, setCronExpression] = useState('0 */6 * * *');
+  const [fetchMode, setFetchMode] = useState('update');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -298,7 +300,9 @@ function JobForm({ onSave, onCancel }) {
     if (!name.trim()) { setError('Name is required'); return; }
     setSaving(true); setError('');
     try {
-      await onSave({ name: name.trim(), action, cron_expression: cronExpression.trim() });
+      const data = { name: name.trim(), action, cron_expression: cronExpression.trim() };
+      if (action === 'fetch_videos') data.fetch_mode = fetchMode;
+      await onSave(data);
     } catch (err) {
       setError(err.message || 'Failed to create job');
       setSaving(false);
@@ -329,6 +333,25 @@ function JobForm({ onSave, onCancel }) {
           <input type="text" value={cronExpression} onChange={e => setCronExpression(e.target.value)} placeholder="0 * * * *"
             className="w-full bg-[#242424] border border-gray-700 rounded-lg px-3 py-2 text-white placeholder-gray-500 text-sm font-mono focus:outline-none focus:border-gray-500" />
         </div>
+        {action === 'fetch_videos' && (
+          <div className="sm:col-span-2">
+            <label className="block text-xs text-gray-400 mb-1.5">Fetch Mode</label>
+            <div className="flex gap-2">
+              {[
+                { value: 'update', label: 'Update', desc: 'Only new videos since last fetch' },
+                { value: 'full', label: 'Full', desc: 'All videos using configured date range' },
+              ].map(opt => (
+                <label key={opt.value} className={`flex items-start gap-2 p-2.5 rounded-lg border flex-1 cursor-pointer ${fetchMode === opt.value ? 'border-indigo-600/50 bg-indigo-600/10' : 'border-gray-700 bg-[#242424]'}`}>
+                  <input type="radio" name="fetchMode" value={opt.value} checked={fetchMode === opt.value} onChange={() => setFetchMode(opt.value)} className="mt-0.5 accent-indigo-500 flex-shrink-0" />
+                  <div>
+                    <p className="text-white text-xs font-medium">{opt.label}</p>
+                    <p className="text-gray-500 text-xs">{opt.desc}</p>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
       <div className="mt-3">
         <p className="text-xs text-gray-500 mb-1.5">Quick select:</p>
@@ -377,8 +400,13 @@ function JobCard({ job, onUpdate, onDelete, onRun }) {
               {job.enabled ? 'Active' : 'Disabled'}
             </span>
           </div>
-          <div className="flex flex-wrap gap-3 text-xs text-gray-400">
+          <div className="flex flex-wrap gap-2 text-xs text-gray-400 items-center">
             <span className="flex items-center gap-1"><Play size={10} />{ACTION_LABELS[job.action] || job.action}</span>
+            {job.action === 'fetch_videos' && (
+              <span className={`px-1.5 py-0.5 rounded text-xs ${job.fetch_mode === 'full' ? 'bg-amber-900/40 text-amber-400' : 'bg-blue-900/40 text-blue-400'}`}>
+                {job.fetch_mode === 'full' ? 'Full' : 'Update'}
+              </span>
+            )}
             <span className="flex items-center gap-1 font-mono bg-[#242424] px-1.5 py-0.5 rounded text-gray-300">{job.cron_expression}</span>
           </div>
           <div className="mt-2 flex flex-wrap gap-4 text-xs text-gray-500">
@@ -514,6 +542,7 @@ function FetchSettingsSection() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [applying, setApplying] = useState(false);
+  const [fetching, setFetching] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
 
@@ -551,6 +580,18 @@ function FetchSettingsSection() {
     }
   };
 
+  const handleFullFetch = async () => {
+    setFetching(true); setError('');
+    try {
+      await fetchVideos('full');
+      flash('Full fetch started in the background');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setFetching(false);
+    }
+  };
+
   return (
     <SectionCard title="Default Fetch Range" description="Controls how far back yt-dlp looks when fetching videos" icon={Calendar}>
       {loading ? (
@@ -584,6 +625,14 @@ function FetchSettingsSection() {
             >
               {applying ? <RefreshCw size={13} className="animate-spin" /> : <RotateCcw size={13} />}
               Apply to all channels
+            </button>
+            <button
+              onClick={handleFullFetch}
+              disabled={fetching}
+              className="flex items-center gap-1.5 px-3 py-2 bg-[#242424] hover:bg-[#2e2e2e] border border-gray-700 text-gray-300 rounded-lg text-sm disabled:opacity-50"
+            >
+              {fetching ? <RefreshCw size={13} className="animate-spin" /> : <RefreshCw size={13} />}
+              Full Fetch All Channels
             </button>
           </div>
         </div>

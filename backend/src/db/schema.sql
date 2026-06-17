@@ -50,6 +50,9 @@ ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS show_about BOOLEAN DEFAULT FA
 ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS subscriber_count BIGINT;
 ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS banner_url TEXT;
 ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS last_fetch_error TEXT;
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS last_fetched_at TIMESTAMP;
+
+ALTER TABLE scheduled_jobs ADD COLUMN IF NOT EXISTS fetch_mode VARCHAR(10) DEFAULT 'update';
 
 CREATE TABLE IF NOT EXISTS channel_categories (
   channel_id VARCHAR(50) REFERENCES subscriptions(id) ON DELETE CASCADE,

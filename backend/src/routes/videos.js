@@ -116,11 +116,13 @@ router.get('/', async (req, res) => {
 });
 
 // POST /api/videos/fetch — start background fetch, returns immediately
+// Body: { fetch_mode: 'update' | 'full' }  (default: 'update')
 router.post('/fetch', (req, res) => {
   if (fetchProgress.running) {
     return res.json({ alreadyRunning: true, ...fetchProgress });
   }
-  fetchAllVideos().catch(err => {
+  const fetchMode = req.body?.fetch_mode === 'full' ? 'full' : 'update';
+  fetchAllVideos(fetchMode).catch(err => {
     console.error('[Videos] Fetch all failed:', err.message);
     fetchProgress.running = false;
   });
@@ -239,7 +241,7 @@ router.post('/purge-and-fetch', async (req, res) => {
     await pool.query('DELETE FROM video_progress');
     await pool.query('DELETE FROM watched_videos');
     await pool.query('DELETE FROM videos');
-    fetchAllVideos().catch(err => {
+    fetchAllVideos('full').catch(err => {
       console.error('[Videos] Purge-and-fetch failed:', err.message);
       fetchProgress.running = false;
     });
