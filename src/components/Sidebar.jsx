@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { version } from '../../package.json';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Settings, RefreshCw, Search,
@@ -139,6 +140,7 @@ export default function Sidebar({ subscriptions, categories, onDataChange, authS
             <i className="ti ti-device-tv text-white" style={{ fontSize: 16 }} />
           </div>
           <span className="text-white font-bold text-lg tracking-tight">Pneuma</span>
+          <span className="text-gray-600 text-xs font-normal">v{version}</span>
         </div>
       </div>
 
@@ -322,6 +324,8 @@ function ChannelRow({ channel, showWatchedBadge, indent }) {
           src={channel.thumbnail_url}
           alt={channel.title}
           className={`w-6 h-6 rounded-full object-cover flex-shrink-0 ${channel.is_favourite ? 'ring-1 ring-yellow-400' : ''}`}
+          loading="lazy"
+          decoding="async"
         />
       ) : (
         <div className={`w-6 h-6 rounded-full bg-gray-700 flex-shrink-0 flex items-center justify-center ${channel.is_favourite ? 'ring-1 ring-yellow-400' : ''}`}>

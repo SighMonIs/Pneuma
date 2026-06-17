@@ -105,7 +105,7 @@ function VideoTableRow({ video, onWatchedChange, videoMode, onVideoSelect }) {
       <td className="py-2 px-3">
         <div onClick={handleClick} className="cursor-pointer">
           <div className="relative w-20 rounded overflow-hidden bg-gray-800" style={{ aspectRatio: '16/9' }}>
-            <img src={thumbnailUrl} className="w-full h-full object-cover" loading="lazy" onError={e => { e.currentTarget.src = `https://i.ytimg.com/vi/${video.id}/mqdefault.jpg`; }} />
+            <img src={thumbnailUrl} className="w-full h-full object-cover" loading="lazy" decoding="async" onError={e => { e.currentTarget.src = `https://i.ytimg.com/vi/${video.id}/mqdefault.jpg`; }} />
             {!isWatched && (video.percent_watched || 0) > 0.01 && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black/40">
                 <div className="h-full bg-red-500" style={{ width: `${Math.min((video.percent_watched || 0) * 100, 100)}%` }} />
@@ -122,7 +122,7 @@ function VideoTableRow({ video, onWatchedChange, videoMode, onVideoSelect }) {
       <td className="py-2 px-3">
         <div className="flex items-center gap-1.5 min-w-[100px]">
           {video.channel_thumbnail
-            ? <img src={video.channel_thumbnail} className="w-5 h-5 rounded-full flex-shrink-0" />
+            ? <img src={video.channel_thumbnail} className="w-5 h-5 rounded-full flex-shrink-0" loading="lazy" decoding="async" />
             : <div className="w-5 h-5 rounded-full bg-gray-700 flex-shrink-0 flex items-center justify-center"><span className="text-[9px] text-gray-400">{video.channel_title?.[0]}</span></div>
           }
           <span className="text-gray-400 text-xs truncate">{video.channel_title}</span>
@@ -717,7 +717,7 @@ function VideoPlayerView({ video, showComments, onBack, onWatchedChange, onProgr
             <h1 className="text-white text-xl font-semibold leading-snug">{video.title}</h1>
             <div className="flex items-center gap-3">
               {video.channel_thumbnail
-                ? <img src={video.channel_thumbnail} alt={video.channel_title} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+                ? <img src={video.channel_thumbnail} alt={video.channel_title} className="w-8 h-8 rounded-full object-cover flex-shrink-0" decoding="async" />
                 : <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center flex-shrink-0"><span className="text-gray-400 text-xs">{video.channel_title?.[0] || '?'}</span></div>
               }
               <span className="text-gray-300 text-sm font-medium">{video.channel_title}</span>

@@ -87,7 +87,7 @@ function VideoTableRow({ video, onWatchedChange, videoMode, onVideoSelect }) {
       <td className="py-2 px-3">
         <a href={ytUrl} onClick={handleClick} className="block" target="_blank" rel="noopener noreferrer">
           <div className="relative w-20 rounded overflow-hidden bg-gray-800" style={{ aspectRatio: '16/9' }}>
-            <img src={thumbnailUrl} className="w-full h-full object-cover" loading="lazy" />
+            <img src={thumbnailUrl} className="w-full h-full object-cover" loading="lazy" decoding="async" />
             {!isWatched && (video.percent_watched || 0) > 0.01 && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black/40">
                 <div className="h-full bg-red-500" style={{ width: `${Math.min((video.percent_watched || 0) * 100, 100)}%` }} />
@@ -447,7 +447,7 @@ export default function ChannelPage({ subscriptions, categories, onDataChange })
           <div className={`flex-shrink-0 rounded-full overflow-hidden ${isFavourite ? 'ring-2 ring-yellow-400 ring-offset-2 ring-offset-[#0f0f0f]' : ''}`}
             style={{ width: 64, height: 64 }}>
             {channel.thumbnail_url ? (
-              <img src={channel.thumbnail_url} alt={channel.title} className="w-full h-full object-cover" />
+              <img src={channel.thumbnail_url} alt={channel.title} className="w-full h-full object-cover" decoding="async" />
             ) : (
               <div className="w-full h-full bg-gray-700 flex items-center justify-center">
                 <span className="text-gray-300 text-xl font-bold">{channel.title?.charAt(0) || '?'}</span>

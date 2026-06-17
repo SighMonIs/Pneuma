@@ -79,7 +79,7 @@ function VideoTableRow({ video, onWatchedChange }) {
     <tr className={`border-b border-gray-800/50 hover:bg-[#1a1a1a] transition-colors group ${isWatched ? 'opacity-50' : ''}`}>
       <td className="py-2 px-3">
         <div onClick={handleClick} className="cursor-pointer relative w-20 rounded overflow-hidden bg-gray-800" style={{ aspectRatio: '16/9' }}>
-          <img src={thumbnailUrl} className="w-full h-full object-cover" loading="lazy"
+          <img src={thumbnailUrl} className="w-full h-full object-cover" loading="lazy" decoding="async"
             onError={e => { e.currentTarget.src = `https://i.ytimg.com/vi/${video.id}/mqdefault.jpg`; }} />
         </div>
       </td>
@@ -89,7 +89,7 @@ function VideoTableRow({ video, onWatchedChange }) {
       <td className="py-2 px-3">
         <Link to={`/channel/${video.channel_id}`} className="flex items-center gap-1.5 min-w-[100px] hover:opacity-80" onClick={e => e.stopPropagation()}>
           {video.channel_thumbnail
-            ? <img src={video.channel_thumbnail} className="w-5 h-5 rounded-full flex-shrink-0" />
+            ? <img src={video.channel_thumbnail} className="w-5 h-5 rounded-full flex-shrink-0" loading="lazy" decoding="async" />
             : <div className="w-5 h-5 rounded-full bg-gray-700 flex-shrink-0 flex items-center justify-center"><span className="text-[9px] text-gray-400">{video.channel_title?.[0]}</span></div>
           }
           <span className="text-gray-400 text-xs truncate">{video.channel_title}</span>

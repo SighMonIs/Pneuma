@@ -78,6 +78,7 @@ export default function VideoCard({ video, onWatchedChange, videoMode = 'youtube
             alt={video.title}
             className={`w-full h-full object-cover transition-opacity ${isWatched ? 'opacity-50' : 'opacity-100'}`}
             loading="lazy"
+            decoding="async"
             onError={e => {
               if (!e.currentTarget.dataset.fallback) {
                 e.currentTarget.dataset.fallback = '1';
@@ -137,7 +138,7 @@ export default function VideoCard({ video, onWatchedChange, videoMode = 'youtube
       <div className="p-3 flex flex-col gap-2">
         <div className="flex items-center gap-2">
           {video.channel_thumbnail ? (
-            <img src={video.channel_thumbnail} alt={video.channel_title} className="w-6 h-6 rounded-full object-cover flex-shrink-0" />
+            <img src={video.channel_thumbnail} alt={video.channel_title} className="w-6 h-6 rounded-full object-cover flex-shrink-0" loading="lazy" decoding="async" />
           ) : (
             <div className="w-6 h-6 rounded-full bg-gray-700 flex-shrink-0 flex items-center justify-center">
               <span className="text-gray-400 text-xs">{video.channel_title?.charAt(0) || '?'}</span>

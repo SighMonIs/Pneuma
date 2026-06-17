@@ -856,7 +856,7 @@ function ManageFeedsView({ categories, onBack, onDataChange }) {
                   className="w-4 h-4 accent-red-500 flex-shrink-0 cursor-pointer"
                 />
                 {sub.thumbnail_url ? (
-                  <img src={sub.thumbnail_url} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
+                  <img src={sub.thumbnail_url} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0" loading="lazy" decoding="async" />
                 ) : (
                   <div className="w-7 h-7 rounded-full bg-gray-700 flex items-center justify-center flex-shrink-0">
                     <span className="text-gray-400 text-xs">{sub.title?.charAt(0)?.toUpperCase() || '?'}</span>
@@ -979,7 +979,7 @@ function ChannelErrorsSection() {
             <div key={ch.id} className={`border rounded-lg p-3 flex flex-col gap-2 ${isRemoved ? 'border-red-800/60 bg-red-950/20' : 'border-gray-700 bg-[#242424]'}`}>
               <div className="flex items-center gap-2.5">
                 {ch.thumbnail_url
-                  ? <img src={ch.thumbnail_url} className="w-7 h-7 rounded-full flex-shrink-0 object-cover" />
+                  ? <img src={ch.thumbnail_url} className="w-7 h-7 rounded-full flex-shrink-0 object-cover" loading="lazy" decoding="async" />
                   : <div className="w-7 h-7 rounded-full bg-gray-700 flex-shrink-0 flex items-center justify-center"><span className="text-xs text-gray-400">{ch.title?.[0]}</span></div>
                 }
                 <div className="flex-1 min-w-0">
