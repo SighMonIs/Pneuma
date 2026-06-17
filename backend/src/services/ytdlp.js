@@ -1,4 +1,4 @@
-import { execFile } from 'child_process';
+﻿import { execFile } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs/promises';
 import path from 'path';
@@ -134,7 +134,7 @@ export function resolveDateAfter(sub, globalMode, globalDate) {
 
 export async function fetchChannelInfo(channelId) {
   const args = [
-    '-J', '--flat-playlist', '--playlist-end', '0',
+    '-J', '--flat-playlist', '--playlist-end', '1',
     '--no-warnings', '--quiet',
     ...(await cookieArgs()),
     `https://www.youtube.com/channel/${channelId}`,
@@ -230,6 +230,7 @@ export async function fetchVideosForChannel(channelId, { dateAfter = null } = {}
     }
   } catch {}
 
+  await pool.query('UPDATE subscriptions SET last_fetch_error = NULL WHERE id = $1', [channelId]);
   return count;
 }
 
@@ -259,17 +260,20 @@ export async function fetchAllVideos() {
     const results = await Promise.allSettled(
       batch.map(sub => fetchVideosForChannel(sub.id, { dateAfter: resolveDateAfter(sub, globalMode, globalDate) })),
     );
-    results.forEach((r, j) => {
-      if (r.status === 'fulfilled') { total += r.value; }
-      else {
-        const sub = batch[j];
+    await Promise.all(results.map(async (r, j) => {
+      const sub = batch[j];
+      if (r.status === 'fulfilled') {
+        total += r.value;
+        await pool.query('UPDATE subscriptions SET last_fetch_error = NULL WHERE id = $1', [sub.id]);
+      } else {
         const msg = r.reason?.message || 'Unknown error';
         console.error(`[yt-dlp] Failed ${sub.id}:`, msg);
         fetchProgress.errors++;
         fetchProgress.errorList.push({ channelId: sub.id, channelTitle: sub.title || sub.id, message: msg });
+        await pool.query('UPDATE subscriptions SET last_fetch_error = $1 WHERE id = $2', [msg, sub.id]);
       }
       fetchProgress.done++;
-    });
+    }));
   }
 
   fetchProgress.running = false;
@@ -312,3 +316,4 @@ export async function addChannelByUrl(url, { fetchSinceMode = 'default', fetchSi
 
   return { id: channelId, title, thumbnail_url: thumbnail };
 }
+

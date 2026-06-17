@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS oauth_tokens (
+﻿CREATE TABLE IF NOT EXISTS oauth_tokens (
   id SERIAL PRIMARY KEY,
   access_token TEXT,
   refresh_token TEXT,
@@ -49,6 +49,7 @@ ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS show_banner BOOLEAN DEFAULT T
 ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS show_about BOOLEAN DEFAULT FALSE;
 ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS subscriber_count BIGINT;
 ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS banner_url TEXT;
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS last_fetch_error TEXT;
 
 CREATE TABLE IF NOT EXISTS channel_categories (
   channel_id VARCHAR(50) REFERENCES subscriptions(id) ON DELETE CASCADE,

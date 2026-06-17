@@ -1,4 +1,4 @@
-import { Router } from 'express';
+﻿import { Router } from 'express';
 import { pool } from '../db/index.js';
 import { syncSubscriptions, addChannelByUrl, fetchChannelInfo, fetchVideosForChannel, resolveDateAfter } from '../services/ytdlp.js';
 
@@ -6,7 +6,7 @@ const VALID_MODES = ['default', 'added', 'date', 'beginning'];
 
 const router = Router();
 
-// GET /api/subscriptions — all subscriptions with category IDs and watched count
+// GET /api/subscriptions â€” all subscriptions with category IDs and watched count
 router.get('/', async (req, res) => {
   try {
     const result = await pool.query(`
@@ -31,7 +31,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// POST /api/subscriptions/sync — sync from YouTube feed (requires cookies)
+// POST /api/subscriptions/sync â€” sync from YouTube feed (requires cookies)
 router.post('/sync', async (req, res) => {
   const { fetch_since_mode, fetch_since_date } = req.body || {};
   const sinceMode = VALID_MODES.includes(fetch_since_mode) ? fetch_since_mode : 'default';
@@ -45,7 +45,7 @@ router.post('/sync', async (req, res) => {
   }
 });
 
-// POST /api/subscriptions/add — add a single channel by YouTube URL or @handle
+// POST /api/subscriptions/add â€” add a single channel by YouTube URL or @handle
 router.post('/add', async (req, res) => {
   const { url, fetch_since_mode, fetch_since_date } = req.body;
   if (!url?.trim()) {
@@ -66,7 +66,7 @@ router.post('/add', async (req, res) => {
   }
 });
 
-// POST /api/subscriptions/import-csv — import Google Takeout subscriptions.csv
+// POST /api/subscriptions/import-csv â€” import Google Takeout subscriptions.csv
 router.post('/import-csv', async (req, res) => {
   const { csv } = req.body;
   if (!csv?.trim()) {
@@ -104,7 +104,7 @@ router.post('/import-csv', async (req, res) => {
   res.json({ count, errors });
 });
 
-// POST /api/subscriptions/reset-display — apply banner/about defaults to all channels
+// POST /api/subscriptions/reset-display â€” apply banner/about defaults to all channels
 router.post('/reset-display', async (req, res) => {
   const { show_banner = true, show_about = false } = req.body;
   try {
@@ -119,7 +119,34 @@ router.post('/reset-display', async (req, res) => {
   }
 });
 
-// GET /api/subscriptions/:id — single channel with video/watched counts
+
+// GET /api/subscriptions/fetch-errors -- channels with a stored fetch error
+router.get('/fetch-errors', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT id, title, thumbnail_url, last_fetch_error
+      FROM subscriptions
+      WHERE last_fetch_error IS NOT NULL
+      ORDER BY title
+    `);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('[Subscriptions] GET /fetch-errors failed:', err.message);
+    res.status(500).json({ error: 'Failed to fetch errors' });
+  }
+});
+
+// DELETE /api/subscriptions/fetch-errors -- clear all stored errors
+router.delete('/fetch-errors', async (req, res) => {
+  try {
+    const result = await pool.query("UPDATE subscriptions SET last_fetch_error = NULL WHERE last_fetch_error IS NOT NULL");
+    res.json({ cleared: result.rowCount });
+  } catch (err) {
+    console.error('[Subscriptions] DELETE /fetch-errors failed:', err.message);
+    res.status(500).json({ error: 'Failed to clear errors' });
+  }
+});
+// GET /api/subscriptions/:id â€” single channel with video/watched counts
 router.get('/:id', async (req, res) => {
   const { id } = req.params;
   try {
@@ -147,7 +174,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// PATCH /api/subscriptions/:id — update channel settings
+// PATCH /api/subscriptions/:id â€” update channel settings
 router.patch('/:id', async (req, res) => {
   const { id } = req.params;
   const { hide_shorts, fetch_since_mode, fetch_since_date, is_favourite, show_banner, show_about } = req.body;
@@ -184,7 +211,7 @@ router.patch('/:id', async (req, res) => {
   }
 });
 
-// POST /api/subscriptions/:id/categories — set category assignments
+// POST /api/subscriptions/:id/categories â€” set category assignments
 router.post('/:id/categories', async (req, res) => {
   const { id } = req.params;
   const { categoryIds } = req.body;
@@ -214,7 +241,7 @@ router.post('/:id/categories', async (req, res) => {
   }
 });
 
-// POST /api/subscriptions/:id/refresh-info — fetch channel metadata from yt-dlp
+// POST /api/subscriptions/:id/refresh-info â€” fetch channel metadata from yt-dlp
 router.post('/:id/refresh-info', async (req, res) => {
   const { id } = req.params;
   try {
@@ -238,7 +265,7 @@ router.post('/:id/refresh-info', async (req, res) => {
   }
 });
 
-// POST /api/subscriptions/:id/mark-all-watched — mark all channel videos as watched
+// POST /api/subscriptions/:id/mark-all-watched â€” mark all channel videos as watched
 router.post('/:id/mark-all-watched', async (req, res) => {
   const { id } = req.params;
   try {
@@ -254,7 +281,7 @@ router.post('/:id/mark-all-watched', async (req, res) => {
   }
 });
 
-// POST /api/subscriptions/:id/fetch — fetch videos for a specific channel
+// POST /api/subscriptions/:id/fetch â€” fetch videos for a specific channel
 router.post('/:id/fetch', async (req, res) => {
   const { id } = req.params;
   try {
@@ -277,7 +304,19 @@ router.post('/:id/fetch', async (req, res) => {
   }
 });
 
-// DELETE /api/subscriptions/:id — remove subscription and its videos
+// DELETE /api/subscriptions/:id/fetch-error -- dismiss one channel's error
+router.delete('/:id/fetch-error', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await pool.query("UPDATE subscriptions SET last_fetch_error = NULL WHERE id = $1", [id]);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('[Subscriptions] DELETE /:id/fetch-error failed:', err.message);
+    res.status(500).json({ error: 'Failed to clear error' });
+  }
+});
+
+// DELETE /api/subscriptions/:id â€” remove subscription and its videos
 router.delete('/:id', async (req, res) => {
   const { id } = req.params;
   try {
@@ -314,3 +353,5 @@ function parseCsvLine(line) {
 }
 
 export default router;
+
+

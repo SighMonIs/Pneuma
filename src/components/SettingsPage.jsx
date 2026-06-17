@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Cookie, FileSpreadsheet, Plus, RefreshCw, Trash2,
@@ -15,6 +15,7 @@ import {
   purgeWatch, purgeCategories, purgeBefore,
   resetDisplayDefaults,
   getJobs, createJob, updateJob, deleteJob, runJob,
+  getFetchErrors, clearFetchError, clearAllFetchErrors, deleteSubscription,
 } from '../services/api.js';
 import CategoryModal from './CategoryModal.jsx';
 
@@ -67,7 +68,7 @@ export default function SettingsPage({ authStatus, onAuthChange, onDataChange, c
   );
 }
 
-/* ─── Display Tab ─── */
+/* â”€â”€â”€ Display Tab â”€â”€â”€ */
 
 function loadStr(key, def) {
   try { return localStorage.getItem(key) ?? def; } catch { return def; }
@@ -94,9 +95,9 @@ function Toggle({ checked, onChange }) {
 }
 
 const QUALITY_OPTIONS = [
-  { value: 'hqdefault', label: 'Low', desc: 'hqdefault — fastest, ~480×360' },
-  { value: 'sddefault', label: 'Medium', desc: 'sddefault — ~640×480' },
-  { value: 'maxresdefault', label: 'High', desc: 'maxresdefault — up to 1280×720' },
+  { value: 'hqdefault', label: 'Low', desc: 'hqdefault â€” fastest, ~480Ã—360' },
+  { value: 'sddefault', label: 'Medium', desc: 'sddefault â€” ~640Ã—480' },
+  { value: 'maxresdefault', label: 'High', desc: 'maxresdefault â€” up to 1280Ã—720' },
 ];
 
 function DisplayTab() {
@@ -200,7 +201,7 @@ function DisplayTab() {
   );
 }
 
-/* ─── Channel Defaults Section ─── */
+/* â”€â”€â”€ Channel Defaults Section â”€â”€â”€ */
 
 function ChannelDefaultsSection() {
   const [showBanner, setShowBanner] = useState(true);
@@ -263,7 +264,7 @@ function ChannelDefaultsSection() {
   );
 }
 
-/* ─── Scheduler Tab ─── */
+/* â”€â”€â”€ Scheduler Tab â”€â”€â”€ */
 
 const ACTION_LABELS = {
   sync_subscriptions: 'Sync Subscriptions',
@@ -345,7 +346,7 @@ function JobForm({ onSave, onCancel }) {
         <button onClick={onCancel} className="px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg text-sm transition-colors">Cancel</button>
         <button onClick={handleSave} disabled={saving}
           className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors">
-          {saving ? 'Creating…' : 'Create Job'}
+          {saving ? 'Creatingâ€¦' : 'Create Job'}
         </button>
       </div>
     </div>
@@ -490,7 +491,7 @@ function SchedulerTab() {
   );
 }
 
-/* ─── Feeds Tab ─── */
+/* â”€â”€â”€ Feeds Tab â”€â”€â”€ */
 
 function FeedsTab({ authStatus, onAuthChange, onDataChange }) {
   return (
@@ -499,12 +500,13 @@ function FeedsTab({ authStatus, onAuthChange, onDataChange }) {
       <CookiesSection authStatus={authStatus} onAuthChange={onAuthChange} onDataChange={onDataChange} />
       <AddChannelSection onDataChange={onDataChange} />
       <ImportCsvSection onDataChange={onDataChange} />
+      <ChannelErrorsSection />
       <DangerZoneSection />
     </div>
   );
 }
 
-/* ─── Fetch Settings Section ─── */
+/* â”€â”€â”€ Fetch Settings Section â”€â”€â”€ */
 
 function FetchSettingsSection() {
   const [mode, setMode] = useState('added');
@@ -590,7 +592,7 @@ function FetchSettingsSection() {
   );
 }
 
-/* ─── Categories Tab ─── */
+/* â”€â”€â”€ Categories Tab â”€â”€â”€ */
 
 function CategoriesTab({ categories, onDataChange }) {
   const [showModal, setShowModal] = useState(false);
@@ -714,7 +716,7 @@ function CategoriesTab({ categories, onDataChange }) {
   );
 }
 
-/* ─── Manage Feeds View ─── */
+/* â”€â”€â”€ Manage Feeds View â”€â”€â”€ */
 
 function ManageFeedsView({ categories, onBack, onDataChange }) {
   const navigate = useNavigate();
@@ -809,7 +811,7 @@ function ManageFeedsView({ categories, onBack, onDataChange }) {
               onChange={e => setSetCatId(e.target.value)}
               className="flex-1 bg-[#0f0f0f] border border-gray-700 rounded-lg px-2 py-1.5 text-gray-200 text-sm focus:outline-none focus:border-gray-500"
             >
-              <option value="">Choose…</option>
+              <option value="">Chooseâ€¦</option>
               {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
             <button
@@ -878,8 +880,147 @@ function ManageFeedsView({ categories, onBack, onDataChange }) {
   );
 }
 
-/* ─── Danger Zone Section ─── */
+/* â”€â”€â”€ Danger Zone Section â”€â”€â”€ */
 
+
+/* --- Channel Errors Section --- */
+
+function classifyError(msg) {
+  if (!msg) return 'unknown';
+  const lower = msg.toLowerCase();
+  if (lower.includes('community guidelines') || lower.includes('channel was removed') || lower.includes('terminated')) return 'removed';
+  if (lower.includes('does not have a videos tab') || lower.includes('no videos tab')) return 'no-videos';
+  if (lower.includes('private')) return 'private';
+  return 'other';
+}
+
+function stripYtdlpPrefix(msg) {
+  if (!msg) return msg;
+  // Strip "yt-dlp failed: ERROR: [youtube:tab] UCxxx: "
+  return msg.replace(/^yt-dlp failed:\s*ERROR:\s*\[youtube:[^\]]+\]\s*[A-Za-z0-9_-]+:\s*/i, '')
+            .replace(/^yt-dlp failed:\s*ERROR:\s*/i, '')
+            .replace(/^yt-dlp failed:\s*/i, '')
+            .trim();
+}
+
+function ChannelErrorsSection() {
+  const [errors, setErrors] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [dismissing, setDismissing] = useState(new Set());
+  const [removing, setRemoving] = useState(new Set());
+  const [clearingAll, setClearingAll] = useState(false);
+
+  const load = async () => {
+    setLoading(true);
+    try { setErrors(await getFetchErrors()); } catch {}
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const handleDismiss = async (id) => {
+    setDismissing(prev => new Set(prev).add(id));
+    try {
+      await clearFetchError(id);
+      setErrors(prev => prev.filter(e => e.id !== id));
+    } catch {}
+    finally { setDismissing(prev => { const n = new Set(prev); n.delete(id); return n; }); }
+  };
+
+  const handleRemove = async (id) => {
+    setRemoving(prev => new Set(prev).add(id));
+    try {
+      await deleteSubscription(id);
+      setErrors(prev => prev.filter(e => e.id !== id));
+    } catch {}
+    finally { setRemoving(prev => { const n = new Set(prev); n.delete(id); return n; }); }
+  };
+
+  const handleClearAll = async () => {
+    setClearingAll(true);
+    try { await clearAllFetchErrors(); setErrors([]); } catch {}
+    finally { setClearingAll(false); }
+  };
+
+  if (loading) return null;
+  if (errors.length === 0) return null;
+
+  return (
+    <div className="bg-[#1a1a1a] border border-yellow-800/60 rounded-xl p-6">
+      <div className="flex items-start justify-between gap-4 mb-4">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-yellow-900/40 rounded-lg flex items-center justify-center flex-shrink-0 border border-yellow-800/60">
+            <AlertCircle size={16} className="text-yellow-500" />
+          </div>
+          <div>
+            <h2 className="text-white font-semibold text-sm">Channel Fetch Errors</h2>
+            <p className="text-gray-500 text-xs mt-0.5">{errors.length} channel{errors.length !== 1 ? 's' : ''} failed on last fetch</p>
+          </div>
+        </div>
+        <button
+          onClick={handleClearAll}
+          disabled={clearingAll}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-400 hover:text-white bg-[#242424] border border-gray-700 rounded-lg transition-colors disabled:opacity-50 flex-shrink-0"
+        >
+          {clearingAll ? <RefreshCw size={11} className="animate-spin" /> : <X size={11} />}
+          Dismiss all
+        </button>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        {errors.map(ch => {
+          const kind = classifyError(ch.last_fetch_error);
+          const msg = stripYtdlpPrefix(ch.last_fetch_error);
+          const isRemoved = kind === 'removed';
+          const isDismissing = dismissing.has(ch.id);
+          const isRemoving = removing.has(ch.id);
+
+          return (
+            <div key={ch.id} className={`border rounded-lg p-3 flex flex-col gap-2 ${isRemoved ? 'border-red-800/60 bg-red-950/20' : 'border-gray-700 bg-[#242424]'}`}>
+              <div className="flex items-center gap-2.5">
+                {ch.thumbnail_url
+                  ? <img src={ch.thumbnail_url} className="w-7 h-7 rounded-full flex-shrink-0 object-cover" />
+                  : <div className="w-7 h-7 rounded-full bg-gray-700 flex-shrink-0 flex items-center justify-center"><span className="text-xs text-gray-400">{ch.title?.[0]}</span></div>
+                }
+                <div className="flex-1 min-w-0">
+                  <p className="text-white text-sm font-medium truncate">{ch.title}</p>
+                  <p className={`text-xs mt-0.5 line-clamp-2 font-mono ${isRemoved ? 'text-red-400' : 'text-gray-500'}`}>{msg}</p>
+                </div>
+              </div>
+
+              {isRemoved && (
+                <p className="text-red-300 text-xs bg-red-900/20 rounded px-2 py-1">
+                  This channel has been removed from YouTube. You can safely remove it from Pneuma.
+                </p>
+              )}
+
+              <div className="flex items-center gap-2">
+                {isRemoved && (
+                  <button
+                    onClick={() => handleRemove(ch.id)}
+                    disabled={isRemoving || isDismissing}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    {isRemoving ? <RefreshCw size={11} className="animate-spin" /> : <Trash2 size={11} />}
+                    Remove channel
+                  </button>
+                )}
+                <button
+                  onClick={() => handleDismiss(ch.id)}
+                  disabled={isDismissing || isRemoving}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-gray-400 hover:text-white bg-[#1a1a1a] border border-gray-700 rounded-lg transition-colors disabled:opacity-50"
+                >
+                  {isDismissing ? <RefreshCw size={11} className="animate-spin" /> : <X size={11} />}
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 function DangerAction({ title, description, confirmText, onConfirm, buttonLabel, successMessage }) {
   const [confirming, setConfirming] = useState(false);
   const [running, setRunning] = useState(false);
@@ -948,7 +1089,7 @@ function DangerAction({ title, description, confirmText, onConfirm, buttonLabel,
               className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white rounded-lg text-xs font-medium transition-colors"
             >
               {running ? <RefreshCw size={11} className="animate-spin" /> : <AlertTriangle size={11} />}
-              {running ? 'Running…' : 'Confirm'}
+              {running ? 'Runningâ€¦' : 'Confirm'}
             </button>
             <button
               onClick={() => { setConfirming(false); setError(''); setDate(''); }}
@@ -990,7 +1131,7 @@ function DangerZoneSection() {
         </div>
         <div>
           <h2 className="text-white font-semibold text-sm">Danger Zone</h2>
-          <p className="text-gray-500 text-xs mt-0.5">Irreversible data operations — proceed with care</p>
+          <p className="text-gray-500 text-xs mt-0.5">Irreversible data operations â€” proceed with care</p>
         </div>
       </div>
 
@@ -1014,7 +1155,7 @@ function DangerZoneSection() {
         <DangerAction
           title="Purge videos before date"
           description="Delete all videos published before a chosen date"
-          confirmText="Choose a date — all videos published before it will be permanently deleted."
+          confirmText="Choose a date â€” all videos published before it will be permanently deleted."
           buttonLabel="Purge by date"
           onConfirm={(date) => purgeBefore(date)}
         />
@@ -1060,7 +1201,7 @@ function DangerZoneSection() {
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white rounded-lg text-xs font-medium transition-colors"
                 >
                   {purgeAllRunning ? <RefreshCw size={11} className="animate-spin" /> : <AlertTriangle size={11} />}
-                  {purgeAllRunning ? 'Purging…' : 'Yes, purge everything'}
+                  {purgeAllRunning ? 'Purgingâ€¦' : 'Yes, purge everything'}
                 </button>
                 <button
                   onClick={() => { setPurgeAllConfirming(false); setPurgeAllError(''); }}
@@ -1078,7 +1219,7 @@ function DangerZoneSection() {
   );
 }
 
-/* ─── Shared helpers ─── */
+/* â”€â”€â”€ Shared helpers â”€â”€â”€ */
 
 function SectionCard({ title, description, icon: Icon, children }) {
   return (
@@ -1097,7 +1238,7 @@ function SectionCard({ title, description, icon: Icon, children }) {
   );
 }
 
-/* ─── FetchSincePicker ─── */
+/* â”€â”€â”€ FetchSincePicker â”€â”€â”€ */
 
 const FETCH_OPTIONS = [
   { value: 'added', label: 'From when the channel was added', desc: 'Only fetch videos published on or after the date the channel was added' },
@@ -1107,7 +1248,7 @@ const FETCH_OPTIONS = [
 
 export function FetchSincePicker({ mode, date, onModeChange, onDateChange, showDefault = false, defaultSummary = '' }) {
   const options = showDefault
-    ? [{ value: 'default', label: `Use default${defaultSummary ? ` (${defaultSummary})` : ''}`, desc: 'Follow the global fetch setting in Settings → Feeds' }, ...FETCH_OPTIONS]
+    ? [{ value: 'default', label: `Use default${defaultSummary ? ` (${defaultSummary})` : ''}`, desc: 'Follow the global fetch setting in Settings â†’ Feeds' }, ...FETCH_OPTIONS]
     : FETCH_OPTIONS;
 
   return (
@@ -1356,3 +1497,5 @@ function ImportCsvSection({ onDataChange }) {
     </SectionCard>
   );
 }
+
+

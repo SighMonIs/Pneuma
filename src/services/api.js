@@ -1,4 +1,4 @@
-const BASE_URL = '/api';
+﻿const BASE_URL = '/api';
 
 async function request(method, path, body) {
   const options = {
@@ -43,6 +43,9 @@ export const updateChannelCategories = (channelId, categoryIds) =>
   request('POST', `/subscriptions/${channelId}/categories`, { categoryIds });
 export const deleteSubscription = (id) => request('DELETE', `/subscriptions/${id}`);
 export const resetDisplayDefaults = (show_banner, show_about) => request('POST', '/subscriptions/reset-display', { show_banner, show_about });
+export const getFetchErrors = () => request('GET', '/subscriptions/fetch-errors');
+export const clearFetchError = (id) => request('DELETE', `/subscriptions/${id}/fetch-error`);
+export const clearAllFetchErrors = () => request('DELETE', '/subscriptions/fetch-errors');
 export const refreshChannelInfo = (id) => request('POST', `/subscriptions/${id}/refresh-info`);
 export const markAllWatched = (id) => request('POST', `/subscriptions/${id}/mark-all-watched`);
 export const fetchChannel = (id) => request('POST', `/subscriptions/${id}/fetch`);
@@ -81,3 +84,4 @@ export const createJob = (data) => request('POST', '/scheduler', data);
 export const updateJob = (id, data) => request('PATCH', `/scheduler/${id}`, data);
 export const deleteJob = (id) => request('DELETE', `/scheduler/${id}`);
 export const runJob = (id) => request('POST', `/scheduler/${id}/run`);
+
