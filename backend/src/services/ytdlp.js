@@ -179,19 +179,26 @@ export async function fetchChannelInfo(channelId) {
 }
 
 export async function fetchVideosForChannel(channelId, { dateAfter = null } = {}) {
-  const dateArgs = dateAfter
-    ? ['--dateafter', dateAfter, '--break-on-reject']
-    : ['--playlist-end', '500'];
-
-  const args = [
-    '--flat-playlist', '--dump-json', '--no-warnings', '--quiet',
-    ...dateArgs,
-    ...(await cookieArgs()),
-    `https://www.youtube.com/channel/${channelId}/videos`,
-  ];
+  // With --dateafter the volume is naturally small (recent videos only), so we
+  // skip --flat-playlist to get full metadata including upload_date/view_count.
+  // For a full channel fetch (no date limit) we keep --flat-playlist for speed,
+  // accepting that some metadata fields may be incomplete.
+  const args = dateAfter
+    ? [
+        '--dump-json', '--no-warnings', '--quiet',
+        '--dateafter', dateAfter, '--break-on-reject',
+        ...(await cookieArgs()),
+        `https://www.youtube.com/channel/${channelId}/videos`,
+      ]
+    : [
+        '--flat-playlist', '--dump-json', '--no-warnings', '--quiet',
+        '--playlist-end', '500',
+        ...(await cookieArgs()),
+        `https://www.youtube.com/channel/${channelId}/videos`,
+      ];
 
   const output = await runYtDlp(args);
-  const items = parseJsonLines(output);
+  const items = parseJsonLines(output).filter(item => item.id && !item.entries);
   let count = 0;
 
   for (const item of items) {
