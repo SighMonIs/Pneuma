@@ -3,6 +3,7 @@ import { promisify } from 'util';
 import fs from 'fs/promises';
 import path from 'path';
 import { pool } from '../db/index.js';
+import { fetchVideosForChannelViaRss } from './rss.js';
 
 const execFileAsync = promisify(execFile);
 const DATA_DIR = process.env.DATA_DIR || '/app/data';
@@ -255,9 +256,33 @@ export async function fetchVideosForChannel(channelId, { dateAfter = null } = {}
   return count;
 }
 
+// Fetch videos for one channel, routing to RSS (fast, always has dates) for update mode
+// and yt-dlp for full/historical fetches. RSS failures fall back to yt-dlp automatically.
+export async function fetchChannelVideos(sub, { fetchMode = 'update', globalMode, globalDate } = {}) {
+  if (fetchMode === 'update') {
+    try {
+      const { count, gapDetected } = await fetchVideosForChannelViaRss(sub.id, {
+        lastFetchedAt: sub.last_fetched_at,
+      });
+      if (gapDetected) {
+        // RSS only holds ~15 videos; a gap means we missed some. Fill with yt-dlp.
+        const dateAfter = resolveDateAfterForUpdate(sub, globalMode, globalDate);
+        await fetchVideosForChannel(sub.id, { dateAfter });
+      }
+      return count;
+    } catch (rssErr) {
+      console.warn(`[RSS] Failed for ${sub.id}, falling back to yt-dlp:`, rssErr.message);
+      const dateAfter = resolveDateAfterForUpdate(sub, globalMode, globalDate);
+      return fetchVideosForChannel(sub.id, { dateAfter });
+    }
+  }
+  const dateAfter = resolveDateAfter(sub, globalMode, globalDate);
+  return fetchVideosForChannel(sub.id, { dateAfter });
+}
+
 export async function fetchAllVideos(fetchMode = 'update') {
   const { rows: subs } = await pool.query(
-    'SELECT id, fetch_since_mode, fetch_since_date, created_at, last_fetched_at FROM subscriptions ORDER BY title',
+    'SELECT id, title, fetch_since_mode, fetch_since_date, created_at, last_fetched_at FROM subscriptions ORDER BY title',
   );
 
   const { rows: settingRows } = await pool.query('SELECT key, value FROM app_settings');
@@ -265,8 +290,6 @@ export async function fetchAllVideos(fetchMode = 'update') {
   settingRows.forEach(r => (globalSettings[r.key] = r.value));
   const globalMode = globalSettings.fetch_since_mode || 'added';
   const globalDate = globalSettings.fetch_since_date || null;
-
-  const resolveDate = fetchMode === 'update' ? resolveDateAfterForUpdate : resolveDateAfter;
 
   fetchProgress.running = true;
   fetchProgress.total = subs.length;
@@ -281,7 +304,7 @@ export async function fetchAllVideos(fetchMode = 'update') {
   for (let i = 0; i < subs.length; i += batchSize) {
     const batch = subs.slice(i, i + batchSize);
     const results = await Promise.allSettled(
-      batch.map(sub => fetchVideosForChannel(sub.id, { dateAfter: resolveDate(sub, globalMode, globalDate) })),
+      batch.map(sub => fetchChannelVideos(sub, { fetchMode, globalMode, globalDate })),
     );
     await Promise.all(results.map(async (r, j) => {
       const sub = batch[j];
@@ -290,7 +313,7 @@ export async function fetchAllVideos(fetchMode = 'update') {
         await pool.query('UPDATE subscriptions SET last_fetch_error = NULL WHERE id = $1', [sub.id]);
       } else {
         const msg = r.reason?.message || 'Unknown error';
-        console.error(`[yt-dlp] Failed ${sub.id}:`, msg);
+        console.error(`[fetch] Failed ${sub.id}:`, msg);
         fetchProgress.errors++;
         fetchProgress.errorList.push({ channelId: sub.id, channelTitle: sub.title || sub.id, message: msg });
         await pool.query('UPDATE subscriptions SET last_fetch_error = $1 WHERE id = $2', [msg, sub.id]);

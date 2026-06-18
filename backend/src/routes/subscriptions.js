@@ -1,6 +1,6 @@
 ﻿import { Router } from 'express';
 import { pool } from '../db/index.js';
-import { syncSubscriptions, addChannelByUrl, fetchChannelInfo, fetchVideosForChannel, resolveDateAfter, resolveDateAfterForUpdate } from '../services/ytdlp.js';
+import { syncSubscriptions, addChannelByUrl, fetchChannelInfo, fetchChannelVideos, resolveDateAfter, resolveDateAfterForUpdate } from '../services/ytdlp.js';
 
 const VALID_MODES = ['default', 'added', 'date', 'beginning'];
 
@@ -298,9 +298,7 @@ router.post('/:id/fetch', async (req, res) => {
     const globalMode = gs.fetch_since_mode || 'added';
     const globalDate = gs.fetch_since_date || null;
 
-    const resolveDate = fetchMode === 'update' ? resolveDateAfterForUpdate : resolveDateAfter;
-    const dateAfter = resolveDate(sub, globalMode, globalDate);
-    const count = await fetchVideosForChannel(id, { dateAfter });
+    const count = await fetchChannelVideos(sub, { fetchMode, globalMode, globalDate });
     res.json({ count, channelId: id });
   } catch (err) {
     console.error('[Subscriptions] fetch failed:', err.message);
