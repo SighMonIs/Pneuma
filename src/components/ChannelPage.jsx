@@ -37,6 +37,10 @@ function formatRelativeTime(dateString) {
   if (diffDays < 365) return `${Math.floor(diffDays / 30)}mo ago`;
   return `${Math.floor(diffDays / 365)}y ago`;
 }
+function formatPublishDate(dateString) {
+  if (!dateString) return '';
+  return new Date(dateString).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+}
 
 function formatViewCount(count) {
   if (!count || count <= 0) return '';
@@ -104,7 +108,7 @@ function VideoTableRow({ video, onWatchedChange, videoMode, onVideoSelect, thumb
           {video.title}
         </a>
       </td>
-      <td className="py-2 px-3 text-gray-500 text-xs whitespace-nowrap">{formatRelativeTime(video.published_at)}</td>
+      <td className="py-2 px-3 text-gray-500 text-xs whitespace-nowrap" title={formatRelativeTime(video.published_at)}>{formatPublishDate(video.published_at) || '—'}</td>
       <td className="py-2 px-3 text-gray-500 text-xs font-mono whitespace-nowrap">{formatDuration(video.duration_seconds) || '—'}</td>
       <td className="py-2 px-3 text-gray-500 text-xs whitespace-nowrap">{formatViewCount(video.view_count) || '—'}</td>
       <td className="py-2 px-3 text-right">
