@@ -471,6 +471,59 @@ input, select { font: inherit; color: inherit; }
   background: var(--bg);
 }
 
+/* ── channel info header ──────────────────────────────────────────────── */
+.channel-header {
+  padding: 20px 20px 0;
+  flex-shrink: 0;
+}
+
+.channel-header-banner {
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  border-radius: var(--radius);
+  margin-bottom: 16px;
+  background: var(--surface-2);
+}
+
+.channel-header-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.channel-header-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--surface-2);
+  flex-shrink: 0;
+}
+
+.channel-header-name {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.channel-header-meta {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.channel-header-desc {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-muted);
+  white-space: pre-wrap;
+  margin: 14px 0 4px;
+  max-width: 800px;
+}
+
+.channel-header-desc a { color: inherit; text-decoration: underline; }
+
 .toolbar {
   display: flex;
   align-items: center;

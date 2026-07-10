@@ -76,6 +76,10 @@ function migrate(db) {
   // Migrations for columns added after initial release
   try { db.exec('ALTER TABLE videos ADD COLUMN watch_progress_secs INTEGER'); } catch (_) {}
   try { db.exec('ALTER TABLE channels ADD COLUMN ytdlp_synced_at TEXT'); } catch (_) {}
+  try { db.exec('ALTER TABLE channels ADD COLUMN description TEXT'); } catch (_) {}
+  try { db.exec('ALTER TABLE channels ADD COLUMN subscriber_count INTEGER'); } catch (_) {}
+  try { db.exec('ALTER TABLE channels ADD COLUMN banner_url TEXT'); } catch (_) {}
+  try { db.exec('ALTER TABLE channels ADD COLUMN handle TEXT'); } catch (_) {}
 
   seedSettings(db);
 }

@@ -169,27 +169,36 @@ router.get('/thumb-events', (req, res) => {
   req.on('close', () => thumbEmitter.off('data', onData));
 });
 
-// GET /api/channels/:id/thumb — proxy channel avatar to avoid ORB in Firefox
-router.get('/:id/thumb', async (req, res) => {
-  const db = getDb();
-  const ch = db.prepare('SELECT thumbnail_url FROM channels WHERE id = ?').get(req.params.id);
-  if (!ch?.thumbnail_url) return res.status(404).end();
-  try {
-    const upstream = await fetch(ch.thumbnail_url);
-    if (!upstream.ok) return res.status(502).end();
-    const buf = Buffer.from(await upstream.arrayBuffer());
-    res.setHeader('Content-Type', upstream.headers.get('content-type') || 'image/jpeg');
-    res.setHeader('Cache-Control', 'public, max-age=86400');
-    res.send(buf);
-  } catch {
-    res.status(502).end();
-  }
-});
+// GET /api/channels/:id/thumb and /:id/banner — proxy channel images to avoid ORB in Firefox
+function makeImageProxy(column) {
+  return async (req, res) => {
+    const db = getDb();
+    const ch = db.prepare(`SELECT ${column} AS url FROM channels WHERE id = ?`).get(req.params.id);
+    if (!ch?.url) return res.status(404).end();
+    try {
+      const upstream = await fetch(ch.url);
+      if (!upstream.ok) return res.status(502).end();
+      const buf = Buffer.from(await upstream.arrayBuffer());
+      res.setHeader('Content-Type', upstream.headers.get('content-type') || 'image/jpeg');
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      res.send(buf);
+    } catch {
+      res.status(502).end();
+    }
+  };
+}
+router.get('/:id/thumb',  makeImageProxy('thumbnail_url'));
+router.get('/:id/banner', makeImageProxy('banner_url'));
 
 // GET /api/channels/:id
 router.get('/:id', (req, res) => {
   const db = getDb();
-  const channel = db.prepare('SELECT * FROM channels WHERE id = ?').get(req.params.id);
+  const channel = db.prepare(`
+    SELECT c.*, COUNT(v.id) as video_count
+    FROM channels c LEFT JOIN videos v ON v.channel_id = c.id
+    WHERE c.id = ?
+    GROUP BY c.id
+  `).get(req.params.id);
   if (!channel) return res.status(404).json({ error: 'Not found' });
   res.json(channel);
 });

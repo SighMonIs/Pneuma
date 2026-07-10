@@ -5,10 +5,10 @@ const YTDLP            = require('../lib/ytdlp');
 
 const thumbEmitter = new EventEmitter();
 
-// Fetch channel avatar via the channel URL with -J (full playlist JSON).
+// Fetch channel avatar + banner + about-page metadata via the channel URL with -J (full playlist JSON).
 // The top-level thumbnails array includes both the avatar (/ytc/ CDN path) and the banner (fcrop64).
 // We prefer the /ytc/ URL because it's YouTube's specific CDN path for channel avatars exclusively.
-function fetchThumbnailFromChannel(ytChannelId) {
+function fetchChannelMeta(ytChannelId) {
   return new Promise((resolve) => {
     const url = ytChannelId.startsWith('@')
       ? `https://www.youtube.com/${ytChannelId}`
@@ -36,19 +36,26 @@ function fetchThumbnailFromChannel(ytChannelId) {
         const thumbs = Array.isArray(info.thumbnails) ? info.thumbnails : [];
 
         // /ytc/ is YouTube's CDN prefix for channel avatars — never used for banners
-        const avatar = thumbs.find(t => t.url?.includes('/ytc/') && t.url.startsWith('http'));
-        if (avatar) { done(avatar.url); return; }
-
-        // Fallback: any non-banner thumbnail (banners contain fcrop64)
+        const avatar    = thumbs.find(t => t.url?.includes('/ytc/') && t.url.startsWith('http'));
         const nonBanner = thumbs.find(t => t.url?.startsWith('http') && !t.url.includes('fcrop64'));
-        if (nonBanner) { done(nonBanner.url); return; }
+        const ct        = info.channel_thumbnail;
 
-        // Last resort: channel_thumbnail field if it isn't a banner
-        const ct = info.channel_thumbnail;
-        if (ct?.startsWith('http') && !ct.includes('fcrop64')) { done(ct); return; }
+        const avatarUrl = avatar?.url
+          || nonBanner?.url
+          || (ct?.startsWith('http') && !ct.includes('fcrop64') ? ct : null);
 
-        console.warn(`[thumb] No avatar for ${ytChannelId}. Thumbnails: ${thumbs.map(t => t.url?.slice(0, 60)).join(' | ')}`);
-        done(null);
+        // Banners are the fcrop64-cropped thumbnails; not every channel has one
+        const banner = thumbs.find(t => t.url?.startsWith('http') && t.url.includes('fcrop64'));
+
+        if (!avatarUrl) console.warn(`[thumb] No avatar for ${ytChannelId}. Thumbnails: ${thumbs.map(t => t.url?.slice(0, 60)).join(' | ')}`);
+
+        done({
+          avatar:          avatarUrl,
+          banner:          banner?.url || null,
+          description:     info.description || null,
+          subscriberCount: info.channel_follower_count ?? null,
+          handle:          info.uploader_id?.startsWith('@') ? info.uploader_id : null,
+        });
       } catch (e) {
         console.error(`[thumb] parse fail (${ytChannelId}) exit=${code}: ${e.message}. out=${out.slice(0, 200)}`);
         done(null);
@@ -61,20 +68,20 @@ function fetchThumbnailFromChannel(ytChannelId) {
 
 let running = false;
 
+// Channels still missing avatar or banner/description/subscriber metadata
+const PENDING_WHERE = `yt_channel_id IS NOT NULL AND (thumbnail_url IS NULL OR banner_url IS NULL)`;
+
 async function syncThumbnails(batchSize = 3) {
   if (running) return;
   running = true;
 
   const db = getDb();
 
-  const remaining = db.prepare(`
-    SELECT COUNT(*) as c FROM channels
-    WHERE thumbnail_url IS NULL AND yt_channel_id IS NOT NULL
-  `).get().c;
+  const remaining = db.prepare(`SELECT COUNT(*) as c FROM channels WHERE ${PENDING_WHERE}`).get().c;
 
   const channels = db.prepare(`
     SELECT id, yt_channel_id, name FROM channels
-    WHERE  thumbnail_url IS NULL AND yt_channel_id IS NOT NULL
+    WHERE  ${PENDING_WHERE}
     LIMIT  ?
   `).all(batchSize);
 
@@ -88,23 +95,28 @@ async function syncThumbnails(batchSize = 3) {
     const slice = channels.slice(i, i + CONCURRENCY);
     slice.forEach(ch => console.log(`[thumb] Fetching: ${ch.name}`));
     const results = await Promise.all(
-      slice.map(ch => fetchThumbnailFromChannel(ch.yt_channel_id).then(url => ({ ch, url })))
+      slice.map(ch => fetchChannelMeta(ch.yt_channel_id).then(meta => ({ ch, meta })))
     );
-    for (const { ch, url } of results) {
-      if (url) {
-        db.prepare('UPDATE channels SET thumbnail_url = ? WHERE id = ?').run(url, ch.id);
+    for (const { ch, meta } of results) {
+      if (meta) {
+        db.prepare(`
+          UPDATE channels SET
+            thumbnail_url    = COALESCE(?, thumbnail_url),
+            banner_url       = ?,
+            description      = ?,
+            subscriber_count = ?,
+            handle           = ?
+          WHERE id = ?
+        `).run(meta.avatar, meta.banner, meta.description, meta.subscriberCount, meta.handle, ch.id);
         console.log(`[thumb] Stored: ${ch.name}`);
-        thumbEmitter.emit('data', { type: 'fetched', channel_id: ch.id, url });
+        thumbEmitter.emit('data', { type: 'fetched', channel_id: ch.id, url: meta.avatar });
       } else {
         console.warn(`[thumb] Failed: ${ch.name}`);
       }
     }
   }
 
-  const newRemaining = db.prepare(`
-    SELECT COUNT(*) as c FROM channels
-    WHERE thumbnail_url IS NULL AND yt_channel_id IS NOT NULL
-  `).get().c;
+  const newRemaining = db.prepare(`SELECT COUNT(*) as c FROM channels WHERE ${PENDING_WHERE}`).get().c;
 
   if (channels.length > 0) {
     thumbEmitter.emit('data', { type: 'done', remaining: newRemaining });

@@ -132,6 +132,7 @@ function navigate(view, id = null, { push = true } = {}) {
   const categoriesPanel  = document.getElementById('categoriesPanel');
   const watchPanel       = document.getElementById('watchPanel');
   const loadMoreWrap     = document.getElementById('loadMoreWrap');
+  const channelHeader    = document.getElementById('channelHeader');
 
   // Helper to hide all secondary panels at once
   const hideAll = () => {
@@ -141,6 +142,7 @@ function navigate(view, id = null, { push = true } = {}) {
     settingsPanel.classList.add('hidden');
     categoriesPanel.classList.add('hidden');
     watchPanel.classList.add('hidden');
+    channelHeader.classList.add('hidden');
   };
 
   if (view === 'settings') {
@@ -172,8 +174,55 @@ function navigate(view, id = null, { push = true } = {}) {
     watchPanel.classList.add('hidden');
     stopPlayer();
     if (prevView === 'categories') renderSidebar(); // switch back to thumbnail mode
+    if (view === 'channel') {
+      renderChannelHeader(id);
+    } else {
+      channelHeader.classList.add('hidden');
+    }
     loadVideos(true);
   }
+}
+
+/* ── render: channel header ───────────────────────────────────────────── */
+async function renderChannelHeader(channelId) {
+  const header = document.getElementById('channelHeader');
+  let ch;
+  try { ch = await api(`/channels/${channelId}`); } catch { header.classList.add('hidden'); return; }
+  if (state.view !== 'channel' || state.channelId !== channelId) return; // navigated away while loading
+
+  const metaParts = [];
+  if (ch.handle) metaParts.push(escHtml(ch.handle));
+  if (ch.subscriber_count != null) metaParts.push(`${formatCount(ch.subscriber_count)} subscribers`);
+  metaParts.push(`${ch.video_count} video${ch.video_count !== 1 ? 's' : ''}`);
+
+  header.innerHTML = `
+    ${ch.banner_url ? `<img class="channel-header-banner" src="/api/channels/${ch.id}/banner" alt="" onerror="this.remove()">` : ''}
+    <div class="channel-header-row">
+      <img class="channel-header-avatar" src="/api/channels/${ch.id}/thumb" alt="" onerror="this.style.visibility='hidden'">
+      <div class="channel-header-info">
+        <div class="channel-header-name">${escHtml(ch.name)}</div>
+        <div class="channel-header-meta">${metaParts.join(' · ')}</div>
+      </div>
+    </div>
+    ${ch.description ? `<div class="channel-header-desc">${linkify(escHtml(ch.description))}</div>` : ''}
+  `;
+  header.classList.remove('hidden');
+}
+
+function formatCount(n) {
+  if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (n >= 1e3) return (n / 1e3).toFixed(1).replace(/\.0$/, '') + 'K';
+  return String(n);
+}
+
+// Turn plain-text URLs into links and preserve line breaks — input must already be HTML-escaped
+function linkify(escapedText) {
+  return escapedText
+    .replace(/(https?:\/\/[^\s<]+|www\.[^\s<]+)/g, (m) => {
+      const href = m.startsWith('http') ? m : `https://${m}`;
+      return `<a href="${href}" target="_blank" rel="noopener">${m}</a>`;
+    })
+    .replace(/\n/g, '<br>');
 }
 
 // Resolve the current URL into a { view, id } pair after state has loaded
