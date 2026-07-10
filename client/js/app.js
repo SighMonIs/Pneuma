@@ -77,9 +77,14 @@ async function loadMeta() {
 
 function applyStoredPrefs() {
   state.layout   = localStorage.getItem('layout')   || state.settings.default_view   || 'grid';
-  state.filter   = localStorage.getItem('filter')   || state.settings.default_filter || 'all';
   state.sort     = localStorage.getItem('sort')     || state.settings.default_sort   || 'newest';
   state.autoplay = localStorage.getItem('autoplay') !== 'false';
+}
+
+// All/Unwatched/Watched is remembered separately per view (home vs a given channel/category page)
+function applyFilterForView(view) {
+  state.filter = localStorage.getItem(`filter:${view}`) || (view === 'home' ? state.settings.default_filter : null) || 'all';
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === state.filter));
 }
 
 /* ── navigation ───────────────────────────────────────────────────────── */
@@ -179,6 +184,7 @@ function navigate(view, id = null, { push = true } = {}) {
     } else {
       channelHeader.classList.add('hidden');
     }
+    applyFilterForView(view);
     loadVideos(true);
   }
 }
@@ -1419,7 +1425,7 @@ function setupEvents() {
       document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       state.filter = btn.dataset.filter;
-      localStorage.setItem('filter', state.filter);
+      localStorage.setItem(`filter:${state.view}`, state.filter);
       loadVideos(true);
     });
   });
@@ -1489,11 +1495,9 @@ function setupEvents() {
     btnAutoplay.classList.toggle('active', state.autoplay);
   });
 
-  // Apply saved layout/filter/sort to UI — clear HTML defaults first
+  // Apply saved layout/sort to UI — clear HTML defaults first (filter is handled per-view by applyFilterForView)
   document.querySelectorAll('.layout-btn').forEach(b => b.classList.remove('active'));
   document.querySelector(`[data-layout="${state.layout}"]`)?.classList.add('active');
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  document.querySelector(`[data-filter="${state.filter}"]`)?.classList.add('active');
   document.getElementById('sortSelect').value = state.sort;
 }
 
