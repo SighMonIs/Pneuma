@@ -2,10 +2,13 @@ const express = require('express');
 const router = express.Router();
 const { getDb, withTransaction } = require('../db');
 
-// GET /api/categories
+// GET /api/categories — Favourites always sorts first, everything else by position/name
 router.get('/', (req, res) => {
   const db = getDb();
-  const cats = db.prepare('SELECT * FROM categories ORDER BY position, name').all();
+  const cats = db.prepare(`
+    SELECT * FROM categories
+    ORDER BY (name = 'Favourites') DESC, position, name
+  `).all();
   res.json(cats);
 });
 

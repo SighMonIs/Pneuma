@@ -948,10 +948,13 @@ function renderCategoriesPage() {
 
   const listHtml = state.categories.length
     ? state.categories.map(cat => {
-        const count = state.channels.filter(c => c.category_id === cat.id).length;
+        const count   = state.channels.filter(c => c.category_id === cat.id).length;
+        const pinned  = cat.name === 'Favourites';
         return `
-          <div class="cat-row" data-id="${cat.id}">
-            <span class="cat-drag-handle" title="Drag to reorder">&#8942;&#8942;</span>
+          <div class="cat-row${pinned ? ' cat-row-pinned' : ''}" data-id="${cat.id}">
+            ${pinned
+              ? `<span class="cat-drag-handle cat-pinned-icon" title="Favourites always stays at the top">&#9733;</span>`
+              : `<span class="cat-drag-handle" title="Drag to reorder">&#8942;&#8942;</span>`}
             <span class="cat-name" contenteditable="false">${escHtml(cat.name)}</span>
             <span class="cat-count">${count} channel${count !== 1 ? 's' : ''}</span>
             <div class="cat-actions">
@@ -1026,7 +1029,9 @@ function renderCategoriesPage() {
 function wireUpCatDrag(catList) {
   let dragSrc = null;
 
-  catList.querySelectorAll('.cat-row').forEach(row => {
+  // Favourites (.cat-row-pinned) is excluded entirely — never draggable, and
+  // since it never gets a dragover listener, nothing can be dropped above it.
+  catList.querySelectorAll('.cat-row:not(.cat-row-pinned)').forEach(row => {
     const handle = row.querySelector('.cat-drag-handle');
 
     handle.addEventListener('mousedown', () => { row.draggable = true; });

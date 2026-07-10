@@ -1507,6 +1507,13 @@ input, select { font: inherit; color: inherit; }
 .cat-drag-handle:active,
 .cat-ch-handle:active { cursor: grabbing; }
 
+.cat-pinned-icon {
+  cursor: default;
+  color: #ffcc00;
+  font-size: 12px;
+}
+.cat-pinned-icon:hover { color: #ffcc00; }
+
 .cat-row.dragging    { opacity: 0.35; }
 .cat-row.drag-over   { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 .cat-section.dragging { opacity: 0.4; }
