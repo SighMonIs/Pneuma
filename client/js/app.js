@@ -224,13 +224,20 @@ async function renderChannelHeader(channelId) {
 
   banner.innerHTML = ch.banner_url ? `<img src="/api/channels/${ch.id}/banner" alt="" onerror="this.remove()">` : '';
 
+  const ytUrl = ch.yt_channel_id.startsWith('@')
+    ? `https://www.youtube.com/${ch.yt_channel_id}`
+    : `https://www.youtube.com/channel/${ch.yt_channel_id}`;
+
   row.innerHTML = `
     <img class="channel-header-avatar" src="/api/channels/${ch.id}/thumb" alt="" onerror="this.style.visibility='hidden'">
     <div class="channel-header-info">
       <div class="channel-header-name">${escHtml(ch.name)}</div>
       <div class="channel-header-meta">${metaParts.join(' · ')}</div>
     </div>
-    ${ch.description ? `<button class="channel-header-desc-toggle" id="descToggle">Show description</button>` : ''}
+    <div class="channel-header-actions">
+      <a class="btn-watch-yt" href="${ytUrl}" target="_blank" rel="noopener">View on YouTube</a>
+      ${ch.description ? `<button class="channel-header-desc-toggle" id="descToggle">Show description</button>` : ''}
+    </div>
   `;
 
   if (ch.description) {

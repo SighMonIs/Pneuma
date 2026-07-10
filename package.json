@@ -1,6 +1,6 @@
 {
   "name": "pneuma",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Self-hosted YouTube subscription reader",
   "main": "server/index.js",
   "scripts": {
