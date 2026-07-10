@@ -1504,6 +1504,17 @@ function setupEvents() {
     });
   });
 
+  // Mark all as watched/unwatched — only the videos currently loaded on screen
+  document.getElementById('markAllSelect').addEventListener('change', async (e) => {
+    const action = e.target.value;
+    e.target.value = '';
+    if (!action || state.videos.length === 0) return;
+    const ids = state.videos.map(v => v.id);
+    await api(`/videos/${action}-bulk`, { method: 'POST', body: { ids } });
+    await loadVideos(true);
+    refreshSidebarCounts();
+  });
+
   // Sort
   document.getElementById('sortSelect').addEventListener('change', (e) => {
     state.sort = e.target.value;

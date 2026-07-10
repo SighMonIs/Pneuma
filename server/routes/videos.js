@@ -109,4 +109,14 @@ router.post('/watched-bulk', (req, res) => {
   res.json({ ok: true });
 });
 
+// POST /api/videos/unwatched-bulk — { ids: [1,2,3] }
+router.post('/unwatched-bulk', (req, res) => {
+  const { ids } = req.body;
+  if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: 'ids required' });
+  const db = getDb();
+  const placeholders = ids.map(() => '?').join(',');
+  db.prepare(`UPDATE videos SET watched_at = NULL WHERE id IN (${placeholders})`).run(...ids);
+  res.json({ ok: true });
+});
+
 module.exports = router;

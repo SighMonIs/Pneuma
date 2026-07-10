@@ -721,7 +721,7 @@ input, select { font: inherit; color: inherit; }
 
 .toolbar-right { display: flex; align-items: center; gap: 8px; }
 
-.sort-select, .duration-select {
+.sort-select, .duration-select, .mark-all-select {
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -732,7 +732,7 @@ input, select { font: inherit; color: inherit; }
   cursor: pointer;
 }
 
-.sort-select:focus, .duration-select:focus { border-color: var(--accent); color: var(--text); }
+.sort-select:focus, .duration-select:focus, .mark-all-select:focus { border-color: var(--accent); color: var(--text); }
 
 .layout-toggle { display: flex; gap: 2px; }
 
@@ -849,12 +849,13 @@ input, select { font: inherit; color: inherit; }
   font-size: 18px;
   color: #fff;
   opacity: 0;
-  transition: opacity var(--transition);
-  pointer-events: none;
+  transition: opacity var(--transition), background var(--transition);
+  pointer-events: auto;
   padding-left: 3px; /* optical centre for ▶ */
 }
 
 .video-card:hover .video-play-btn { opacity: 1; }
+.video-play-btn:hover { background: var(--accent); }
 
 /* Watched toggle button */
 .video-watched-btn {
@@ -906,6 +907,7 @@ input, select { font: inherit; color: inherit; }
   height: 100%;
   object-fit: cover;
   display: block;
+  filter: brightness(0.85);
 }
 
 .video-duration {
