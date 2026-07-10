@@ -200,6 +200,10 @@ router.post('/', async (req, res) => {
   if (!yt_channel_id && !rss_url) return res.status(400).json({ error: 'yt_channel_id or rss_url required' });
   const db = getDb();
   const { id, created } = upsertChannel(db, { name, yt_channel_id, rss_url, category_id, settings_json });
+  if (created) {
+    const channel = db.prepare('SELECT * FROM channels WHERE id = ?').get(id);
+    pollChannel(channel).catch(e => console.error('Poll error:', e.message));
+  }
   res.json({ id, created });
 });
 
@@ -221,7 +225,9 @@ router.post('/add', async (req, res) => {
     const info = await resolveChannelFromUrl(url);
     const db = getDb();
     const { id, created } = upsertChannel(db, { ...info, category_id });
-    res.json({ id, created, channel: db.prepare('SELECT * FROM channels WHERE id = ?').get(id) });
+    const channel = db.prepare('SELECT * FROM channels WHERE id = ?').get(id);
+    if (created) pollChannel(channel).catch(e => console.error('Poll error:', e.message));
+    res.json({ id, created, channel });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -357,6 +363,7 @@ router.post('/import', upload.single('file'), async (req, res) => {
     }
   }
 
+  if (results.imported > 0) pollAllFeeds().catch(e => console.error('Poll error:', e.message));
   res.json(results);
 });
 
