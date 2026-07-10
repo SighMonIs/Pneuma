@@ -177,6 +177,7 @@ function navigate(view, id = null, { push = true } = {}) {
     settingsPanel.classList.add('hidden');
     categoriesPanel.classList.add('hidden');
     watchPanel.classList.add('hidden');
+    videoContainer.scrollTop = 0;
     stopPlayer();
     if (prevView === 'categories') renderSidebar(); // switch back to thumbnail mode
     if (view === 'channel') {
