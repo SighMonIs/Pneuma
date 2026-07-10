@@ -74,8 +74,16 @@
     <!-- ── MAIN CONTENT ──────────────────────────────────── -->
     <main class="main" id="main">
 
-      <!-- Channel info header (channel pages only) -->
-      <div class="channel-header hidden" id="channelHeader">
+      <!-- Channel info header (channel pages only) — three separate top-level
+           blocks (not one wrapper) so channel-header-row can position:sticky
+           against the full page instead of a small parent box. -->
+      <div class="channel-header-banner hidden" id="channelBanner">
+        <!-- populated by JS -->
+      </div>
+      <div class="channel-header-row hidden" id="channelHeaderRow">
+        <!-- populated by JS -->
+      </div>
+      <div class="channel-header-desc hidden" id="channelDesc">
         <!-- populated by JS -->
       </div>
 

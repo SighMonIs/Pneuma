@@ -131,13 +131,16 @@ function navigate(view, id = null, { push = true } = {}) {
     history.pushState({ view, id }, '', url);
   }
 
+  const main             = document.getElementById('main');
   const toolbar          = document.getElementById('toolbar');
   const videoContainer   = document.getElementById('videoContainer');
   const settingsPanel    = document.getElementById('settingsPanel');
   const categoriesPanel  = document.getElementById('categoriesPanel');
   const watchPanel       = document.getElementById('watchPanel');
   const loadMoreWrap     = document.getElementById('loadMoreWrap');
-  const channelHeader    = document.getElementById('channelHeader');
+  const channelBanner    = document.getElementById('channelBanner');
+  const channelHeaderRow = document.getElementById('channelHeaderRow');
+  const channelDescEl    = document.getElementById('channelDesc');
 
   // Helper to hide all secondary panels at once
   const hideAll = () => {
@@ -147,7 +150,9 @@ function navigate(view, id = null, { push = true } = {}) {
     settingsPanel.classList.add('hidden');
     categoriesPanel.classList.add('hidden');
     watchPanel.classList.add('hidden');
-    channelHeader.classList.add('hidden');
+    channelBanner.classList.add('hidden');
+    channelHeaderRow.classList.add('hidden');
+    channelDescEl.classList.add('hidden');
   };
 
   if (view === 'settings') {
@@ -178,12 +183,17 @@ function navigate(view, id = null, { push = true } = {}) {
     categoriesPanel.classList.add('hidden');
     watchPanel.classList.add('hidden');
     videoContainer.scrollTop = 0;
+    main.scrollTop = 0;
+    main.classList.toggle('channel-scroll', view === 'channel');
     stopPlayer();
     if (prevView === 'categories') renderSidebar(); // switch back to thumbnail mode
     if (view === 'channel') {
       renderChannelHeader(id);
     } else {
-      channelHeader.classList.add('hidden');
+      channelBanner.classList.add('hidden');
+      channelHeaderRow.classList.add('hidden');
+      channelDescEl.classList.add('hidden');
+      toolbar.style.top = ''; // only relevant in channel-scroll mode; avoid leaking a stale offset
     }
     applyFilterForView(view);
     loadVideos(true);
@@ -192,9 +202,19 @@ function navigate(view, id = null, { push = true } = {}) {
 
 /* ── render: channel header ───────────────────────────────────────────── */
 async function renderChannelHeader(channelId) {
-  const header = document.getElementById('channelHeader');
+  const banner = document.getElementById('channelBanner');
+  const row    = document.getElementById('channelHeaderRow');
+  const desc   = document.getElementById('channelDesc');
+
   let ch;
-  try { ch = await api(`/channels/${channelId}`); } catch { header.classList.add('hidden'); return; }
+  try {
+    ch = await api(`/channels/${channelId}`);
+  } catch {
+    banner.classList.add('hidden');
+    row.classList.add('hidden');
+    desc.classList.add('hidden');
+    return;
+  }
   if (state.view !== 'channel' || state.channelId !== channelId) return; // navigated away while loading
 
   const metaParts = [];
@@ -202,28 +222,35 @@ async function renderChannelHeader(channelId) {
   if (ch.subscriber_count != null) metaParts.push(`${formatCount(ch.subscriber_count)} subscribers`);
   metaParts.push(`${ch.video_count} video${ch.video_count !== 1 ? 's' : ''}`);
 
-  header.innerHTML = `
-    <div class="channel-header-banner">
-      ${ch.banner_url ? `<img src="/api/channels/${ch.id}/banner" alt="" onerror="this.remove()">` : ''}
+  banner.innerHTML = ch.banner_url ? `<img src="/api/channels/${ch.id}/banner" alt="" onerror="this.remove()">` : '';
+
+  row.innerHTML = `
+    <img class="channel-header-avatar" src="/api/channels/${ch.id}/thumb" alt="" onerror="this.style.visibility='hidden'">
+    <div class="channel-header-info">
+      <div class="channel-header-name">${escHtml(ch.name)}</div>
+      <div class="channel-header-meta">${metaParts.join(' · ')}</div>
     </div>
-    <div class="channel-header-row">
-      <img class="channel-header-avatar" src="/api/channels/${ch.id}/thumb" alt="" onerror="this.style.visibility='hidden'">
-      <div class="channel-header-info">
-        <div class="channel-header-name">${escHtml(ch.name)}</div>
-        <div class="channel-header-meta">${metaParts.join(' · ')}</div>
-      </div>
-      ${ch.description ? `<button class="channel-header-desc-toggle" id="descToggle">Show description</button>` : ''}
-    </div>
-    ${ch.description ? `<div class="channel-header-desc hidden" id="channelDesc">${linkify(escHtml(ch.description))}</div>` : ''}
+    ${ch.description ? `<button class="channel-header-desc-toggle" id="descToggle">Show description</button>` : ''}
   `;
 
-  header.querySelector('#descToggle')?.addEventListener('click', () => {
-    const desc   = header.querySelector('#channelDesc');
-    const toggle = header.querySelector('#descToggle');
-    const hidden = desc.classList.toggle('hidden');
-    toggle.textContent = hidden ? 'Show description' : 'Hide description';
-  });
-  header.classList.remove('hidden');
+  if (ch.description) {
+    desc.innerHTML = linkify(escHtml(ch.description));
+    desc.classList.add('hidden');
+    row.querySelector('#descToggle').addEventListener('click', () => {
+      const toggle = document.getElementById('descToggle');
+      const hidden = desc.classList.toggle('hidden');
+      toggle.textContent = hidden ? 'Show description' : 'Hide description';
+    });
+  } else {
+    desc.innerHTML = '';
+    desc.classList.add('hidden');
+  }
+
+  banner.classList.remove('hidden');
+  row.classList.remove('hidden');
+
+  // Stack the sticky toolbar directly under the sticky channel-header-row
+  document.getElementById('toolbar').style.top = `${row.offsetHeight}px`;
 }
 
 function formatCount(n) {

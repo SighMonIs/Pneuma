@@ -471,19 +471,29 @@ input, select { font: inherit; color: inherit; }
   background: var(--bg);
 }
 
-/* ── channel info header ──────────────────────────────────────────────── */
-.channel-header {
-  padding: 20px 20px 0;
-  flex-shrink: 0;
+/* Channel pages: the whole page scrolls (banner scrolls away) instead of
+   just the video grid, so the channel-header-row + toolbar can stick to
+   the top once the banner scrolls past. */
+.main.channel-scroll {
+  overflow-y: auto;
+}
+.main.channel-scroll .video-container {
+  flex: none;
+  overflow: visible;
 }
 
+/* ── channel info header ──────────────────────────────────────────────── */
+/* channel-header-banner, channel-header-row, and channel-header-desc are
+   separate top-level siblings of .main (not nested in one wrapper) so
+   channel-header-row can position:sticky against the full scrollable page
+   instead of being confined to a small wrapper's own height. */
 .channel-header-banner {
-  width: 100%;
   height: 160px;
   border-radius: var(--radius);
-  margin-bottom: 16px;
+  margin: 20px 20px 16px;
   background: var(--surface-2);
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .channel-header-banner img {
@@ -497,6 +507,17 @@ input, select { font: inherit; color: inherit; }
   display: flex;
   align-items: center;
   gap: 16px;
+  padding: 0 20px;
+  flex-shrink: 0;
+}
+
+.main.channel-scroll .channel-header-row {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  background: var(--bg);
+  padding-top: 12px;
+  padding-bottom: 12px;
 }
 
 .channel-header-avatar {
@@ -540,8 +561,9 @@ input, select { font: inherit; color: inherit; }
   line-height: 1.6;
   color: var(--text-muted);
   white-space: pre-wrap;
-  margin: 14px 0 4px;
+  margin: 14px 20px 20px;
   max-width: 800px;
+  flex-shrink: 0;
 }
 
 .channel-header-desc a { color: inherit; text-decoration: underline; }
@@ -554,6 +576,12 @@ input, select { font: inherit; color: inherit; }
   padding: 10px 20px;
   flex-shrink: 0;
   position: relative;
+}
+
+.main.channel-scroll .toolbar {
+  position: sticky;
+  z-index: 5;
+  background: var(--bg);
 }
 
 .toolbar-filters {
