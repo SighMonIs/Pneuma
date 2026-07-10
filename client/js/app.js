@@ -196,7 +196,9 @@ async function renderChannelHeader(channelId) {
   metaParts.push(`${ch.video_count} video${ch.video_count !== 1 ? 's' : ''}`);
 
   header.innerHTML = `
-    ${ch.banner_url ? `<img class="channel-header-banner" src="/api/channels/${ch.id}/banner" alt="" onerror="this.remove()">` : ''}
+    <div class="channel-header-banner">
+      ${ch.banner_url ? `<img src="/api/channels/${ch.id}/banner" alt="" onerror="this.remove()">` : ''}
+    </div>
     <div class="channel-header-row">
       <img class="channel-header-avatar" src="/api/channels/${ch.id}/thumb" alt="" onerror="this.style.visibility='hidden'">
       <div class="channel-header-info">
