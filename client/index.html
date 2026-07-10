@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pneuma</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="layout">
+
+    <!-- ── SIDEBAR ─────────────────────────────────────────── -->
+    <aside class="sidebar" id="sidebar">
+
+      <div class="sidebar-header">
+        <span class="brand" id="brand">Pneuma</span>
+        <div class="search-wrap" id="searchWrap">
+          <input
+            type="text"
+            id="searchInput"
+            class="search-input"
+            placeholder="Search…"
+            autocomplete="off"
+            spellcheck="false"
+          >
+          <button class="search-clear" id="searchClear" aria-label="Clear search">✕</button>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a class="nav-item active" data-view="home" href="#">
+          <span class="nav-icon">⌂</span> Home
+        </a>
+        <a class="nav-item" data-view="settings" href="#">
+          <span class="nav-icon">⚙</span> Settings
+        </a>
+      </nav>
+
+      <div class="sidebar-divider"></div>
+
+      <!-- Search results (replaces category list when searching) -->
+      <div class="search-results hidden" id="searchResults">
+        <div class="search-section" id="searchLocal">
+          <!-- populated by JS -->
+        </div>
+        <div class="search-divider hidden" id="searchDivider"></div>
+        <div class="search-section" id="searchYoutube">
+          <!-- populated by JS -->
+        </div>
+        <div class="search-detected hidden" id="searchDetected">
+          <!-- populated by JS when URL/channel name detected -->
+        </div>
+      </div>
+
+      <!-- Categories section header -->
+      <div class="sidebar-cats-row">
+        <button class="nav-item cats-nav-btn" data-view="categories" id="btnCategoriesPage">
+          <span class="nav-icon">&#8801;</span> Categories
+          <button class="btn-cat-toggle" id="btnToggleCategories" title="Toggle category list">&#8722;</button>
+        </button>
+      </div>
+
+      <!-- Category + channel tree -->
+      <div class="category-tree" id="categoryTree">
+        <!-- populated by JS -->
+      </div>
+
+      <div class="sidebar-footer">
+        <button class="btn-add-channel" id="btnAddChannel">＋ Add Channel</button>
+      </div>
+
+    </aside>
+
+    <!-- ── MAIN CONTENT ──────────────────────────────────── -->
+    <main class="main" id="main">
+
+      <!-- Filter / sort bar -->
+      <div class="toolbar" id="toolbar">
+        <div class="toolbar-filters">
+          <button class="filter-btn active" data-filter="all">All</button>
+          <button class="filter-btn" data-filter="unwatched">Unwatched</button>
+          <button class="filter-btn" data-filter="watched">Watched</button>
+        </div>
+        <div class="toolbar-center"></div>
+        <div class="toolbar-right">
+          <button class="btn-feed-errors hidden" id="btnFeedErrors" title="Feed errors">⚠ <span id="feedErrorCount">0</span></button>
+          <select class="sort-select" id="sortSelect">
+            <option value="newest">Newest</option>
+            <option value="oldest">Oldest</option>
+          </select>
+          <select class="duration-select" id="durationSelect">
+            <option value="any">Any length</option>
+            <option value="short">Short (&lt;5m)</option>
+            <option value="medium">Medium (5–20m)</option>
+            <option value="long">Long (&gt;20m)</option>
+          </select>
+          <div class="layout-toggle">
+            <button class="layout-btn active" data-layout="grid" title="Grid view">⊞</button>
+            <button class="layout-btn" data-layout="list" title="List view">≡</button>
+          </div>
+          <button class="btn-autoplay active" id="btnAutoplay" title="Autoplay">▶ Auto</button>
+          <button class="btn-refresh" id="btnRefresh" title="Refresh all feeds">↻</button>
+        </div>
+      </div>
+
+      <!-- Video grid / list -->
+      <div class="video-container" id="videoContainer">
+        <!-- populated by JS -->
+        <div class="load-more-wrap hidden" id="loadMoreWrap">
+          <button class="btn-load-more" id="btnLoadMore">Load more</button>
+        </div>
+      </div>
+
+      <!-- Settings panel (hidden by default) -->
+      <div class="settings-panel hidden" id="settingsPanel">
+        <!-- populated by JS -->
+      </div>
+
+      <!-- Categories management panel -->
+      <div class="settings-panel hidden" id="categoriesPanel">
+        <!-- populated by JS -->
+      </div>
+
+      <!-- Watch page (dedicated video player) -->
+      <div class="watch-panel hidden" id="watchPanel">
+        <div class="watch-header">
+          <button class="watch-back" id="watchBack">&#8592; Back</button>
+        </div>
+        <div class="watch-player-wrap" id="watchPlayerWrap">
+          <!-- YT player injected here -->
+        </div>
+        <div class="watch-info">
+          <h1 class="watch-title" id="watchTitle"></h1>
+          <div class="watch-meta-row">
+            <div class="watch-meta" id="watchMeta"></div>
+            <a class="btn-watch-yt" id="watchYtLink" target="_blank" rel="noopener">View on YouTube</a>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ── MODALS ─────────────────────────────────────────── -->
+  <div class="modal-overlay hidden" id="modalOverlay">
+    <div class="modal" id="modal">
+      <!-- populated by JS -->
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="https://www.youtube.com/iframe_api"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>

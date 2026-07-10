@@ -1,0 +1,11 @@
+services:
+  pneuma:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - pneuma-data:/data
+    restart: unless-stopped
+
+volumes:
+  pneuma-data:
