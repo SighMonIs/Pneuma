@@ -420,7 +420,7 @@ function makeVideoCard(v) {
     </div>
     <div class="video-info">
       <div class="video-title">${escHtml(v.title)}</div>
-      <div class="video-meta">${videoChannelLinkHtml(v)} · ${timeAgo(v.published_at)}</div>
+      <div class="video-meta">${videoChannelLinkHtml(v)}<span class="video-time">${timeAgo(v.published_at)}</span></div>
     </div>`;
 
   el.querySelector('.video-watched-btn').addEventListener('click', async (e) => {
@@ -445,7 +445,7 @@ function makeVideoRow(v) {
     <img class="video-row-thumb" src="${v.thumbnail_url || ''}" alt="" loading="lazy" onerror="this.style.opacity=0">
     <div class="video-row-info">
       <div class="video-row-title">${escHtml(v.title)}</div>
-      <div class="video-row-meta">${videoChannelLinkHtml(v)} · ${timeAgo(v.published_at)}</div>
+      <div class="video-row-meta">${videoChannelLinkHtml(v)}<span class="video-time">${timeAgo(v.published_at)}</span></div>
     </div>
     ${v.duration ? `<span class="video-row-duration">${formatDuration(v.duration)}</span>` : ''}`;
   wireVideoChannelLink(el, v);

@@ -9,6 +9,7 @@ const { getDb } = require('./db');
 const { pollAllFeeds } = require('./jobs/rss-poller');
 const { syncMissingVideos } = require('./jobs/ytdlp-sync');
 const { syncThumbnails } = require('./jobs/thumbnail-sync');
+const { syncDurations } = require('./jobs/duration-sync');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -59,5 +60,10 @@ function scheduleJobs() {
   // Thumbnail sync: runs every 15 s, batch of 6 (running flag prevents overlap)
   setInterval(async () => {
     try { await syncThumbnails(6); } catch (e) { console.error('Thumbnail sync error:', e.message); }
+  }, 15_000);
+
+  // Duration backfill: runs every 15 s, batch of 6 (running flag prevents overlap)
+  setInterval(async () => {
+    try { await syncDurations(6); } catch (e) { console.error('Duration sync error:', e.message); }
   }, 15_000);
 }

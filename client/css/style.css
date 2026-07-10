@@ -917,6 +917,10 @@ input, select { font: inherit; color: inherit; }
 }
 
 .video-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   font-size: 11px;
   color: var(--text-muted);
 }
@@ -925,9 +929,12 @@ input, select { font: inherit; color: inherit; }
   display: inline-flex;
   align-items: center;
   gap: 5px;
+  min-width: 0;
   cursor: pointer;
 }
 .video-channel-link:hover { color: var(--text); text-decoration: underline; }
+
+.video-time { flex-shrink: 0; }
 
 .video-channel-icon {
   width: 16px;
@@ -974,7 +981,14 @@ input, select { font: inherit; color: inherit; }
   margin-bottom: 4px;
 }
 
-.video-row-meta { font-size: 11px; color: var(--text-muted); }
+.video-row-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
 
 .video-row-duration {
   font-size: 11px;
