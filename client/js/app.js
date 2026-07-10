@@ -205,9 +205,17 @@ async function renderChannelHeader(channelId) {
         <div class="channel-header-name">${escHtml(ch.name)}</div>
         <div class="channel-header-meta">${metaParts.join(' · ')}</div>
       </div>
+      ${ch.description ? `<button class="channel-header-desc-toggle" id="descToggle">Show description</button>` : ''}
     </div>
-    ${ch.description ? `<div class="channel-header-desc">${linkify(escHtml(ch.description))}</div>` : ''}
+    ${ch.description ? `<div class="channel-header-desc hidden" id="channelDesc">${linkify(escHtml(ch.description))}</div>` : ''}
   `;
+
+  header.querySelector('#descToggle')?.addEventListener('click', () => {
+    const desc   = header.querySelector('#channelDesc');
+    const toggle = header.querySelector('#descToggle');
+    const hidden = desc.classList.toggle('hidden');
+    toggle.textContent = hidden ? 'Show description' : 'Hide description';
+  });
   header.classList.remove('hidden');
 }
 

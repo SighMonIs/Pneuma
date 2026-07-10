@@ -520,6 +520,21 @@ input, select { font: inherit; color: inherit; }
   margin-top: 4px;
 }
 
+.channel-header-info { flex: 1; min-width: 0; }
+
+.channel-header-desc-toggle {
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.channel-header-desc-toggle:hover { background: var(--surface-2); color: var(--text); }
+
 .channel-header-desc {
   font-size: 13px;
   line-height: 1.6;
