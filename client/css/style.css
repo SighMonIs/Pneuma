@@ -537,7 +537,8 @@ input, select { font: inherit; color: inherit; }
 .toolbar-filters {
   display: flex;
   gap: 2px;
-  background: var(--surface-2);
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 3px;
 }
@@ -548,7 +549,7 @@ input, select { font: inherit; color: inherit; }
   font-size: 13px;
   color: var(--text-muted);
   border: none;
-  background: transparent;
+  background: var(--surface);
   transition: all var(--transition);
 }
 
@@ -587,6 +588,7 @@ input, select { font: inherit; color: inherit; }
   opacity: 1;
   transform: translateY(0);
   transition: opacity 0.25s ease, transform 0.25s ease;
+  pointer-events: auto;
 }
 
 .toast.toast-hiding {
@@ -599,6 +601,18 @@ input, select { font: inherit; color: inherit; }
   align-items: center;
   gap: 7px;
 }
+
+.toast-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+}
+.toast-close:hover { color: var(--text); }
 
 .toast-icon { font-size: 14px; flex-shrink: 0; }
 

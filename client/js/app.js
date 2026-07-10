@@ -1548,12 +1548,18 @@ function showToast(id, { icon, title, message, progress } = {}) {
     toast.id = `toast-${id}`;
     toast.innerHTML = `
       <div class="toast-header">
+        <button class="toast-close" title="Hide">&times;</button>
         <span class="toast-icon">${icon ?? ''}</span>
         <span class="toast-title">${title ?? ''}</span>
       </div>
       <div class="toast-message"></div>
       <div class="toast-bar"><div class="toast-bar-fill"></div></div>
     `;
+    // Hiding only removes the toast — the underlying background job keeps running
+    toast.querySelector('.toast-close').addEventListener('click', () => {
+      clearTimeout(_toastTimers[id]);
+      removeToast(id);
+    });
     document.getElementById('toastContainer').appendChild(toast);
   }
   if (message !== undefined) toast.querySelector('.toast-message').textContent = message;
@@ -1567,14 +1573,16 @@ function showToast(id, { icon, title, message, progress } = {}) {
   clearTimeout(_toastTimers[id]);
 }
 
+function removeToast(id) {
+  const toast = document.getElementById(`toast-${id}`);
+  if (!toast) return;
+  toast.classList.add('toast-hiding');
+  setTimeout(() => toast.remove(), 280);
+}
+
 function dismissToast(id, delay = 1500) {
   clearTimeout(_toastTimers[id]);
-  _toastTimers[id] = setTimeout(() => {
-    const toast = document.getElementById(`toast-${id}`);
-    if (!toast) return;
-    toast.classList.add('toast-hiding');
-    setTimeout(() => toast.remove(), 280);
-  }, delay);
+  _toastTimers[id] = setTimeout(() => removeToast(id), delay);
 }
 
 /* ── poll progress (SSE) ──────────────────────────────────────────────── */

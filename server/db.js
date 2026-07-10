@@ -80,6 +80,7 @@ function migrate(db) {
   try { db.exec('ALTER TABLE channels ADD COLUMN subscriber_count INTEGER'); } catch (_) {}
   try { db.exec('ALTER TABLE channels ADD COLUMN banner_url TEXT'); } catch (_) {}
   try { db.exec('ALTER TABLE channels ADD COLUMN handle TEXT'); } catch (_) {}
+  try { db.exec('ALTER TABLE channels ADD COLUMN meta_synced_at TEXT'); } catch (_) {}
 
   seedSettings(db);
 }

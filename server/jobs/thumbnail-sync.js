@@ -68,8 +68,11 @@ function fetchChannelMeta(ytChannelId) {
 
 let running = false;
 
-// Channels still missing avatar or banner/description/subscriber metadata
-const PENDING_WHERE = `yt_channel_id IS NOT NULL AND (thumbnail_url IS NULL OR banner_url IS NULL)`;
+// Channels not yet processed for avatar/banner/description/subscriber metadata.
+// Keyed off meta_synced_at rather than the data columns themselves — banner_url,
+// description etc. can legitimately be null for a channel that has none, and
+// re-checking those columns would re-fetch that channel forever.
+const PENDING_WHERE = `yt_channel_id IS NOT NULL AND meta_synced_at IS NULL`;
 
 async function syncThumbnails(batchSize = 3) {
   if (running) return;
@@ -105,12 +108,14 @@ async function syncThumbnails(batchSize = 3) {
             banner_url       = ?,
             description      = ?,
             subscriber_count = ?,
-            handle           = ?
+            handle           = ?,
+            meta_synced_at   = datetime('now')
           WHERE id = ?
         `).run(meta.avatar, meta.banner, meta.description, meta.subscriberCount, meta.handle, ch.id);
         console.log(`[thumb] Stored: ${ch.name}`);
         thumbEmitter.emit('data', { type: 'fetched', channel_id: ch.id, url: meta.avatar });
       } else {
+        db.prepare(`UPDATE channels SET meta_synced_at = datetime('now') WHERE id = ?`).run(ch.id);
         console.warn(`[thumb] Failed: ${ch.name}`);
       }
     }
