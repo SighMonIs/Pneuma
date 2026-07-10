@@ -94,6 +94,8 @@ function seedSettings(db) {
     search_youtube:    'true',
     show_shorts:       'true',
     auto_mark_watched: 'false',
+    mark_watched_at_enabled: 'true',
+    mark_watched_at_percent: '90',
     default_view:      'grid',
     default_filter:    'all',
     default_sort:      'newest',

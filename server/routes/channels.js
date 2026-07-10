@@ -271,6 +271,31 @@ router.put('/:id', (req, res) => {
   res.json({ ok: true });
 });
 
+// POST /api/channels/:id/favourite — toggle membership in the "Favourites" category
+// (creates the category on first use; un-favouriting just uncategorises the channel,
+// since a channel can only belong to one category)
+router.post('/:id/favourite', (req, res) => {
+  const db = getDb();
+  const channel = db.prepare('SELECT * FROM channels WHERE id = ?').get(req.params.id);
+  if (!channel) return res.status(404).json({ error: 'Not found' });
+
+  const favCat = db.prepare("SELECT id FROM categories WHERE name = 'Favourites'").get();
+
+  if (favCat && channel.category_id === favCat.id) {
+    db.prepare('UPDATE channels SET category_id = NULL WHERE id = ?').run(channel.id);
+    return res.json({ favourite: false });
+  }
+
+  let favCatId = favCat?.id;
+  if (!favCatId) {
+    const maxPos = db.prepare('SELECT MAX(position) as m FROM categories').get().m ?? -1;
+    const result = db.prepare('INSERT INTO categories (name, position) VALUES (?, ?)').run('Favourites', maxPos + 1);
+    favCatId = Number(result.lastInsertRowid);
+  }
+  db.prepare('UPDATE channels SET category_id = ? WHERE id = ?').run(favCatId, channel.id);
+  res.json({ favourite: true });
+});
+
 // POST /api/channels/:id/relink — re-resolve channel from a new URL/handle
 router.post('/:id/relink', async (req, res) => {
   const { url } = req.body;

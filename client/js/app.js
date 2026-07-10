@@ -228,10 +228,16 @@ async function renderChannelHeader(channelId) {
     ? `https://www.youtube.com/${ch.yt_channel_id}`
     : `https://www.youtube.com/channel/${ch.yt_channel_id}`;
 
+  const favCat  = state.categories.find(c => c.name === 'Favourites');
+  const isFav   = !!favCat && ch.category_id === favCat.id;
+
   row.innerHTML = `
     <img class="channel-header-avatar" src="/api/channels/${ch.id}/thumb" alt="" onerror="this.style.visibility='hidden'">
     <div class="channel-header-info">
-      <div class="channel-header-name">${escHtml(ch.name)}</div>
+      <div class="channel-header-name">
+        ${escHtml(ch.name)}
+        <button class="channel-fav-btn${isFav ? ' active' : ''}" id="favBtn" title="${isFav ? 'Remove from Favourites' : 'Add to Favourites'}">${isFav ? '★' : '☆'}</button>
+      </div>
       <div class="channel-header-meta">${metaParts.join(' · ')}</div>
     </div>
     <div class="channel-header-actions">
@@ -239,6 +245,13 @@ async function renderChannelHeader(channelId) {
       ${ch.description ? `<button class="channel-header-desc-toggle" id="descToggle">Show description</button>` : ''}
     </div>
   `;
+
+  row.querySelector('#favBtn').addEventListener('click', async () => {
+    await api(`/channels/${ch.id}/favourite`, { method: 'POST' });
+    await loadMeta();
+    renderSidebar();
+    if (state.view === 'channel' && state.channelId === channelId) renderChannelHeader(channelId);
+  });
 
   if (ch.description) {
     desc.innerHTML = linkify(escHtml(ch.description));
@@ -517,7 +530,9 @@ function startProgressTracking(v) {
     const t = _ytPlayer.getCurrentTime();
     const d = _ytPlayer.getDuration();
     await saveProgress(v, t);
-    if (d > 0 && t / d >= 0.9) await markWatched(v);
+    const markAtEnabled = state.settings.mark_watched_at_enabled !== 'false';
+    const markAtPercent = parseInt(state.settings.mark_watched_at_percent || '90', 10) / 100;
+    if (markAtEnabled && d > 0 && t / d >= markAtPercent) await markWatched(v);
   }, 5000);
 }
 
@@ -757,7 +772,7 @@ function renderSettings() {
         <div class="playback-options">
           <button class="playback-opt${s.playback_mode !== 'youtube' ? ' active' : ''}" data-mode="embed">
             <span class="playback-opt-title">Embedded player</span>
-            <span class="playback-opt-desc">Tracks progress · auto-marks watched at 90% · resumes where you left off</span>
+            <span class="playback-opt-desc">Tracks progress${s.mark_watched_at_enabled !== 'false' ? ` · auto-marks watched at ${parseInt(s.mark_watched_at_percent || '90', 10)}%` : ''} · resumes where you left off</span>
           </button>
           <button class="playback-opt${s.playback_mode === 'youtube' ? ' active' : ''}" data-mode="youtube">
             <span class="playback-opt-title">Open in YouTube</span>
@@ -795,6 +810,15 @@ function renderSettings() {
         </div>
         <div class="setting-control">
           ${toggleHtml('auto_mark_watched', s.auto_mark_watched === 'true')}
+        </div>
+      </div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Mark videos watched at ${percentSelectHtml('mark_watched_at_percent', parseInt(s.mark_watched_at_percent || '90', 10))}%</div>
+          <div class="setting-desc">Automatically mark a video watched once playback reaches this point</div>
+        </div>
+        <div class="setting-control">
+          ${toggleHtml('mark_watched_at_enabled', s.mark_watched_at_enabled !== 'false')}
         </div>
       </div>
     </div>
@@ -855,6 +879,8 @@ function renderSettings() {
       state.settings[key] = value;
       api('/settings', { method: 'PUT', body: { [key]: value } });
       flashSaved();
+      // These affect the "Embedded player" description text above, so re-render to keep it in sync
+      if (key === 'mark_watched_at_enabled' || key === 'mark_watched_at_percent') renderSettings();
     });
   });
 
@@ -906,6 +932,14 @@ function toggleHtml(key, checked) {
     <input type="checkbox" data-key="${key}" ${checked ? 'checked' : ''}>
     <div class="toggle-track"></div>
   </label>`;
+}
+
+function percentSelectHtml(key, selected) {
+  const options = [];
+  for (let p = 5; p <= 100; p += 5) {
+    options.push(`<option value="${p}"${p === selected ? ' selected' : ''}>${p}</option>`);
+  }
+  return `<select class="inline-select" data-key="${key}">${options.join('')}</select>`;
 }
 
 /* ── render: categories management ───────────────────────────────────── */

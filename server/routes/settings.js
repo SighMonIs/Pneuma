@@ -27,6 +27,7 @@ router.put('/', (req, res) => {
     'playback_mode', 'poll_interval', 'search_youtube',
     'show_shorts', 'auto_mark_watched', 'default_view',
     'default_filter', 'default_sort',
+    'mark_watched_at_enabled', 'mark_watched_at_percent',
   ];
   const update = db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)');
   withTransaction(db, () => {
