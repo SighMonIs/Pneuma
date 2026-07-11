@@ -609,7 +609,10 @@ input, select { font: inherit; color: inherit; }
 
 .toolbar-filters {
   display: flex;
+  align-items: center;
   gap: 2px;
+  height: 32px;
+  box-sizing: border-box;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -617,12 +620,16 @@ input, select { font: inherit; color: inherit; }
 }
 
 .filter-btn {
-  padding: 4px 14px;
+  height: 100%;
+  padding: 0 14px;
   border-radius: 6px;
   font-size: 13px;
   color: var(--text-muted);
   border: none;
   background: var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: all var(--transition);
 }
 
@@ -722,10 +729,12 @@ input, select { font: inherit; color: inherit; }
 .toolbar-right { display: flex; align-items: center; gap: 8px; }
 
 .sort-select, .duration-select, .mark-all-select {
+  height: 32px;
+  box-sizing: border-box;
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: 6px;
-  padding: 5px 10px;
+  padding: 0 10px;
   font-size: 12px;
   color: var(--text-muted);
   outline: none;
@@ -736,7 +745,10 @@ input, select { font: inherit; color: inherit; }
 
 .layout-toggle {
   display: flex;
+  align-items: center;
   gap: 2px;
+  height: 32px;
+  box-sizing: border-box;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -745,7 +757,7 @@ input, select { font: inherit; color: inherit; }
 
 .layout-btn {
   width: 30px;
-  height: 30px;
+  height: 100%;
   border-radius: 6px;
   font-size: 20px;
   color: var(--text-muted);
