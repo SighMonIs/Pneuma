@@ -144,7 +144,7 @@ input, select { font: inherit; color: inherit; }
 .nav-item:hover  { background: var(--surface-2); color: var(--text); }
 .nav-item.active { background: var(--surface-3); color: var(--text); }
 
-.nav-icon { width: 18px; text-align: center; }
+.nav-icon { width: 18px; text-align: center; font-size: 18px; }
 
 /* categories row */
 .sidebar-cats-row {
