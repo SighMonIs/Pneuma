@@ -780,10 +780,31 @@ function renderSettings() {
           </button>
         </div>
       </div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Autoplay</div>
+          <div class="setting-desc">Automatically start playing when you open a video</div>
+        </div>
+        <div class="setting-control">
+          <label class="toggle">
+            <input type="checkbox" id="autoplayToggle" ${state.autoplay ? 'checked' : ''}>
+            <div class="toggle-track"></div>
+          </label>
+        </div>
+      </div>
     </div>
 
     <div class="settings-section">
       <h2>Feed</h2>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Refresh feeds</div>
+          <div class="setting-desc">Manually check all channels for new videos now</div>
+        </div>
+        <div class="setting-control">
+          <button class="btn-refresh" id="btnRefresh" title="Refresh all feeds">&#8635; Refresh now</button>
+        </div>
+      </div>
       <div class="setting-row">
         <div>
           <div class="setting-label">Poll interval</div>
@@ -914,6 +935,17 @@ function renderSettings() {
       panel.querySelectorAll('.playback-opt').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
       flashSaved();
     });
+  });
+
+  // Autoplay — a client-only preference (localStorage), not a synced server setting
+  document.getElementById('autoplayToggle').addEventListener('change', (e) => {
+    state.autoplay = e.target.checked;
+    localStorage.setItem('autoplay', state.autoplay);
+  });
+
+  // Refresh feeds — fires and forgets; progress comes back via SSE toast
+  document.getElementById('btnRefresh').addEventListener('click', () => {
+    api('/channels/refresh', { method: 'POST' });
   });
 }
 
@@ -1542,11 +1574,6 @@ function setupEvents() {
   // Load more
   document.getElementById('btnLoadMore').addEventListener('click', () => loadVideos(false));
 
-  // Refresh feeds — fires and forgets; progress comes back via SSE
-  document.getElementById('btnRefresh').addEventListener('click', () => {
-    api('/channels/refresh', { method: 'POST' });
-  });
-
   // Feed errors button
   document.getElementById('btnFeedErrors').addEventListener('click', openFeedErrorsModal);
 
@@ -1570,15 +1597,6 @@ function setupEvents() {
 
   // Sidebar search
   setupSearch();
-
-  // Autoplay toggle
-  const btnAutoplay = document.getElementById('btnAutoplay');
-  btnAutoplay.classList.toggle('active', state.autoplay);
-  btnAutoplay.addEventListener('click', () => {
-    state.autoplay = !state.autoplay;
-    localStorage.setItem('autoplay', state.autoplay);
-    btnAutoplay.classList.toggle('active', state.autoplay);
-  });
 
   // Apply saved layout/sort to UI — clear HTML defaults first (filter is handled per-view by applyFilterForView)
   document.querySelectorAll('.layout-btn').forEach(b => b.classList.remove('active'));

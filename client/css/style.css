@@ -780,23 +780,6 @@ input, select { font: inherit; color: inherit; }
 .btn-refresh:hover { background: rgba(255,68,68,0.1); }
 .btn-refresh.spinning { animation: spin 1s linear infinite; }
 
-.btn-autoplay {
-  height: 30px;
-  padding: 0 10px;
-  border-radius: 6px;
-  font-size: 12px;
-  background: none;
-  border: 1px solid var(--border);
-  color: var(--text-muted);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  transition: all var(--transition);
-}
-.btn-autoplay:hover { background: var(--surface-2); color: var(--text); }
-.btn-autoplay.active { background: var(--surface-3); color: var(--text); border-color: transparent; }
-
 /* ── video container ─────────────────────────────────────────────────── */
 .video-container {
   flex: 1;
