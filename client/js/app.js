@@ -10,7 +10,6 @@ const ICONS = {
   trash:         '<path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
   x:             '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
   check:         '<path d="M20 6 9 17l-5-5"/>',
-  checkCircle:   '<path d="M21.801 10A10 10 0 1 1 17 3.335"/><path d="m9 11 3 3L22 4"/>',
   star:          '<path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/>',
   play:          '<path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/>',
   arrowLeft:     '<path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>',
@@ -377,6 +376,22 @@ async function loadVideos(reset = false) {
   renderVideos(reset);
 }
 
+/* ── infinite scroll ──────────────────────────────────────────────────── */
+let _loadingMore = false;
+
+async function maybeLoadMore(el) {
+  if (_loadingMore || state.offset >= state.total) return;
+  if (!['home', 'channel', 'category'].includes(state.view)) return;
+  const nearBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 600;
+  if (!nearBottom) return;
+
+  _loadingMore = true;
+  document.getElementById('loadMoreWrap').classList.remove('hidden');
+  await loadVideos(false);
+  document.getElementById('loadMoreWrap').classList.add('hidden');
+  _loadingMore = false;
+}
+
 /* ── render: videos ───────────────────────────────────────────────────── */
 function renderVideos(reset) {
   const container = document.getElementById('videoContainer');
@@ -408,7 +423,7 @@ function renderVideos(reset) {
   });
 
   container.insertBefore(frag, lmw);
-  lmw.classList.toggle('hidden', state.offset >= state.total);
+  lmw.classList.add('hidden'); // shown transiently by maybeLoadMore() while fetching the next page
 }
 
 function formatDuration(secs) {
@@ -457,7 +472,7 @@ function makeVideoCard(v) {
     <div class="video-thumb-wrap">
       <img class="video-thumb" src="${v.thumbnail_url || ''}" alt="" loading="lazy" onerror="this.style.opacity=0">
       <div class="video-play-btn">${icon('play')}</div>
-      <button class="video-watched-btn" title="${v.watched_at ? 'Mark unwatched' : 'Mark watched'}">${icon('checkCircle')}</button>
+      <button class="video-watched-btn" title="${v.watched_at ? 'Mark unwatched' : 'Mark watched'}">${icon('check')}</button>
       ${v.duration ? `<span class="video-duration">${formatDuration(v.duration)}</span>` : ''}
     </div>
     <div class="video-info">
@@ -1600,8 +1615,9 @@ function setupEvents() {
     });
   });
 
-  // Load more
-  document.getElementById('btnLoadMore').addEventListener('click', () => loadVideos(false));
+  // Infinite scroll — videoContainer scrolls on home/category, .main scrolls on channel pages
+  document.getElementById('videoContainer').addEventListener('scroll', (e) => maybeLoadMore(e.target));
+  document.getElementById('main').addEventListener('scroll', (e) => maybeLoadMore(e.target));
 
   // Feed errors button
   document.getElementById('btnFeedErrors').addEventListener('click', openFeedErrorsModal);

@@ -850,7 +850,7 @@ input, select { font: inherit; color: inherit; }
   overflow: visible;
 }
 
-.video-card:hover { border-color: rgba(255,255,255,0.35); }
+.video-card:hover { border-color: var(--accent); }
 
 .video-card.watched { opacity: 0.55; }
 
@@ -997,7 +997,7 @@ input, select { font: inherit; color: inherit; }
   transition: border-color var(--transition);
 }
 
-.video-row:hover { border-color: var(--surface-3); }
+.video-row:hover { border-color: var(--accent); }
 
 .video-row.watched { opacity: 0.55; }
 
@@ -1048,19 +1048,16 @@ input, select { font: inherit; color: inherit; }
 .empty-state p  { font-size: 13px; }
 
 /* load more */
-.load-more-wrap { text-align: center; padding: 16px 0 24px; grid-column: 1 / -1; }
-
-.btn-load-more {
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 8px 24px;
-  font-size: 13px;
+.load-more-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 0 24px;
+  grid-column: 1 / -1;
   color: var(--text-muted);
-  transition: all var(--transition);
+  font-size: 13px;
 }
-
-.btn-load-more:hover { background: var(--surface-3); color: var(--text); }
 
 /* ── settings panel ───────────────────────────────────────────────────── */
 .settings-panel {
