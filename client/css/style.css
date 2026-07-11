@@ -734,7 +734,14 @@ input, select { font: inherit; color: inherit; }
 
 .sort-select:focus, .duration-select:focus, .mark-all-select:focus { border-color: var(--accent); color: var(--text); }
 
-.layout-toggle { display: flex; gap: 2px; }
+.layout-toggle {
+  display: flex;
+  gap: 2px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 3px;
+}
 
 .layout-btn {
   width: 30px;
@@ -742,14 +749,16 @@ input, select { font: inherit; color: inherit; }
   border-radius: 6px;
   font-size: 20px;
   color: var(--text-muted);
+  border: none;
+  background: var(--surface);
   transition: all var(--transition);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.layout-btn:hover  { background: var(--surface-2); color: var(--text); }
-.layout-btn.active { background: var(--surface-3); color: var(--text); }
+.layout-btn:hover  { color: var(--text); background: rgba(255,255,255,0.06); }
+.layout-btn.active { color: var(--text); background: var(--surface-3); }
 
 .btn-feed-errors {
   padding: 4px 10px;
