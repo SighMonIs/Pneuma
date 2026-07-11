@@ -1,3 +1,32 @@
+/* ── icons (Lucide, ISC license — see client/icons/LICENSE) ─────────────── */
+const ICONS = {
+  home:          '<path d="M7 21h10"/><rect width="20" height="14" x="2" y="3" rx="2"/>',
+  settings:      '<path d="M14 17H5"/><path d="M19 7h-9"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/>',
+  list:          '<path d="M3 5h.01"/><path d="M3 12h.01"/><path d="M3 19h.01"/><path d="M8 5h13"/><path d="M8 12h13"/><path d="M8 19h13"/>',
+  grid:          '<rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/>',
+  refresh:       '<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
+  plus:          '<path d="M5 12h14"/><path d="M12 5v14"/>',
+  pencil:        '<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/>',
+  trash:         '<path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+  x:             '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+  check:         '<path d="M20 6 9 17l-5-5"/>',
+  checkCircle:   '<path d="M21.801 10A10 10 0 1 1 17 3.335"/><path d="m9 11 3 3L22 4"/>',
+  star:          '<path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/>',
+  play:          '<path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/>',
+  arrowLeft:     '<path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>',
+  grip:          '<circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/>',
+  chevronDown:   '<path d="m6 9 6 6 6-6"/>',
+  chevronRight:  '<path d="m9 18 6-6-6-6"/>',
+  chevronUp:     '<path d="m18 15-6-6-6 6"/>',
+  alertTriangle: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+};
+
+function icon(name, cls = '') {
+  const body = ICONS[name];
+  if (!body) return '';
+  return `<svg class="icon${cls ? ' ' + cls : ''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`;
+}
+
 /* ── state ────────────────────────────────────────────────────────────── */
 const state = {
   view:        'home',   // 'home' | 'channel' | 'category' | 'settings' | 'watch'
@@ -236,7 +265,7 @@ async function renderChannelHeader(channelId) {
     <div class="channel-header-info">
       <div class="channel-header-name">
         ${escHtml(ch.name)}
-        <button class="channel-fav-btn${isFav ? ' active' : ''}" id="favBtn" title="${isFav ? 'Remove from Favourites' : 'Add to Favourites'}">${isFav ? '★' : '☆'}</button>
+        <button class="channel-fav-btn${isFav ? ' active' : ''}" id="favBtn" title="${isFav ? 'Remove from Favourites' : 'Add to Favourites'}">${icon('star')}</button>
       </div>
       <div class="channel-header-meta">${metaParts.join(' · ')}</div>
     </div>
@@ -406,10 +435,10 @@ function timeAgo(iso) {
 
 // Icon + name for a video's channel, clickable to jump to that channel's page
 function videoChannelLinkHtml(v) {
-  const icon = v.channel_thumbnail
+  const avatarHtml = v.channel_thumbnail
     ? `<img class="video-channel-icon" src="/api/channels/${v.channel_id}/thumb" alt="" onerror="this.style.display='none'">`
     : '';
-  return `<span class="video-channel-link" data-channel-id="${v.channel_id}">${icon}${escHtml(v.channel_name)}</span>`;
+  return `<span class="video-channel-link" data-channel-id="${v.channel_id}">${avatarHtml}${escHtml(v.channel_name)}</span>`;
 }
 
 function wireVideoChannelLink(el, v) {
@@ -427,8 +456,8 @@ function makeVideoCard(v) {
   el.innerHTML = `
     <div class="video-thumb-wrap">
       <img class="video-thumb" src="${v.thumbnail_url || ''}" alt="" loading="lazy" onerror="this.style.opacity=0">
-      <div class="video-play-btn">&#9654;</div>
-      <button class="video-watched-btn" title="${v.watched_at ? 'Mark unwatched' : 'Mark watched'}">&#10003;</button>
+      <div class="video-play-btn">${icon('play')}</div>
+      <button class="video-watched-btn" title="${v.watched_at ? 'Mark unwatched' : 'Mark watched'}">${icon('checkCircle')}</button>
       ${v.duration ? `<span class="video-duration">${formatDuration(v.duration)}</span>` : ''}
     </div>
     <div class="video-info">
@@ -588,7 +617,7 @@ function renderSidebar() {
     const chListAttrs = isDragMode ? ` data-cat-id="${cat.id}"` : '';
     item.innerHTML = `
       <div class="category-header" data-id="${cat.id}">
-        <button class="category-chevron">${cat.collapsed ? '+' : '&#8722;'}</button>
+        <button class="category-chevron">${cat.collapsed ? icon('chevronRight') : icon('chevronDown')}</button>
         <span class="category-name">${escHtml(cat.name)}</span>
         ${unread > 0 ? `<span class="category-badge has-unread">${unread}</span>` : `<span class="category-badge">${channels.length}</span>`}
       </div>
@@ -602,7 +631,7 @@ function renderSidebar() {
         e.stopPropagation();
         item.classList.toggle('open');
         const isOpen = item.classList.contains('open');
-        e.currentTarget.innerHTML = isOpen ? '&#8722;' : '+';
+        e.currentTarget.innerHTML = isOpen ? icon('chevronDown') : icon('chevronRight');
         toggleCategoryCollapsed(cat.id, !isOpen);
       });
       // Header (excluding chevron): navigate to category
@@ -635,7 +664,7 @@ function renderSidebar() {
       el.className  = 'channel-item';
       el.dataset.id = ch.id;
       if (isDragMode) {
-        el.innerHTML = `<span class="sidebar-drag-handle">&#8942;&#8942;</span><span class="channel-name">${escHtml(ch.name)}</span>${ch.unwatched_count > 0 ? `<span class="channel-unread">${ch.unwatched_count}</span>` : ''}`;
+        el.innerHTML = `<span class="sidebar-drag-handle">${icon('grip')}</span><span class="channel-name">${escHtml(ch.name)}</span>${ch.unwatched_count > 0 ? `<span class="channel-unread">${ch.unwatched_count}</span>` : ''}`;
       } else {
         el.innerHTML = channelThumbHtml(ch) + `<span class="channel-name">${escHtml(ch.name)}</span>${ch.unwatched_count > 0 ? `<span class="channel-unread">${ch.unwatched_count}</span>` : ''}`;
         el.addEventListener('click', () => navigate('channel', ch.id));
@@ -650,12 +679,12 @@ function renderSidebar() {
 }
 
 function channelItemHtml(ch, draggable = false) {
-  const icon = draggable
-    ? `<span class="sidebar-drag-handle">&#8942;&#8942;</span>`
+  const leadingHtml = draggable
+    ? `<span class="sidebar-drag-handle">${icon('grip')}</span>`
     : channelThumbHtml(ch);
   return `
     <div class="channel-item" data-id="${ch.id}">
-      ${icon}
+      ${leadingHtml}
       <span class="channel-name">${escHtml(ch.name)}</span>
       ${ch.unwatched_count > 0 ? `<span class="channel-unread">${ch.unwatched_count}</span>` : ''}
     </div>`;
@@ -802,7 +831,7 @@ function renderSettings() {
           <div class="setting-desc">Manually check all channels for new videos now</div>
         </div>
         <div class="setting-control">
-          <button class="btn-refresh" id="btnRefresh" title="Refresh all feeds">&#8635; Refresh now</button>
+          <button class="btn-refresh" id="btnRefresh" title="Refresh all feeds">${icon('refresh')} Refresh now</button>
         </div>
       </div>
       <div class="setting-row">
@@ -888,7 +917,7 @@ function renderSettings() {
   });
 
   const flashSaved = () => {
-    showToast('settings-saved', { icon: '✓', title: 'Settings saved' });
+    showToast('settings-saved', { icon: icon('check'), title: 'Settings saved' });
     dismissToast('settings-saved', 1500);
   };
 
@@ -953,8 +982,8 @@ function numInput(id, value, min, max) {
   return `<div class="num-input-wrap">
     <input type="number" id="${id}" value="${value}" min="${min}" max="${max}">
     <div class="num-input-btns">
-      <button class="num-btn" data-target="${id}" data-delta="1">▲</button>
-      <button class="num-btn" data-target="${id}" data-delta="-1">▼</button>
+      <button class="num-btn" data-target="${id}" data-delta="1">${icon('chevronUp')}</button>
+      <button class="num-btn" data-target="${id}" data-delta="-1">${icon('chevronDown')}</button>
     </div>
   </div>`;
 }
@@ -985,13 +1014,13 @@ function renderCategoriesPage() {
         return `
           <div class="cat-row${pinned ? ' cat-row-pinned' : ''}" data-id="${cat.id}">
             ${pinned
-              ? `<span class="cat-drag-handle cat-pinned-icon" title="Favourites always stays at the top">&#9733;</span>`
-              : `<span class="cat-drag-handle" title="Drag to reorder">&#8942;&#8942;</span>`}
+              ? `<span class="cat-drag-handle cat-pinned-icon" title="Favourites always stays at the top">${icon('star')}</span>`
+              : `<span class="cat-drag-handle" title="Drag to reorder">${icon('grip')}</span>`}
             <span class="cat-name" contenteditable="false">${escHtml(cat.name)}</span>
             <span class="cat-count">${count} channel${count !== 1 ? 's' : ''}</span>
             <div class="cat-actions">
-              <button class="cat-btn-rename" title="Rename">&#9998;</button>
-              <button class="cat-btn-delete" title="Delete">&#10005;</button>
+              <button class="cat-btn-rename" title="Rename">${icon('pencil')}</button>
+              <button class="cat-btn-delete" title="Delete">${icon('trash')}</button>
             </div>
           </div>`;
       }).join('')
@@ -1029,12 +1058,12 @@ function renderCategoriesPage() {
       range.selectNodeContents(nameEl);
       window.getSelection().removeAllRanges();
       window.getSelection().addRange(range);
-      renBtn.textContent = '✓';
+      renBtn.innerHTML = icon('check');
     };
     const saveEdit = async () => {
       const newName = nameEl.textContent.trim();
       nameEl.contentEditable = 'false';
-      renBtn.innerHTML = '&#9998;';
+      renBtn.innerHTML = icon('pencil');
       if (!newName) return reloadCategoriesPage();
       await api(`/categories/${id}`, { method: 'PUT', body: { name: newName } });
       await reloadCategoriesPage();
@@ -1043,7 +1072,7 @@ function renderCategoriesPage() {
     renBtn.addEventListener('click', () => nameEl.contentEditable === 'true' ? saveEdit() : startEditing());
     nameEl.addEventListener('keydown', e => {
       if (e.key === 'Enter')  { e.preventDefault(); saveEdit(); }
-      if (e.key === 'Escape') { nameEl.contentEditable = 'false'; renBtn.innerHTML = '&#9998;'; reloadCategoriesPage(); }
+      if (e.key === 'Escape') { nameEl.contentEditable = 'false'; renBtn.innerHTML = icon('pencil'); reloadCategoriesPage(); }
     });
     row.querySelector('.cat-btn-delete').addEventListener('click', async () => {
       const name  = nameEl.textContent.trim();
@@ -1241,7 +1270,7 @@ async function runModalSearch(q) {
         <div class="search-result-info">
           <div class="search-result-name">${escHtml(c.channel)}</div>
         </div>
-        <button class="search-add-btn" data-channel-id="${c.channel_id}" data-channel-name="${escHtml(c.channel)}">+</button>
+        <button class="search-add-btn" data-channel-id="${c.channel_id}" data-channel-name="${escHtml(c.channel)}">${icon('plus')}</button>
       </div>`).join('');
 
     container.querySelectorAll('.search-add-btn').forEach(btn => {
@@ -1254,7 +1283,7 @@ async function runModalSearch(q) {
           rss_url: `https://www.youtube.com/feeds/videos.xml?channel_id=${chId}`,
           category_id: cat || null,
         }});
-        btn.textContent = '✓';
+        btn.innerHTML = icon('check');
         btn.disabled = true;
         await loadMeta();
         renderSidebar();
@@ -1427,7 +1456,7 @@ function renderYoutubeResults(results, container) {
         <div class="search-result-name">${escHtml(r.channel)}</div>
         <div class="search-result-sub">YouTube channel</div>
       </div>
-      <button class="search-add-btn" data-channel-id="${r.channel_id}" data-channel-name="${escHtml(r.channel)}" title="Add channel">+</button>
+      <button class="search-add-btn" data-channel-id="${r.channel_id}" data-channel-name="${escHtml(r.channel)}" title="Add channel">${icon('plus')}</button>
     </div>`).join('');
 
   container.innerHTML = html;
@@ -1441,7 +1470,7 @@ function renderYoutubeResults(results, container) {
         name: btn.dataset.channelName,
         rss_url: `https://www.youtube.com/feeds/videos.xml?channel_id=${chId}`,
       }});
-      btn.textContent = '✓';
+      btn.innerHTML = icon('check');
       btn.disabled = true;
       await loadMeta();
       renderSidebar();
@@ -1468,7 +1497,7 @@ async function runDetection(input, container) {
           <div class="search-result-name">${escHtml(result.name || result.yt_channel_id)}</div>
           <div class="search-result-sub">${escHtml(result.yt_channel_id || '')}</div>
         </div>
-        <button class="search-add-btn" id="btnAddDetected" title="Add channel">+</button>
+        <button class="search-add-btn" id="btnAddDetected" title="Add channel">${icon('plus')}</button>
       </div>`;
 
     document.getElementById('btnAddDetected')?.addEventListener('click', async () => {
@@ -1477,7 +1506,7 @@ async function runDetection(input, container) {
         name: result.name || result.yt_channel_id,
         rss_url: result.rss_url,
       }});
-      document.getElementById('btnAddDetected').textContent = '✓';
+      document.getElementById('btnAddDetected').innerHTML = icon('check');
       await loadMeta();
       renderSidebar();
     });
@@ -1516,13 +1545,13 @@ function setupEvents() {
   const catExpanded  = localStorage.getItem('catTreeExpanded') !== 'false';
   if (!catExpanded) {
     catTree.classList.add('hidden');
-    catToggleBtn.innerHTML = '+';
+    catToggleBtn.innerHTML = icon('chevronRight');
   }
   catToggleBtn.addEventListener('click', (e) => {
     e.stopPropagation();
-    const open = catTree.classList.toggle('hidden');
-    catToggleBtn.innerHTML = open ? '+' : '&#8722;';
-    localStorage.setItem('catTreeExpanded', open ? 'false' : 'true');
+    const nowHidden = catTree.classList.toggle('hidden');
+    catToggleBtn.innerHTML = nowHidden ? icon('chevronRight') : icon('chevronDown');
+    localStorage.setItem('catTreeExpanded', nowHidden ? 'false' : 'true');
   });
 
   // Filter buttons
@@ -1619,7 +1648,7 @@ function connectThumbStream() {
 
     if (msg.type === 'start') {
       remaining = msg.remaining;
-      showToast('thumb', { icon: '◎', title: 'Channel icons', message: `${remaining} remaining` });
+      showToast('thumb', { title: 'Channel icons', message: `${remaining} remaining` });
     }
 
     if (msg.type === 'fetched') {
@@ -1657,7 +1686,7 @@ function connectThumbStream() {
 /* ── Toast system ────────────────────────────────────────────────────── */
 const _toastTimers = {};
 
-function showToast(id, { icon, title, message, progress } = {}) {
+function showToast(id, { icon: iconHtml, title, message, progress } = {}) {
   let toast = document.getElementById(`toast-${id}`);
   if (!toast) {
     toast = document.createElement('div');
@@ -1665,8 +1694,8 @@ function showToast(id, { icon, title, message, progress } = {}) {
     toast.id = `toast-${id}`;
     toast.innerHTML = `
       <div class="toast-header">
-        <button class="toast-close" title="Hide">&times;</button>
-        <span class="toast-icon">${icon ?? ''}</span>
+        <button class="toast-close" title="Hide">${icon('x')}</button>
+        <span class="toast-icon">${iconHtml ?? ''}</span>
         <span class="toast-title">${title ?? ''}</span>
       </div>
       <div class="toast-message"></div>
@@ -1710,7 +1739,7 @@ function connectPollStream() {
     const msg = JSON.parse(e.data);
 
     if (msg.type === 'start') {
-      showToast('poll', { icon: '↻', title: 'Refreshing feeds', message: `0 / ${msg.total}`, progress: 0 });
+      showToast('poll', { icon: icon('refresh'), title: 'Refreshing feeds', message: `0 / ${msg.total}`, progress: 0 });
     }
 
     if (msg.type === 'progress') {

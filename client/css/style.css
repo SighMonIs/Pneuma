@@ -31,6 +31,16 @@ button { cursor: pointer; border: none; background: none; color: inherit; font: 
 a { color: inherit; text-decoration: none; }
 input, select { font: inherit; color: inherit; }
 
+/* Inline Lucide icons — sized in em so they follow the parent's font-size like the
+   Unicode characters they replaced; color follows currentColor automatically. */
+.icon {
+  width: 1em;
+  height: 1em;
+  display: inline-block;
+  vertical-align: -0.15em;
+  flex-shrink: 0;
+}
+
 .hidden { display: none !important; }
 
 /* ── layout ──────────────────────────────────────────────────────────── */
@@ -457,6 +467,10 @@ input, select { font: inherit; color: inherit; }
   border-radius: 6px;
   color: var(--text-muted);
   font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   transition: background var(--transition), color var(--transition);
 }
 
@@ -549,6 +563,7 @@ input, select { font: inherit; color: inherit; }
 }
 .channel-fav-btn:hover { color: #ffcc00; }
 .channel-fav-btn.active { color: #ffcc00; }
+.channel-fav-btn.active .icon { fill: currentColor; }
 
 .channel-header-meta {
   font-size: 13px;
@@ -786,9 +801,9 @@ input, select { font: inherit; color: inherit; }
 
 .btn-refresh {
   height: 30px;
-  padding: 0 10px;
+  padding: 0 12px;
   border-radius: 6px;
-  font-size: 19px;
+  font-size: 13px;
   line-height: 1;
   color: var(--accent);
   border: 1px solid var(--accent);
@@ -797,7 +812,9 @@ input, select { font: inherit; color: inherit; }
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
 }
+.btn-refresh .icon { width: 1.3em; height: 1.3em; }
 .btn-refresh:hover { background: rgba(255,68,68,0.1); }
 .btn-refresh.spinning { animation: spin 1s linear infinite; }
 
@@ -855,7 +872,6 @@ input, select { font: inherit; color: inherit; }
   opacity: 0;
   transition: opacity var(--transition), background var(--transition);
   pointer-events: auto;
-  padding-left: 3px; /* optical centre for ▶ */
 }
 
 .video-card:hover .video-play-btn { opacity: 1; }
@@ -1143,9 +1159,9 @@ input, select { font: inherit; color: inherit; }
   background: none;
   border: none;
   color: var(--text-muted);
-  font-size: 7px;
+  font-size: 10px;
   line-height: 1;
-  padding: 3px 5px;
+  padding: 2px 5px;
   cursor: pointer;
   transition: background var(--transition), color var(--transition);
 }
@@ -1519,6 +1535,7 @@ input, select { font: inherit; color: inherit; }
   font-size: 12px;
 }
 .cat-pinned-icon:hover { color: #ffcc00; }
+.cat-pinned-icon .icon { fill: currentColor; }
 
 .cat-row.dragging    { opacity: 0.35; }
 .cat-row.drag-over   { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
