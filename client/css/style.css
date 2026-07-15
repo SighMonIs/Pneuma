@@ -593,6 +593,7 @@ input, select { font: inherit; color: inherit; }
   transition: all var(--transition);
 }
 .channel-header-desc-toggle:hover { background: var(--surface-2); color: var(--text); }
+.channel-header-info .channel-header-desc-toggle { margin-top: 8px; }
 
 .channel-header-desc {
   font-size: 13px;

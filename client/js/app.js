@@ -268,11 +268,11 @@ async function renderChannelHeader(channelId) {
         <button class="channel-fav-btn${isFav ? ' active' : ''}" id="favBtn" title="${isFav ? 'Remove from Favourites' : 'Add to Favourites'}">${icon('star')}</button>
       </div>
       <div class="channel-header-meta">${metaParts.join(' · ')}</div>
+      ${ch.description ? `<button class="channel-header-desc-toggle" id="descToggle">Show description</button>` : ''}
     </div>
     <div class="channel-header-actions">
       <a class="btn-watch-yt" href="${ytUrl}" target="_blank" rel="noopener">View on YouTube</a>
-      <button class="channel-header-desc-toggle" id="channelSettingsBtn" title="Channel settings">${icon('settings')}</button>
-      ${ch.description ? `<button class="channel-header-desc-toggle" id="descToggle">Show description</button>` : ''}
+      <button class="channel-header-desc-toggle" id="channelSettingsBtn" title="Channel settings">${icon('settings')} Settings</button>
     </div>
   `;
 
@@ -1183,6 +1183,7 @@ function openChannelSettingsModal(ch) {
     </div>
     <div class="modal-actions">
       <button class="btn-secondary modal-actions-left" id="btnRefreshChannel">${icon('refresh')} Refresh feed</button>
+      <button class="btn-danger" id="btnUnsubscribeChannel">Unsubscribe</button>
       <button class="btn-secondary" onclick="closeModal()">Cancel</button>
       <button class="btn-primary" id="btnSaveChannelSettings">Save</button>
     </div>
@@ -1214,6 +1215,16 @@ function openChannelSettingsModal(ch) {
       btn.innerHTML = `${icon('refresh')} Refresh feed`;
     }, 1500);
     if (state.view === 'channel' && state.channelId === ch.id) loadVideos(true);
+  });
+
+  document.getElementById('btnUnsubscribeChannel').addEventListener('click', async () => {
+    if (!confirm(`Unsubscribe from "${ch.name}"? This deletes the channel and all its videos.`)) return;
+    await api(`/channels/${ch.id}`, { method: 'DELETE' });
+    state.channels = state.channels.filter(c => String(c.id) !== String(ch.id));
+    closeModal();
+    await loadMeta();
+    renderSidebar();
+    navigate('home');
   });
 
   document.getElementById('btnSaveChannelSettings').addEventListener('click', async () => {
