@@ -18,6 +18,7 @@ const ICONS = {
   chevronRight:  '<path d="m9 18 6-6-6-6"/>',
   chevronUp:     '<path d="m18 15-6-6-6 6"/>',
   alertTriangle: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+  copy:          '<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
 };
 
 function icon(name, cls = '') {
@@ -270,6 +271,7 @@ async function renderChannelHeader(channelId) {
     </div>
     <div class="channel-header-actions">
       <a class="btn-watch-yt" href="${ytUrl}" target="_blank" rel="noopener">View on YouTube</a>
+      <button class="channel-header-desc-toggle" id="channelSettingsBtn" title="Channel settings">${icon('settings')}</button>
       ${ch.description ? `<button class="channel-header-desc-toggle" id="descToggle">Show description</button>` : ''}
     </div>
   `;
@@ -280,6 +282,8 @@ async function renderChannelHeader(channelId) {
     renderSidebar();
     if (state.view === 'channel' && state.channelId === channelId) renderChannelHeader(channelId);
   });
+
+  row.querySelector('#channelSettingsBtn').addEventListener('click', () => openChannelSettingsModal(ch));
 
   if (ch.description) {
     desc.innerHTML = linkify(escHtml(ch.description));
@@ -1149,6 +1153,85 @@ async function reloadCategoriesPage() {
   await loadMeta();
   renderSidebar();
   if (state.view === 'categories') renderCategoriesPage();
+}
+
+/* ── channel settings modal ───────────────────────────────────────────── */
+function openChannelSettingsModal(ch) {
+  const favCat = state.categories.find(c => c.name === 'Favourites');
+  const isFav  = !!favCat && ch.category_id === favCat.id;
+  const catOptions = state.categories
+    .filter(c => c.id !== favCat?.id)
+    .map(c => `<option value="${c.id}"${ch.category_id === c.id ? ' selected' : ''}>${escHtml(c.name)}</option>`)
+    .join('');
+
+  showModal('Channel Settings', `
+    <div class="modal-body">
+      <div class="form-field">
+        <label>Feed URL</label>
+        <div class="channel-settings-url-row">
+          <input type="text" id="settingsFeedUrl" value="${escHtml(ch.rss_url || '')}" readonly>
+          <button class="btn-secondary" id="btnCopyFeedUrl" title="Copy feed URL">${icon('copy')}</button>
+        </div>
+      </div>
+      <div class="form-field">
+        <label>Category</label>
+        <select id="settingsCategory"${isFav ? ' disabled' : ''}><option value="">None</option>${catOptions}</select>
+      </div>
+      <div class="form-field form-field-checkbox">
+        <label><input type="checkbox" id="settingsFavourite"${isFav ? ' checked' : ''}> Favourite</label>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary modal-actions-left" id="btnRefreshChannel">${icon('refresh')} Refresh feed</button>
+      <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn-primary" id="btnSaveChannelSettings">Save</button>
+    </div>
+  `);
+
+  document.getElementById('settingsFavourite').addEventListener('change', (e) => {
+    document.getElementById('settingsCategory').disabled = e.target.checked;
+  });
+
+  document.getElementById('btnCopyFeedUrl').addEventListener('click', async () => {
+    const btn = document.getElementById('btnCopyFeedUrl');
+    await navigator.clipboard.writeText(ch.rss_url || '');
+    btn.innerHTML = icon('check');
+    setTimeout(() => { btn.innerHTML = icon('copy'); }, 1500);
+  });
+
+  document.getElementById('btnRefreshChannel').addEventListener('click', async () => {
+    const btn = document.getElementById('btnRefreshChannel');
+    btn.disabled = true;
+    btn.textContent = 'Refreshing…';
+    try {
+      const res = await api(`/channels/${ch.id}/poll`, { method: 'POST' });
+      btn.textContent = res.ok ? `Added ${res.added}` : (res.error || 'Failed');
+    } catch (e) {
+      btn.textContent = e.message || 'Failed';
+    }
+    setTimeout(() => {
+      btn.disabled = false;
+      btn.innerHTML = `${icon('refresh')} Refresh feed`;
+    }, 1500);
+    if (state.view === 'channel' && state.channelId === ch.id) loadVideos(true);
+  });
+
+  document.getElementById('btnSaveChannelSettings').addEventListener('click', async () => {
+    const favChecked = document.getElementById('settingsFavourite').checked;
+    if (favChecked !== isFav) {
+      await api(`/channels/${ch.id}/favourite`, { method: 'POST' });
+    } else if (!favChecked) {
+      const val = document.getElementById('settingsCategory').value;
+      const newCatId = val ? Number(val) : null;
+      if (newCatId !== (ch.category_id ?? null)) {
+        await api(`/channels/${ch.id}`, { method: 'PUT', body: { category_id: newCatId } });
+      }
+    }
+    closeModal();
+    await loadMeta();
+    renderSidebar();
+    if (state.view === 'channel' && state.channelId === ch.id) renderChannelHeader(ch.id);
+  });
 }
 
 /* ── add channel modal ────────────────────────────────────────────────── */
