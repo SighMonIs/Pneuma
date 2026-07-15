@@ -52,8 +52,8 @@ function scheduleJobs() {
     try { await pollAllFeeds(); } catch (e) { console.error('RSS poll error:', e.message); }
   });
 
-  // yt-dlp gap-fill runs once per hour regardless of poll interval
-  cron.schedule('0 * * * *', async () => {
+  // yt-dlp gap-fill: daily at 4am (catches videos RSS's 15-item window missed; heavy, so not hourly)
+  cron.schedule('0 4 * * *', async () => {
     try { await syncMissingVideos(); } catch (e) { console.error('yt-dlp sync error:', e.message); }
   });
 
