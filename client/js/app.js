@@ -855,6 +855,15 @@ function renderSettings() {
       </div>
       <div class="setting-row">
         <div>
+          <div class="setting-label">Clean up feeds</div>
+          <div class="setting-desc">Remove feeds that are no longer active</div>
+        </div>
+        <div class="setting-control">
+          <button class="btn-refresh" id="btnCleanupFeeds">Clean up feeds</button>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div>
           <div class="setting-label">Poll interval</div>
           <div class="setting-desc">How often to check for new videos</div>
         </div>
@@ -994,6 +1003,109 @@ function renderSettings() {
   // Refresh feeds — fires and forgets; progress comes back via SSE toast
   document.getElementById('btnRefresh').addEventListener('click', () => {
     api('/channels/refresh', { method: 'POST' });
+  });
+
+  document.getElementById('btnCleanupFeeds').addEventListener('click', openCleanupModal);
+}
+
+/* ── clean up feeds modal ─────────────────────────────────────────────── */
+async function openCleanupModal() {
+  showModal('Clean Up Feeds', `
+    <div class="modal-body">
+      <div class="form-field">
+        <label>No activity in:</label>
+        <select id="cleanupTimeframe">
+          <option value="3">More than 3 months</option>
+          <option value="6">More than 6 months</option>
+          <option value="12">More than 1 year</option>
+        </select>
+      </div>
+      <div class="cleanup-list-header">
+        <button class="btn-secondary" id="cleanupSelectAll">Select All</button>
+        <span class="setting-desc" id="cleanupCount"></span>
+      </div>
+      <div class="feed-error-list" id="cleanupList"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn-danger" id="cleanupDeleteBtn" disabled>Delete Selected</button>
+    </div>
+  `);
+
+  async function loadInactive() {
+    const months = document.getElementById('cleanupTimeframe').value;
+    const list   = document.getElementById('cleanupList');
+    list.innerHTML = `<div class="setting-desc">Loading…</div>`;
+    const channels = await api(`/channels/inactive?months=${months}`);
+    list.innerHTML = channels.length === 0
+      ? `<div class="setting-desc">No inactive channels found.</div>`
+      : channels.map(ch => `
+        <label class="feed-error-row cleanup-row">
+          <input type="checkbox" class="cleanup-checkbox" value="${ch.id}" data-name="${escHtml(ch.name)}">
+          ${channelThumbHtml(ch)}
+          <div class="feed-error-info">
+            <div class="feed-error-name">${escHtml(ch.name)}</div>
+            <div class="setting-desc">${ch.last_video_at ? 'Last video ' + timeAgo(ch.last_video_at) : 'No videos'}</div>
+          </div>
+        </label>`).join('');
+    updateDeleteBtn();
+  }
+
+  function updateDeleteBtn() {
+    const checked = document.querySelectorAll('.cleanup-checkbox:checked');
+    const btn = document.getElementById('cleanupDeleteBtn');
+    btn.disabled = checked.length === 0;
+    btn.textContent = checked.length ? `Delete ${checked.length} channel${checked.length !== 1 ? 's' : ''}` : 'Delete Selected';
+    document.getElementById('cleanupCount').textContent = `${document.querySelectorAll('.cleanup-checkbox').length} inactive`;
+  }
+
+  document.getElementById('cleanupTimeframe').addEventListener('change', loadInactive);
+
+  document.getElementById('cleanupList').addEventListener('change', (e) => {
+    if (e.target.classList.contains('cleanup-checkbox')) updateDeleteBtn();
+  });
+
+  document.getElementById('cleanupSelectAll').addEventListener('click', () => {
+    const boxes = document.querySelectorAll('.cleanup-checkbox');
+    const allChecked = boxes.length > 0 && [...boxes].every(b => b.checked);
+    boxes.forEach(b => { b.checked = !allChecked; });
+    updateDeleteBtn();
+  });
+
+  document.getElementById('cleanupDeleteBtn').addEventListener('click', () => {
+    const checked = [...document.querySelectorAll('.cleanup-checkbox:checked')];
+    if (checked.length === 0) return;
+    openCleanupConfirmModal(checked.map(c => c.value), checked.map(c => c.dataset.name));
+  });
+
+  await loadInactive();
+}
+
+function openCleanupConfirmModal(ids, names) {
+  showModal('Confirm Delete', `
+    <div class="modal-body">
+      <p style="font-size:13px">Delete ${ids.length} channel${ids.length !== 1 ? 's' : ''} and all their videos? This cannot be undone.</p>
+      <ul class="cleanup-confirm-list">${names.map(n => `<li>${escHtml(n)}</li>`).join('')}</ul>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="cleanupConfirmBack">Back</button>
+      <button class="btn-danger" id="cleanupConfirmDelete">Delete</button>
+    </div>
+  `);
+
+  document.getElementById('cleanupConfirmBack').addEventListener('click', openCleanupModal);
+
+  document.getElementById('cleanupConfirmDelete').addEventListener('click', async () => {
+    const btn = document.getElementById('cleanupConfirmDelete');
+    btn.disabled = true;
+    btn.textContent = 'Deleting…';
+    for (const id of ids) {
+      await api(`/channels/${id}`, { method: 'DELETE' });
+    }
+    closeModal();
+    await loadMeta();
+    renderSidebar();
+    if (state.view === 'home') loadVideos(true);
   });
 }
 

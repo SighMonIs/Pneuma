@@ -1615,6 +1615,11 @@ input, select { font: inherit; color: inherit; }
   padding: 16px 0;
 }
 
+/* ── clean up feeds modal ─────────────────────────────────────────────── */
+.cleanup-list-header { display: flex; align-items: center; justify-content: space-between; }
+.cleanup-row { cursor: pointer; }
+.cleanup-confirm-list { max-height: 200px; overflow-y: auto; font-size: 13px; padding-left: 20px; color: var(--text-muted); }
+
 /* ── feed error modal ─────────────────────────────────────────────────── */
 .feed-error-list { display: flex; flex-direction: column; gap: 8px; max-height: 360px; overflow-y: auto; }
 

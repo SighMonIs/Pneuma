@@ -119,6 +119,22 @@ router.get('/', (req, res) => {
   res.json(channels);
 });
 
+// GET /api/channels/inactive?months=3 — channels with no video in the last N months, or none at all
+// (must be before /:id)
+router.get('/inactive', (req, res) => {
+  const months = parseInt(req.query.months, 10) || 3;
+  const db = getDb();
+  const channels = db.prepare(`
+    SELECT c.*, MAX(v.published_at) as last_video_at
+    FROM channels c
+    LEFT JOIN videos v ON v.channel_id = c.id
+    GROUP BY c.id
+    HAVING last_video_at IS NULL OR last_video_at < datetime('now', ?)
+    ORDER BY last_video_at IS NULL DESC, last_video_at ASC
+  `).all(`-${months} months`);
+  res.json(channels);
+});
+
 // GET /api/channels/poll-errors — errors from last poll (must be before /:id)
 router.get('/poll-errors', (req, res) => {
   res.json({ errors: getPollState().errors || [] });
