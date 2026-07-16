@@ -1158,7 +1158,6 @@ async function reloadCategoriesPage() {
 /* ── channel settings modal ───────────────────────────────────────────── */
 function openChannelSettingsModal(ch) {
   const favCat = state.categories.find(c => c.name === 'Favourites');
-  const isFav  = !!favCat && ch.category_id === favCat.id;
   const catOptions = state.categories
     .filter(c => c.id !== favCat?.id)
     .map(c => `<option value="${c.id}"${ch.category_id === c.id ? ' selected' : ''}>${escHtml(c.name)}</option>`)
@@ -1175,10 +1174,7 @@ function openChannelSettingsModal(ch) {
       </div>
       <div class="form-field">
         <label>Category</label>
-        <select id="settingsCategory"${isFav ? ' disabled' : ''}><option value="">None</option>${catOptions}</select>
-      </div>
-      <div class="form-field form-field-checkbox">
-        <label><input type="checkbox" id="settingsFavourite"${isFav ? ' checked' : ''}> Favourite</label>
+        <select id="settingsCategory"><option value="">None</option>${catOptions}</select>
       </div>
     </div>
     <div class="modal-actions">
@@ -1188,10 +1184,6 @@ function openChannelSettingsModal(ch) {
       <button class="btn-primary" id="btnSaveChannelSettings">Save</button>
     </div>
   `);
-
-  document.getElementById('settingsFavourite').addEventListener('change', (e) => {
-    document.getElementById('settingsCategory').disabled = e.target.checked;
-  });
 
   document.getElementById('btnCopyFeedUrl').addEventListener('click', async () => {
     const btn = document.getElementById('btnCopyFeedUrl');
@@ -1228,15 +1220,10 @@ function openChannelSettingsModal(ch) {
   });
 
   document.getElementById('btnSaveChannelSettings').addEventListener('click', async () => {
-    const favChecked = document.getElementById('settingsFavourite').checked;
-    if (favChecked !== isFav) {
-      await api(`/channels/${ch.id}/favourite`, { method: 'POST' });
-    } else if (!favChecked) {
-      const val = document.getElementById('settingsCategory').value;
-      const newCatId = val ? Number(val) : null;
-      if (newCatId !== (ch.category_id ?? null)) {
-        await api(`/channels/${ch.id}`, { method: 'PUT', body: { category_id: newCatId } });
-      }
+    const val = document.getElementById('settingsCategory').value;
+    const newCatId = val ? Number(val) : null;
+    if (newCatId !== (ch.category_id ?? null)) {
+      await api(`/channels/${ch.id}`, { method: 'PUT', body: { category_id: newCatId } });
     }
     closeModal();
     await loadMeta();
