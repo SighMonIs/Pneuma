@@ -1174,7 +1174,8 @@ function openChannelSettingsModal(ch) {
       </div>
       <div class="form-field">
         <label>Category</label>
-        <select id="settingsCategory"><option value="">None</option>${catOptions}</select>
+        <select id="settingsCategory"><option value="">None</option><option value="__new__">-- New Category --</option>${catOptions}</select>
+        <input type="text" id="settingsNewCategory" placeholder="New category name" class="hidden">
       </div>
     </div>
     <div class="modal-actions">
@@ -1184,6 +1185,10 @@ function openChannelSettingsModal(ch) {
       <button class="btn-primary" id="btnSaveChannelSettings">Save</button>
     </div>
   `);
+
+  document.getElementById('settingsCategory').addEventListener('change', (e) => {
+    document.getElementById('settingsNewCategory').classList.toggle('hidden', e.target.value !== '__new__');
+  });
 
   document.getElementById('btnCopyFeedUrl').addEventListener('click', async () => {
     const btn = document.getElementById('btnCopyFeedUrl');
@@ -1221,7 +1226,15 @@ function openChannelSettingsModal(ch) {
 
   document.getElementById('btnSaveChannelSettings').addEventListener('click', async () => {
     const val = document.getElementById('settingsCategory').value;
-    const newCatId = val ? Number(val) : null;
+    let newCatId = val ? Number(val) : null;
+
+    if (val === '__new__') {
+      const name = document.getElementById('settingsNewCategory').value.trim();
+      if (!name) return;
+      const created = await api('/categories', { method: 'POST', body: { name } });
+      newCatId = created.id;
+    }
+
     if (newCatId !== (ch.category_id ?? null)) {
       await api(`/channels/${ch.id}`, { method: 'PUT', body: { category_id: newCatId } });
     }
