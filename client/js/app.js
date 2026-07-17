@@ -1760,19 +1760,24 @@ function setupEvents() {
     });
   });
 
-  // Category tree collapse toggle
+  // Expand/collapse all categories at once
   const catToggleBtn = document.getElementById('btnToggleCategories');
-  const catTree      = document.getElementById('categoryTree');
-  const catExpanded  = localStorage.getItem('catTreeExpanded') !== 'false';
-  if (!catExpanded) {
-    catTree.classList.add('hidden');
-    catToggleBtn.innerHTML = icon('chevronRight');
-  }
+  let catAllExpanded  = localStorage.getItem('catTreeExpanded') !== 'false';
+  catToggleBtn.innerHTML = icon(catAllExpanded ? 'chevronDown' : 'chevronRight');
   catToggleBtn.addEventListener('click', (e) => {
     e.stopPropagation();
-    const nowHidden = catTree.classList.toggle('hidden');
-    catToggleBtn.innerHTML = nowHidden ? icon('chevronRight') : icon('chevronDown');
-    localStorage.setItem('catTreeExpanded', nowHidden ? 'false' : 'true');
+    catAllExpanded = !catAllExpanded;
+    localStorage.setItem('catTreeExpanded', catAllExpanded ? 'true' : 'false');
+    catToggleBtn.innerHTML = icon(catAllExpanded ? 'chevronDown' : 'chevronRight');
+    document.querySelectorAll('#categoryTree .category-item').forEach(item => {
+      item.classList.toggle('open', catAllExpanded);
+      const chevron = item.querySelector('.category-chevron');
+      if (chevron) chevron.innerHTML = icon(catAllExpanded ? 'chevronDown' : 'chevronRight');
+    });
+    for (const cat of state.categories) {
+      cat.collapsed = catAllExpanded ? 0 : 1;
+      toggleCategoryCollapsed(cat.id, !catAllExpanded);
+    }
   });
 
   // Filter buttons
