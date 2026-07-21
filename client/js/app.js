@@ -32,9 +32,8 @@ const state = {
   view:        'home',   // 'home' | 'channel' | 'category' | 'settings' | 'watch'
   channelId:   null,
   categoryId:  null,
-  filter:      'all',
+  filter:      'unwatched',
   sort:        'newest',
-  duration:    'any',
   layout:      'grid',
   categories:  [],
   channels:    [],
@@ -45,6 +44,7 @@ const state = {
   PAGE:        40,
   watchVideo:  null,  // currently playing video object
   canGoBack:   false, // true when watch was opened via navigation (not direct URL)
+  settingsTab: 'playback',
 };
 
 /* ── YouTube IFrame player ────────────────────────────────────────────── */
@@ -112,19 +112,21 @@ function applyStoredPrefs() {
 
 // All/Unwatched/Watched is remembered separately per view (home vs a given channel/category page)
 function applyFilterForView(view) {
-  state.filter = localStorage.getItem(`filter:${view}`) || (view === 'home' ? state.settings.default_filter : null) || 'all';
+  state.filter = localStorage.getItem(`filter:${view}`) || (view === 'home' ? state.settings.default_filter : null) || 'unwatched';
   document.getElementById('filterSelect').value = state.filter;
 }
 
 /* ── navigation ───────────────────────────────────────────────────────── */
 function navigate(view, id = null, { push = true } = {}) {
-  const prevView  = state.view;
+  const prevView       = state.view;
+  const prevSettingsTab = state.settingsTab;
   state.view      = view;
   state.offset    = 0;
   state.videos    = [];
 
   if (view === 'channel')  state.channelId  = id;
   if (view === 'category') state.categoryId = id;
+  if (view === 'settings') state.settingsTab = id || state.settingsTab || 'playback';
 
   // Update active states in sidebar
   document.querySelectorAll('.nav-item, .category-header, .channel-item').forEach(el => el.classList.remove('active'));
@@ -133,8 +135,6 @@ function navigate(view, id = null, { push = true } = {}) {
     document.querySelector('[data-view="home"]')?.classList.add('active');
   } else if (view === 'settings') {
     document.querySelector('[data-view="settings"]')?.classList.add('active');
-  } else if (view === 'categories') {
-    document.querySelector('[data-view="categories"]')?.classList.add('active');
   } else if (view === 'channel') {
     document.querySelector(`.channel-item[data-id="${id}"]`)?.classList.add('active');
   } else if (view === 'category') {
@@ -145,9 +145,7 @@ function navigate(view, id = null, { push = true } = {}) {
   if (push) {
     let url = '/';
     if (view === 'settings') {
-      url = '/settings';
-    } else if (view === 'categories') {
-      url = '/categories';
+      url = state.settingsTab && state.settingsTab !== 'playback' ? `/settings/${state.settingsTab}` : '/settings';
     } else if (view === 'watch' && id) {
       url = `/watch/${id}`;
     } else if (view === 'channel' && id) {
@@ -164,7 +162,6 @@ function navigate(view, id = null, { push = true } = {}) {
   const toolbar          = document.getElementById('toolbar');
   const videoContainer   = document.getElementById('videoContainer');
   const settingsPanel    = document.getElementById('settingsPanel');
-  const categoriesPanel  = document.getElementById('categoriesPanel');
   const watchPanel       = document.getElementById('watchPanel');
   const loadMoreWrap     = document.getElementById('loadMoreWrap');
   const channelBanner    = document.getElementById('channelBanner');
@@ -177,24 +174,22 @@ function navigate(view, id = null, { push = true } = {}) {
     videoContainer.classList.add('hidden');
     loadMoreWrap.classList.add('hidden');
     settingsPanel.classList.add('hidden');
-    categoriesPanel.classList.add('hidden');
     watchPanel.classList.add('hidden');
     channelBanner.classList.add('hidden');
     channelHeaderRow.classList.add('hidden');
     channelDescEl.classList.add('hidden');
   };
 
+  // The sidebar channel tree switches into drag-handle mode while the Categories settings tab is open
+  const wasDragMode = prevView === 'settings' && prevSettingsTab === 'categories';
+  const isDragMode  = view === 'settings' && state.settingsTab === 'categories';
+
   if (view === 'settings') {
     hideAll();
     settingsPanel.classList.remove('hidden');
     stopPlayer();
+    if (wasDragMode !== isDragMode) renderSidebar();
     renderSettings();
-  } else if (view === 'categories') {
-    hideAll();
-    categoriesPanel.classList.remove('hidden');
-    stopPlayer();
-    if (prevView !== 'categories') renderSidebar(); // switch to drag-handle mode
-    renderCategoriesPage();
   } else if (view === 'watch') {
     hideAll();
     watchPanel.classList.remove('hidden');
@@ -209,13 +204,12 @@ function navigate(view, id = null, { push = true } = {}) {
     toolbar.classList.remove('hidden');
     videoContainer.classList.remove('hidden');
     settingsPanel.classList.add('hidden');
-    categoriesPanel.classList.add('hidden');
     watchPanel.classList.add('hidden');
     videoContainer.scrollTop = 0;
     main.scrollTop = 0;
     main.classList.toggle('channel-scroll', view === 'channel');
     stopPlayer();
-    if (prevView === 'categories') renderSidebar(); // switch back to thumbnail mode
+    if (wasDragMode) renderSidebar(); // switch back to thumbnail mode
     if (view === 'channel') {
       renderChannelHeader(id);
     } else {
@@ -325,8 +319,9 @@ function linkify(escapedText) {
 function parseUrl() {
   const path = decodeURIComponent(window.location.pathname);
 
-  if (path === '/settings')   return { view: 'settings',   id: null };
-  if (path === '/categories') return { view: 'categories', id: null };
+  if (path === '/settings') return { view: 'settings', id: null };
+  const settingsTabMatch = path.match(/^\/settings\/(.+)$/);
+  if (settingsTabMatch) return { view: 'settings', id: settingsTabMatch[1] };
 
   const watchMatch = path.match(/^\/watch\/(.+)$/);
   if (watchMatch) return { view: 'watch', id: watchMatch[1] };
@@ -356,11 +351,10 @@ async function loadVideos(reset = false) {
   }
 
   const params = new URLSearchParams({
-    filter:   state.filter,
-    sort:     state.sort,
-    duration: state.duration,
-    limit:    state.PAGE,
-    offset:   state.offset,
+    filter: state.filter,
+    sort:   state.sort,
+    limit:  state.PAGE,
+    offset: state.offset,
   });
 
   if (state.view === 'channel')  params.set('channel_id',  state.channelId);
@@ -616,7 +610,7 @@ function stopPlayer() {
 /* ── render: sidebar ──────────────────────────────────────────────────── */
 function renderSidebar() {
   const tree       = document.getElementById('categoryTree');
-  const isDragMode = state.view === 'categories';
+  const isDragMode = state.view === 'settings' && state.settingsTab === 'categories';
   tree.innerHTML   = '';
 
   const byCategory  = {};
@@ -803,145 +797,164 @@ function updateSidebarCounts() {
 }
 
 /* ── render: settings ─────────────────────────────────────────────────── */
+const SETTINGS_TABS = [
+  { key: 'playback',   label: 'Playback' },
+  { key: 'feed',       label: 'Feed' },
+  { key: 'search',     label: 'Search' },
+  { key: 'categories', label: 'Categories' },
+  { key: 'shortcut',   label: 'iOS Shortcut' },
+];
+
 function renderSettings() {
   const panel = document.getElementById('settingsPanel');
   const s     = state.settings;
+  const tab   = state.settingsTab || 'playback';
+
+  const tabsHtml = SETTINGS_TABS.map(t =>
+    `<button class="settings-tab${t.key === tab ? ' active' : ''}" data-tab="${t.key}">${t.label}</button>`
+  ).join('');
+
+  const sections = {
+    playback: `
+      <div class="settings-section">
+        <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:10px">
+          <div>
+            <div class="setting-label">Video playback</div>
+            <div class="setting-desc">How videos open when you click them</div>
+          </div>
+          <div class="playback-options">
+            <button class="playback-opt${s.playback_mode !== 'youtube' ? ' active' : ''}" data-mode="embed">
+              <span class="playback-opt-title">Embedded player</span>
+              <span class="playback-opt-desc">Tracks progress${s.mark_watched_at_enabled !== 'false' ? ` · auto-marks watched at ${parseInt(s.mark_watched_at_percent || '90', 10)}%` : ''} · resumes where you left off</span>
+            </button>
+            <button class="playback-opt${s.playback_mode === 'youtube' ? ' active' : ''}" data-mode="youtube">
+              <span class="playback-opt-title">Open in YouTube</span>
+              <span class="playback-opt-desc">Opens in a new tab · no progress tracking</span>
+            </button>
+          </div>
+        </div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Autoplay</div>
+            <div class="setting-desc">Automatically start playing when you open a video</div>
+          </div>
+          <div class="setting-control">
+            <label class="toggle">
+              <input type="checkbox" id="autoplayToggle" ${state.autoplay ? 'checked' : ''}>
+              <div class="toggle-track"></div>
+            </label>
+          </div>
+        </div>
+      </div>`,
+
+    feed: `
+      <div class="settings-section">
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Refresh feeds</div>
+            <div class="setting-desc">Manually check all channels for new videos now</div>
+          </div>
+          <div class="setting-control">
+            <button class="btn-refresh" id="btnRefresh" title="Refresh all feeds">${icon('refresh')} Refresh now</button>
+          </div>
+        </div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Clean up feeds</div>
+            <div class="setting-desc">Remove feeds that are no longer active</div>
+          </div>
+          <div class="setting-control">
+            <button class="btn-refresh" id="btnCleanupFeeds">Clean up feeds</button>
+          </div>
+        </div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Poll interval</div>
+            <div class="setting-desc">How often to check for new videos</div>
+          </div>
+          <div class="setting-control poll-interval-wrap">
+            ${numInput('pollHours',   Math.floor((s.poll_interval || 3600) / 3600),        0, 23)} <span class="poll-unit">h</span>
+            ${numInput('pollMinutes', Math.floor(((s.poll_interval || 3600) % 3600) / 60), 0, 59)} <span class="poll-unit">m</span>
+          </div>
+        </div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Show Shorts</div>
+            <div class="setting-desc">Include YouTube Shorts in the feed</div>
+          </div>
+          <div class="setting-control">
+            ${toggleHtml('show_shorts', s.show_shorts !== 'false')}
+          </div>
+        </div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Auto-mark watched</div>
+            <div class="setting-desc">Mark videos as watched automatically when opened</div>
+          </div>
+          <div class="setting-control">
+            ${toggleHtml('auto_mark_watched', s.auto_mark_watched === 'true')}
+          </div>
+        </div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Mark videos watched at ${percentSelectHtml('mark_watched_at_percent', parseInt(s.mark_watched_at_percent || '90', 10))}%</div>
+            <div class="setting-desc">Automatically mark a video watched once playback reaches this point</div>
+          </div>
+          <div class="setting-control">
+            ${toggleHtml('mark_watched_at_enabled', s.mark_watched_at_enabled !== 'false')}
+          </div>
+        </div>
+      </div>`,
+
+    search: `
+      <div class="settings-section">
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Search YouTube</div>
+            <div class="setting-desc">Include YouTube results in the sidebar search (uses yt-dlp)</div>
+          </div>
+          <div class="setting-control">
+            ${toggleHtml('search_youtube', s.search_youtube !== 'false')}
+          </div>
+        </div>
+      </div>`,
+
+    categories: `
+      <div class="settings-section">
+        <div class="cat-add-row">
+          <input class="cat-add-input" id="catAddInput" type="text" placeholder="New category name…" maxlength="80">
+          <button class="btn btn-primary" id="catAddBtn">Add</button>
+        </div>
+        <div class="cat-list" id="catList">${categoriesListHtml()}</div>
+      </div>`,
+
+    shortcut: `
+      <div class="settings-section">
+        <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:10px">
+          <div class="setting-label">Add channels from iPhone share sheet</div>
+          <div class="shortcut-qr">
+            <img src="/api/shortcut/qr" alt="QR Code" width="160" height="160">
+            <div class="setting-desc" style="margin-top:6px">Scan with your iPhone to open the setup page</div>
+          </div>
+          <a class="btn-setup" href="/api/shortcut/setup" target="_blank">Open Setup Page</a>
+          <div>
+            <div class="setting-desc">Your unique token:</div>
+            <div class="token-display" id="tokenDisplay">loading…</div>
+            <button class="btn-regen" id="btnRegen">Regenerate token</button>
+          </div>
+        </div>
+      </div>`,
+  };
 
   panel.innerHTML = `
     <h1>Settings</h1>
+    <div class="settings-tabs">${tabsHtml}</div>
+    <div class="settings-tab-body">${sections[tab] || ''}</div>`;
 
-    <div class="settings-section">
-      <h2>Playback</h2>
-      <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:10px">
-        <div>
-          <div class="setting-label">Video playback</div>
-          <div class="setting-desc">How videos open when you click them</div>
-        </div>
-        <div class="playback-options">
-          <button class="playback-opt${s.playback_mode !== 'youtube' ? ' active' : ''}" data-mode="embed">
-            <span class="playback-opt-title">Embedded player</span>
-            <span class="playback-opt-desc">Tracks progress${s.mark_watched_at_enabled !== 'false' ? ` · auto-marks watched at ${parseInt(s.mark_watched_at_percent || '90', 10)}%` : ''} · resumes where you left off</span>
-          </button>
-          <button class="playback-opt${s.playback_mode === 'youtube' ? ' active' : ''}" data-mode="youtube">
-            <span class="playback-opt-title">Open in YouTube</span>
-            <span class="playback-opt-desc">Opens in a new tab · no progress tracking</span>
-          </button>
-        </div>
-      </div>
-      <div class="setting-row">
-        <div>
-          <div class="setting-label">Autoplay</div>
-          <div class="setting-desc">Automatically start playing when you open a video</div>
-        </div>
-        <div class="setting-control">
-          <label class="toggle">
-            <input type="checkbox" id="autoplayToggle" ${state.autoplay ? 'checked' : ''}>
-            <div class="toggle-track"></div>
-          </label>
-        </div>
-      </div>
-    </div>
-
-    <div class="settings-section">
-      <h2>Feed</h2>
-      <div class="setting-row">
-        <div>
-          <div class="setting-label">Refresh feeds</div>
-          <div class="setting-desc">Manually check all channels for new videos now</div>
-        </div>
-        <div class="setting-control">
-          <button class="btn-refresh" id="btnRefresh" title="Refresh all feeds">${icon('refresh')} Refresh now</button>
-        </div>
-      </div>
-      <div class="setting-row">
-        <div>
-          <div class="setting-label">Clean up feeds</div>
-          <div class="setting-desc">Remove feeds that are no longer active</div>
-        </div>
-        <div class="setting-control">
-          <button class="btn-refresh" id="btnCleanupFeeds">Clean up feeds</button>
-        </div>
-      </div>
-      <div class="setting-row">
-        <div>
-          <div class="setting-label">Poll interval</div>
-          <div class="setting-desc">How often to check for new videos</div>
-        </div>
-        <div class="setting-control poll-interval-wrap">
-          ${numInput('pollHours',   Math.floor((s.poll_interval || 3600) / 3600),        0, 23)} <span class="poll-unit">h</span>
-          ${numInput('pollMinutes', Math.floor(((s.poll_interval || 3600) % 3600) / 60), 0, 59)} <span class="poll-unit">m</span>
-        </div>
-      </div>
-      <div class="setting-row">
-        <div>
-          <div class="setting-label">Show Shorts</div>
-          <div class="setting-desc">Include YouTube Shorts in the feed</div>
-        </div>
-        <div class="setting-control">
-          ${toggleHtml('show_shorts', s.show_shorts !== 'false')}
-        </div>
-      </div>
-      <div class="setting-row">
-        <div>
-          <div class="setting-label">Auto-mark watched</div>
-          <div class="setting-desc">Mark videos as watched automatically when opened</div>
-        </div>
-        <div class="setting-control">
-          ${toggleHtml('auto_mark_watched', s.auto_mark_watched === 'true')}
-        </div>
-      </div>
-      <div class="setting-row">
-        <div>
-          <div class="setting-label">Mark videos watched at ${percentSelectHtml('mark_watched_at_percent', parseInt(s.mark_watched_at_percent || '90', 10))}%</div>
-          <div class="setting-desc">Automatically mark a video watched once playback reaches this point</div>
-        </div>
-        <div class="setting-control">
-          ${toggleHtml('mark_watched_at_enabled', s.mark_watched_at_enabled !== 'false')}
-        </div>
-      </div>
-    </div>
-
-    <div class="settings-section">
-      <h2>Search</h2>
-      <div class="setting-row">
-        <div>
-          <div class="setting-label">Search YouTube</div>
-          <div class="setting-desc">Include YouTube results in the sidebar search (uses yt-dlp)</div>
-        </div>
-        <div class="setting-control">
-          ${toggleHtml('search_youtube', s.search_youtube !== 'false')}
-        </div>
-      </div>
-    </div>
-
-    <div class="settings-section">
-      <h2>iOS Shortcut</h2>
-      <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:10px">
-        <div class="setting-label">Add channels from iPhone share sheet</div>
-        <div class="shortcut-qr">
-          <img src="/api/shortcut/qr" alt="QR Code" width="160" height="160">
-          <div class="setting-desc" style="margin-top:6px">Scan with your iPhone to open the setup page</div>
-        </div>
-        <a class="btn-setup" href="/api/shortcut/setup" target="_blank">Open Setup Page</a>
-        <div>
-          <div class="setting-desc">Your unique token:</div>
-          <div class="token-display" id="tokenDisplay">loading…</div>
-          <button class="btn-regen" id="btnRegen">Regenerate token</button>
-        </div>
-      </div>
-    </div>`;
-
-  // Load token
-  fetch(`${API}/settings/token`).then(r => r.json()).then(d => {
-    const el = document.getElementById('tokenDisplay');
-    if (el) el.textContent = d.token;
-  });
-
-  // Regen token
-  document.getElementById('btnRegen')?.addEventListener('click', async () => {
-    if (!confirm('Regenerate token? Your existing iOS shortcut will stop working until you update it.')) return;
-    const d = await api('/settings/regenerate-token', { method: 'POST' });
-    document.getElementById('tokenDisplay').textContent = d.token;
+  panel.querySelectorAll('.settings-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (btn.dataset.tab !== tab) navigate('settings', btn.dataset.tab);
+    });
   });
 
   const flashSaved = () => {
@@ -962,50 +975,70 @@ function renderSettings() {
     });
   });
 
-  // Poll interval — convert h+m to seconds on save
-  const savePollInterval = () => {
-    const h = parseInt(document.getElementById('pollHours').value)   || 0;
-    const m = parseInt(document.getElementById('pollMinutes').value) || 0;
-    const secs = Math.max(300, h * 3600 + m * 60);
-    state.settings.poll_interval = String(secs);
-    api('/settings', { method: 'PUT', body: { poll_interval: String(secs) } });
-    flashSaved();
-  };
-  document.getElementById('pollHours')?.addEventListener('change', savePollInterval);
-  document.getElementById('pollMinutes')?.addEventListener('change', savePollInterval);
-
-  panel.querySelectorAll('.num-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const input = document.getElementById(btn.dataset.target);
-      const val   = parseInt(input.value) + parseInt(btn.dataset.delta);
-      input.value = Math.min(parseInt(input.max), Math.max(parseInt(input.min), val));
-      input.dispatchEvent(new Event('change'));
+  if (tab === 'playback') {
+    panel.querySelectorAll('.playback-opt').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const mode = btn.dataset.mode;
+        state.settings.playback_mode = mode;
+        api('/settings', { method: 'PUT', body: { playback_mode: mode } });
+        panel.querySelectorAll('.playback-opt').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+        flashSaved();
+      });
     });
-  });
 
-  // Playback mode buttons
-  panel.querySelectorAll('.playback-opt').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const mode = btn.dataset.mode;
-      state.settings.playback_mode = mode;
-      api('/settings', { method: 'PUT', body: { playback_mode: mode } });
-      panel.querySelectorAll('.playback-opt').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+    // Autoplay — a client-only preference (localStorage), not a synced server setting
+    document.getElementById('autoplayToggle').addEventListener('change', (e) => {
+      state.autoplay = e.target.checked;
+      localStorage.setItem('autoplay', state.autoplay);
+    });
+  }
+
+  if (tab === 'feed') {
+    // Poll interval — convert h+m to seconds on save
+    const savePollInterval = () => {
+      const h = parseInt(document.getElementById('pollHours').value)   || 0;
+      const m = parseInt(document.getElementById('pollMinutes').value) || 0;
+      const secs = Math.max(300, h * 3600 + m * 60);
+      state.settings.poll_interval = String(secs);
+      api('/settings', { method: 'PUT', body: { poll_interval: String(secs) } });
       flashSaved();
+    };
+    document.getElementById('pollHours')?.addEventListener('change', savePollInterval);
+    document.getElementById('pollMinutes')?.addEventListener('change', savePollInterval);
+
+    panel.querySelectorAll('.num-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const input = document.getElementById(btn.dataset.target);
+        const val   = parseInt(input.value) + parseInt(btn.dataset.delta);
+        input.value = Math.min(parseInt(input.max), Math.max(parseInt(input.min), val));
+        input.dispatchEvent(new Event('change'));
+      });
     });
-  });
 
-  // Autoplay — a client-only preference (localStorage), not a synced server setting
-  document.getElementById('autoplayToggle').addEventListener('change', (e) => {
-    state.autoplay = e.target.checked;
-    localStorage.setItem('autoplay', state.autoplay);
-  });
+    // Refresh feeds — fires and forgets; progress comes back via SSE toast
+    document.getElementById('btnRefresh').addEventListener('click', () => {
+      api('/channels/refresh', { method: 'POST' });
+    });
 
-  // Refresh feeds — fires and forgets; progress comes back via SSE toast
-  document.getElementById('btnRefresh').addEventListener('click', () => {
-    api('/channels/refresh', { method: 'POST' });
-  });
+    document.getElementById('btnCleanupFeeds').addEventListener('click', openCleanupModal);
+  }
 
-  document.getElementById('btnCleanupFeeds').addEventListener('click', openCleanupModal);
+  if (tab === 'categories') {
+    wireUpCategoriesTab(panel);
+  }
+
+  if (tab === 'shortcut') {
+    fetch(`${API}/settings/token`).then(r => r.json()).then(d => {
+      const el = document.getElementById('tokenDisplay');
+      if (el) el.textContent = d.token;
+    });
+
+    document.getElementById('btnRegen')?.addEventListener('click', async () => {
+      if (!confirm('Regenerate token? Your existing iOS shortcut will stop working until you update it.')) return;
+      const d = await api('/settings/regenerate-token', { method: 'POST' });
+      document.getElementById('tokenDisplay').textContent = d.token;
+    });
+  }
 }
 
 /* ── clean up feeds modal ─────────────────────────────────────────────── */
@@ -1134,11 +1167,9 @@ function percentSelectHtml(key, selected) {
   return `<select class="inline-select" data-key="${key}">${options.join('')}</select>`;
 }
 
-/* ── render: categories management ───────────────────────────────────── */
-function renderCategoriesPage() {
-  const panel = document.getElementById('categoriesPanel');
-
-  const listHtml = state.categories.length
+/* ── render: categories management (Settings → Categories tab) ───────── */
+function categoriesListHtml() {
+  return state.categories.length
     ? state.categories.map(cat => {
         const count   = state.channels.filter(c => c.category_id === cat.id).length;
         const pinned  = cat.name === 'Favourites';
@@ -1156,24 +1187,16 @@ function renderCategoriesPage() {
           </div>`;
       }).join('')
     : '<div class="cat-empty">No categories yet. Add one above.</div>';
+}
 
-  panel.innerHTML = `
-    <h1>Categories</h1>
-    <div class="settings-section">
-      <div class="cat-add-row">
-        <input class="cat-add-input" id="catAddInput" type="text" placeholder="New category name…" maxlength="80">
-        <button class="btn btn-primary" id="catAddBtn">Add</button>
-      </div>
-      <div class="cat-list" id="catList">${listHtml}</div>
-    </div>`;
-
+function wireUpCategoriesTab(panel) {
   const addInput = panel.querySelector('#catAddInput');
   panel.querySelector('#catAddBtn').addEventListener('click', async () => {
     const name = addInput.value.trim();
     if (!name) return;
     await api('/categories', { method: 'POST', body: { name } });
     addInput.value = '';
-    await reloadCategoriesPage();
+    await reloadCategoriesTab();
   });
   addInput.addEventListener('keydown', e => { if (e.key === 'Enter') panel.querySelector('#catAddBtn').click(); });
 
@@ -1195,15 +1218,15 @@ function renderCategoriesPage() {
       const newName = nameEl.textContent.trim();
       nameEl.contentEditable = 'false';
       renBtn.innerHTML = icon('pencil');
-      if (!newName) return reloadCategoriesPage();
+      if (!newName) return reloadCategoriesTab();
       await api(`/categories/${id}`, { method: 'PUT', body: { name: newName } });
-      await reloadCategoriesPage();
+      await reloadCategoriesTab();
     };
 
     renBtn.addEventListener('click', () => nameEl.contentEditable === 'true' ? saveEdit() : startEditing());
     nameEl.addEventListener('keydown', e => {
       if (e.key === 'Enter')  { e.preventDefault(); saveEdit(); }
-      if (e.key === 'Escape') { nameEl.contentEditable = 'false'; renBtn.innerHTML = icon('pencil'); reloadCategoriesPage(); }
+      if (e.key === 'Escape') { nameEl.contentEditable = 'false'; renBtn.innerHTML = icon('pencil'); reloadCategoriesTab(); }
     });
     row.querySelector('.cat-btn-delete').addEventListener('click', async () => {
       const name  = nameEl.textContent.trim();
@@ -1211,7 +1234,7 @@ function renderCategoriesPage() {
       const msg   = count ? `Delete "${name}"? Its ${count} channel${count !== 1 ? 's' : ''} will become uncategorised.` : `Delete "${name}"?`;
       if (!confirm(msg)) return;
       await api(`/categories/${id}`, { method: 'DELETE' });
-      await reloadCategoriesPage();
+      await reloadCategoriesTab();
     });
   });
 
@@ -1261,10 +1284,10 @@ function wireUpCatDrag(catList) {
   });
 }
 
-async function reloadCategoriesPage() {
+async function reloadCategoriesTab() {
   await loadMeta();
   renderSidebar();
-  if (state.view === 'categories') renderCategoriesPage();
+  if (state.view === 'settings' && state.settingsTab === 'categories') renderSettings();
 }
 
 /* ── channel settings modal ───────────────────────────────────────────── */
@@ -1802,12 +1825,6 @@ function setupEvents() {
   document.getElementById('sortSelect').addEventListener('change', (e) => {
     state.sort = e.target.value;
     localStorage.setItem('sort', state.sort);
-    loadVideos(true);
-  });
-
-  // Duration
-  document.getElementById('durationSelect').addEventListener('change', (e) => {
-    state.duration = e.target.value;
     loadVideos(true);
   });
 

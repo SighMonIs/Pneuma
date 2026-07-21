@@ -54,10 +54,8 @@
 
       <!-- Categories section header -->
       <div class="sidebar-cats-row">
-        <button class="nav-item cats-nav-btn" data-view="categories" id="btnCategoriesPage">
-          <span class="nav-icon"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h.01"/><path d="M3 12h.01"/><path d="M3 19h.01"/><path d="M8 5h13"/><path d="M8 12h13"/><path d="M8 19h13"/></svg></span> Categories
-          <button class="btn-cat-toggle" id="btnToggleCategories" title="Expand/collapse all categories"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
-        </button>
+        <span class="sidebar-cats-label">Channels</span>
+        <button class="btn-cat-toggle" id="btnToggleCategories" title="Expand/collapse all categories"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
       </div>
 
       <!-- Category + channel tree -->
@@ -90,9 +88,9 @@
       <!-- Filter / sort bar -->
       <div class="toolbar" id="toolbar">
         <select class="sort-select" id="filterSelect">
-          <option value="all">All</option>
           <option value="unwatched">Unwatched</option>
           <option value="watched">Watched</option>
+          <option value="all">All</option>
         </select>
         <select class="mark-all-select" id="markAllSelect">
           <option value="" selected disabled>Mark all as…</option>
@@ -105,12 +103,6 @@
           <select class="sort-select" id="sortSelect">
             <option value="newest">Newest</option>
             <option value="oldest">Oldest</option>
-          </select>
-          <select class="duration-select" id="durationSelect">
-            <option value="any">Any length</option>
-            <option value="short">Short (&lt;5m)</option>
-            <option value="medium">Medium (5–20m)</option>
-            <option value="long">Long (&gt;20m)</option>
           </select>
           <div class="layout-toggle">
             <button class="layout-btn active" data-layout="grid" title="Grid view"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg></button>
@@ -129,11 +121,6 @@
 
       <!-- Settings panel (hidden by default) -->
       <div class="settings-panel hidden" id="settingsPanel">
-        <!-- populated by JS -->
-      </div>
-
-      <!-- Categories management panel -->
-      <div class="settings-panel hidden" id="categoriesPanel">
         <!-- populated by JS -->
       </div>
 

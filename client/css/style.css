@@ -158,11 +158,18 @@ input, select { font: inherit; color: inherit; }
 
 /* categories row */
 .sidebar-cats-row {
-  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px 4px;
 }
 
-.cats-nav-btn {
-  width: 100%;
+.sidebar-cats-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
 }
 
 .btn-cat-toggle {
@@ -715,7 +722,7 @@ input, select { font: inherit; color: inherit; }
 
 .toolbar-right { display: flex; align-items: center; gap: 8px; }
 
-.sort-select, .duration-select, .mark-all-select {
+.sort-select, .mark-all-select {
   height: 32px;
   box-sizing: border-box;
   background: var(--surface-2);
@@ -728,7 +735,7 @@ input, select { font: inherit; color: inherit; }
   cursor: pointer;
 }
 
-.sort-select:focus, .duration-select:focus, .mark-all-select:focus { border-color: var(--accent); color: var(--text); }
+.sort-select:focus, .mark-all-select:focus { border-color: var(--accent); color: var(--text); }
 
 .layout-toggle {
   display: flex;
@@ -1040,7 +1047,29 @@ input, select { font: inherit; color: inherit; }
   max-width: 760px;
 }
 
-.settings-panel h1 { font-size: 20px; margin-bottom: 24px; }
+.settings-panel h1 { font-size: 20px; margin-bottom: 20px; }
+
+.settings-tabs {
+  display: flex;
+  gap: 20px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
+}
+
+.settings-tab {
+  padding: 0 0 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  cursor: pointer;
+  transition: color var(--transition), border-color var(--transition);
+}
+
+.settings-tab:hover  { color: var(--text); }
+.settings-tab.active { color: var(--text); border-bottom-color: var(--accent); }
 
 .settings-section { margin-bottom: 32px; }
 

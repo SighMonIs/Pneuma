@@ -97,7 +97,7 @@ function seedSettings(db) {
     mark_watched_at_enabled: 'true',
     mark_watched_at_percent: '90',
     default_view:      'grid',
-    default_filter:    'all',
+    default_filter:    'unwatched',
     default_sort:      'newest',
   };
 
@@ -107,6 +107,9 @@ function seedSettings(db) {
   for (const [key, value] of Object.entries(defaults)) {
     insert.run(key, value);
   }
+
+  // default_filter used to default to 'all'; bump untouched installs to the new default
+  db.prepare("UPDATE settings SET value = 'unwatched' WHERE key = 'default_filter' AND value = 'all'").run();
 }
 
 module.exports = { getDb, withTransaction };
