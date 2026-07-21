@@ -632,22 +632,35 @@ function renderSidebar() {
     else uncategorised.push(ch);
   }
 
-  for (const cat of state.categories) {
-    const channels = byCategory[cat.id] || [];
-    const unread   = channels.reduce((n, c) => n + (c.unwatched_count || 0), 0);
+  // Real categories in their stored order, with the pseudo-category "Uncategorised" pinned
+  // last — it has no id/position of its own and never appears in the Categories settings
+  // tab's reorder list, it's purely a sidebar grouping for channels with no category.
+  const groups = state.categories.map(cat => ({
+    id: cat.id, name: cat.name, channels: byCategory[cat.id] || [], collapsed: !!cat.collapsed, isReal: true,
+  }));
+  if (uncategorised.length > 0 || isDragMode) {
+    groups.push({
+      id: null, name: 'Uncategorised', channels: uncategorised,
+      collapsed: localStorage.getItem('uncatCollapsed') === 'true', isReal: false,
+    });
+  }
+
+  for (const group of groups) {
+    const unread = group.channels.reduce((n, c) => n + (c.unwatched_count || 0), 0);
 
     const item = document.createElement('div');
-    item.className = `category-item${cat.collapsed ? '' : ' open'}`;
+    item.className = `category-item${group.collapsed ? '' : ' open'}`;
 
-    const chListAttrs = isDragMode ? ` data-cat-id="${cat.id}"` : '';
+    const headerId    = group.isReal ? group.id : 'null';
+    const chListAttrs = isDragMode ? ` data-cat-id="${headerId}"` : '';
     item.innerHTML = `
-      <div class="category-header" data-id="${cat.id}">
-        <button class="category-chevron">${cat.collapsed ? icon('chevronRight') : icon('chevronDown')}</button>
-        <span class="category-name">${escHtml(cat.name)}</span>
-        ${unread > 0 ? `<span class="category-badge has-unread">${unread}</span>` : `<span class="category-badge">${channels.length}</span>`}
+      <div class="category-header" data-id="${headerId}">
+        <button class="category-chevron">${group.collapsed ? icon('chevronRight') : icon('chevronDown')}</button>
+        <span class="category-name">${escHtml(group.name)}</span>
+        ${unread > 0 ? `<span class="category-badge has-unread">${unread}</span>` : `<span class="category-badge">${group.channels.length}</span>`}
       </div>
       <div class="channel-list"${chListAttrs}>
-        ${channels.map(ch => channelItemHtml(ch, isDragMode)).join('')}
+        ${group.channels.map(ch => channelItemHtml(ch, isDragMode)).join('')}
       </div>`;
 
     if (!isDragMode) {
@@ -657,47 +670,24 @@ function renderSidebar() {
         item.classList.toggle('open');
         const isOpen = item.classList.contains('open');
         e.currentTarget.innerHTML = isOpen ? icon('chevronDown') : icon('chevronRight');
-        toggleCategoryCollapsed(cat.id, !isOpen);
+        if (group.isReal) toggleCategoryCollapsed(group.id, !isOpen);
+        else localStorage.setItem('uncatCollapsed', String(!isOpen));
       });
-      // Header (excluding chevron): navigate to category
-      item.querySelector('.category-header').addEventListener('click', (e) => {
-        if (e.target.closest('.category-chevron') || e.target.closest('.channel-item')) return;
-        navigate('category', cat.id);
-        document.querySelectorAll('.category-header').forEach(h => h.classList.remove('active'));
-        item.querySelector('.category-header').classList.add('active');
-      });
+      // Header (excluding chevron): navigate to category — Uncategorised has no video page of its own
+      if (group.isReal) {
+        item.querySelector('.category-header').addEventListener('click', (e) => {
+          if (e.target.closest('.category-chevron') || e.target.closest('.channel-item')) return;
+          navigate('category', group.id);
+          document.querySelectorAll('.category-header').forEach(h => h.classList.remove('active'));
+          item.querySelector('.category-header').classList.add('active');
+        });
+      }
       item.querySelectorAll('.channel-item').forEach(el => {
         el.addEventListener('click', (e) => { e.stopPropagation(); navigate('channel', parseInt(el.dataset.id)); });
       });
     }
 
     tree.appendChild(item);
-  }
-
-  // Uncategorised
-  if (uncategorised.length > 0 || isDragMode) {
-    const div = document.createElement('div');
-    div.innerHTML = `<div class="uncategorised-header">Uncategorised</div>`;
-    // Use a plain div (not .channel-list) so the max-height:0 rule doesn't apply
-    const chList = document.createElement('div');
-    if (isDragMode) {
-      chList.dataset.catId = 'null';
-      chList.style.cssText = 'min-height:28px;border-radius:6px;transition:background .15s,outline .15s';
-    }
-    for (const ch of uncategorised) {
-      const el = document.createElement('div');
-      el.className  = 'channel-item';
-      el.dataset.id = ch.id;
-      if (isDragMode) {
-        el.innerHTML = `<span class="sidebar-drag-handle">${icon('grip')}</span><span class="channel-name">${escHtml(ch.name)}</span>${ch.unwatched_count > 0 ? `<span class="channel-unread">${ch.unwatched_count}</span>` : ''}`;
-      } else {
-        el.innerHTML = channelThumbHtml(ch) + `<span class="channel-name">${escHtml(ch.name)}</span>${ch.unwatched_count > 0 ? `<span class="channel-unread">${ch.unwatched_count}</span>` : ''}`;
-        el.addEventListener('click', () => navigate('channel', ch.id));
-      }
-      chList.appendChild(el);
-    }
-    div.appendChild(chList);
-    tree.appendChild(div);
   }
 
   if (isDragMode) wireUpSidebarDrag(tree);
@@ -783,7 +773,7 @@ function wireUpSidebarDrag(tree) {
       e.preventDefault();
       header.classList.remove('drag-over');
       const chId  = parseInt(dragSrc.dataset.id);
-      const catId = parseInt(header.dataset.id);
+      const catId = header.dataset.id === 'null' ? null : parseInt(header.dataset.id);
       // Null out dragSrc so the natural dragend that follows skips the API call
       dragSrc = null;
       await api(`/channels/${chId}`, { method: 'PUT', body: { category_id: catId } });
@@ -1813,6 +1803,7 @@ function setupEvents() {
       cat.collapsed = catAllExpanded ? 0 : 1;
       toggleCategoryCollapsed(cat.id, !catAllExpanded);
     }
+    localStorage.setItem('uncatCollapsed', String(!catAllExpanded));
   });
 
   // Filter dropdown
