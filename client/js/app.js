@@ -1816,7 +1816,9 @@ function setupEvents() {
   // Mark all (or, in select mode, only the selected videos) as watched/unwatched
   document.getElementById('markAllSelect').addEventListener('change', async (e) => {
     const action = e.target.value;
-    e.target.value = ''; // reset immediately so the same action can be re-run once more videos load in
+    // Reset immediately (not a persistent choice like sort/filter — it's a one-shot action)
+    // so the same action can be re-run once more videos load in.
+    e.target.selectedIndex = 0;
     const ids = state.selectMode ? [...state.selectedIds] : state.videos.map(v => v.id);
     if (!action || ids.length === 0) return;
     await api(`/videos/${action}-bulk`, { method: 'POST', body: { ids } });
@@ -1828,8 +1830,9 @@ function setupEvents() {
   });
 
   // Select mode — click videos to select them, then bulk-mark only those
-  document.getElementById('selectModeToggle').addEventListener('change', (e) => {
-    state.selectMode = e.target.checked;
+  document.getElementById('selectModeToggle').addEventListener('click', (e) => {
+    state.selectMode = !state.selectMode;
+    e.currentTarget.classList.toggle('active', state.selectMode);
     state.selectedIds.clear();
     document.querySelectorAll('.video-card.selected').forEach(el => el.classList.remove('selected'));
     const placeholder = document.querySelector('#markAllSelect option[value=""]');

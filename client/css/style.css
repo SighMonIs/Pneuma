@@ -728,19 +728,26 @@ input, select { font: inherit; color: inherit; }
 
 .sort-select:focus, .mark-all-select:focus { border-color: var(--accent); color: var(--text); }
 
-.select-mode-toggle {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+.toolbar-toggle-btn {
   height: 32px;
-  padding: 0 10px;
+  box-sizing: border-box;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0 12px;
   font-size: 12px;
   color: var(--text-muted);
   cursor: pointer;
-  user-select: none;
+  transition: background var(--transition), color var(--transition), border-color var(--transition);
 }
 
-.select-mode-toggle:hover { color: var(--text); }
+.toolbar-toggle-btn:hover { color: var(--text); }
+
+.toolbar-toggle-btn.active {
+  background: var(--accent-dim);
+  color: var(--accent);
+  border-color: var(--accent);
+}
 
 .btn-feed-errors {
   padding: 4px 10px;
