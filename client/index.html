@@ -89,11 +89,11 @@
 
       <!-- Filter / sort bar -->
       <div class="toolbar" id="toolbar">
-        <div class="toolbar-filters">
-          <button class="filter-btn active" data-filter="all">All</button>
-          <button class="filter-btn" data-filter="unwatched">Unwatched</button>
-          <button class="filter-btn" data-filter="watched">Watched</button>
-        </div>
+        <select class="sort-select" id="filterSelect">
+          <option value="all">All</option>
+          <option value="unwatched">Unwatched</option>
+          <option value="watched">Watched</option>
+        </select>
         <select class="mark-all-select" id="markAllSelect">
           <option value="" selected disabled>Mark all as…</option>
           <option value="watched">Watched</option>

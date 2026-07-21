@@ -623,35 +623,6 @@ input, select { font: inherit; color: inherit; }
   background: var(--bg);
 }
 
-.toolbar-filters {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  height: 32px;
-  box-sizing: border-box;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 3px;
-}
-
-.filter-btn {
-  height: 100%;
-  padding: 0 14px;
-  border-radius: 6px;
-  font-size: 13px;
-  color: var(--text-muted);
-  border: none;
-  background: var(--surface);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all var(--transition);
-}
-
-.filter-btn:hover  { color: var(--text); background: rgba(255,255,255,0.06); }
-.filter-btn.active { color: var(--text); background: var(--surface-3); }
-
 .toolbar-center {
   flex: 1;
   display: flex;

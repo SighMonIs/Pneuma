@@ -113,7 +113,7 @@ function applyStoredPrefs() {
 // All/Unwatched/Watched is remembered separately per view (home vs a given channel/category page)
 function applyFilterForView(view) {
   state.filter = localStorage.getItem(`filter:${view}`) || (view === 'home' ? state.settings.default_filter : null) || 'all';
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === state.filter));
+  document.getElementById('filterSelect').value = state.filter;
 }
 
 /* ── navigation ───────────────────────────────────────────────────────── */
@@ -1780,15 +1780,11 @@ function setupEvents() {
     }
   });
 
-  // Filter buttons
-  document.querySelectorAll('.filter-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      state.filter = btn.dataset.filter;
-      localStorage.setItem(`filter:${state.view}`, state.filter);
-      loadVideos(true);
-    });
+  // Filter dropdown
+  document.getElementById('filterSelect').addEventListener('change', (e) => {
+    state.filter = e.target.value;
+    localStorage.setItem(`filter:${state.view}`, state.filter);
+    loadVideos(true);
   });
 
   // Mark all as watched/unwatched — only the videos currently loaded on screen
