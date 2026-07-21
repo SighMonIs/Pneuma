@@ -25,7 +25,7 @@ router.put('/', (req, res) => {
   const db = getDb();
   const allowed = [
     'playback_mode', 'poll_interval', 'search_youtube',
-    'show_shorts', 'auto_mark_watched', 'default_view',
+    'show_shorts', 'auto_mark_watched',
     'default_filter', 'default_sort',
     'mark_watched_at_enabled', 'mark_watched_at_percent',
   ];

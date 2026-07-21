@@ -96,7 +96,6 @@ function seedSettings(db) {
     auto_mark_watched: 'false',
     mark_watched_at_enabled: 'true',
     mark_watched_at_percent: '90',
-    default_view:      'grid',
     default_filter:    'unwatched',
     default_sort:      'newest',
   };

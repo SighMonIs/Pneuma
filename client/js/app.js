@@ -34,7 +34,6 @@ const state = {
   categoryId:  null,
   filter:      'unwatched',
   sort:        'newest',
-  layout:      'grid',
   categories:  [],
   channels:    [],
   settings:    {},
@@ -45,6 +44,8 @@ const state = {
   watchVideo:  null,  // currently playing video object
   canGoBack:   false, // true when watch was opened via navigation (not direct URL)
   settingsTab: 'playback',
+  selectMode:  false,   // bulk-select mode toggled via the "Select" checkbox
+  selectedIds: new Set(),
 };
 
 /* ── YouTube IFrame player ────────────────────────────────────────────── */
@@ -105,7 +106,6 @@ async function loadMeta() {
 }
 
 function applyStoredPrefs() {
-  state.layout   = localStorage.getItem('layout')   || state.settings.default_view   || 'grid';
   state.sort     = localStorage.getItem('sort')     || state.settings.default_sort   || 'newest';
   state.autoplay = localStorage.getItem('autoplay') !== 'false';
 }
@@ -395,9 +395,10 @@ function renderVideos(reset) {
   const container = document.getElementById('videoContainer');
   const lmw       = document.getElementById('loadMoreWrap');
 
-  container.className = `video-container ${state.layout}`;
+  container.className = 'video-container';
 
   if (reset) {
+    state.selectedIds.clear();
     // Remove all children except the load-more button
     Array.from(container.children)
       .filter(c => c.id !== 'loadMoreWrap')
@@ -417,7 +418,7 @@ function renderVideos(reset) {
   const batch = reset ? state.videos : state.videos.slice(state.offset - (state.offset % state.PAGE || state.PAGE));
 
   (reset ? state.videos : batch).forEach(v => {
-    frag.appendChild(state.layout === 'grid' ? makeVideoCard(v) : makeVideoRow(v));
+    frag.appendChild(makeVideoCard(v));
   });
 
   container.insertBefore(frag, lmw);
@@ -487,25 +488,21 @@ function makeVideoCard(v) {
   });
 
   wireVideoChannelLink(el, v);
-  el.addEventListener('click', () => openVideo(v));
+  el.addEventListener('click', () => {
+    if (state.selectMode) toggleVideoSelection(el, v.id);
+    else openVideo(v);
+  });
   return el;
 }
 
-function makeVideoRow(v) {
-  const el = document.createElement('div');
-  el.className = `video-row${v.watched_at ? ' watched' : ''}`;
-  el.dataset.id = v.id;
-  el.dataset.ytId = v.yt_id;
-  el.innerHTML = `
-    <img class="video-row-thumb" src="${v.thumbnail_url || ''}" alt="" loading="lazy" onerror="this.style.opacity=0">
-    <div class="video-row-info">
-      <div class="video-row-title">${escHtml(v.title)}</div>
-      <div class="video-row-meta">${videoChannelLinkHtml(v)}<span class="video-time">${timeAgo(v.published_at)}</span></div>
-    </div>
-    ${v.duration ? `<span class="video-row-duration">${formatDuration(v.duration)}</span>` : ''}`;
-  wireVideoChannelLink(el, v);
-  el.addEventListener('click', () => openVideo(v));
-  return el;
+function toggleVideoSelection(el, id) {
+  if (state.selectedIds.has(id)) {
+    state.selectedIds.delete(id);
+    el.classList.remove('selected');
+  } else {
+    state.selectedIds.add(id);
+    el.classList.add('selected');
+  }
 }
 
 /* ── video playback ───────────────────────────────────────────────────── */
@@ -1810,15 +1807,25 @@ function setupEvents() {
     loadVideos(true);
   });
 
-  // Mark all as watched/unwatched — only the videos currently loaded on screen
+  // Mark all (or, in select mode, only the selected videos) as watched/unwatched
   document.getElementById('markAllSelect').addEventListener('change', async (e) => {
     const action = e.target.value;
     e.target.value = '';
-    if (!action || state.videos.length === 0) return;
-    const ids = state.videos.map(v => v.id);
+    const ids = state.selectMode ? [...state.selectedIds] : state.videos.map(v => v.id);
+    if (!action || ids.length === 0) return;
     await api(`/videos/${action}-bulk`, { method: 'POST', body: { ids } });
+    state.selectedIds.clear();
     await loadVideos(true);
     refreshSidebarCounts();
+  });
+
+  // Select mode — click videos to select them, then bulk-mark only those
+  document.getElementById('selectModeToggle').addEventListener('change', (e) => {
+    state.selectMode = e.target.checked;
+    state.selectedIds.clear();
+    document.querySelectorAll('.video-card.selected').forEach(el => el.classList.remove('selected'));
+    const placeholder = document.querySelector('#markAllSelect option[value=""]');
+    if (placeholder) placeholder.textContent = state.selectMode ? 'Mark selected as…' : 'Mark all as…';
   });
 
   // Sort
@@ -1826,17 +1833,6 @@ function setupEvents() {
     state.sort = e.target.value;
     localStorage.setItem('sort', state.sort);
     loadVideos(true);
-  });
-
-  // Layout toggle
-  document.querySelectorAll('.layout-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.layout-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      state.layout = btn.dataset.layout;
-      localStorage.setItem('layout', state.layout);
-      renderVideos(true);
-    });
   });
 
   // Infinite scroll — videoContainer scrolls on home/category, .main scrolls on channel pages
@@ -1867,9 +1863,7 @@ function setupEvents() {
   // Sidebar search
   setupSearch();
 
-  // Apply saved layout/sort to UI — clear HTML defaults first (filter is handled per-view by applyFilterForView)
-  document.querySelectorAll('.layout-btn').forEach(b => b.classList.remove('active'));
-  document.querySelector(`[data-layout="${state.layout}"]`)?.classList.add('active');
+  // Apply saved sort to UI (filter is handled per-view by applyFilterForView)
   document.getElementById('sortSelect').value = state.sort;
 }
 
