@@ -524,6 +524,16 @@ function renderWatchView(v) {
   wireVideoChannelLink(watchMeta, v);
   document.getElementById('watchYtLink').href = `https://www.youtube.com/watch?v=${v.yt_id}`;
 
+  updateWatchMarkButton(v);
+  const markBtn = document.getElementById('watchMarkWatchedBtn');
+  markBtn.onclick = async () => {
+    const watched = !!v.watched_at;
+    await api(`/videos/${v.id}/watched`, { method: watched ? 'DELETE' : 'POST' });
+    v.watched_at = watched ? null : new Date().toISOString();
+    updateWatchMarkButton(v);
+    document.querySelector(`.video-card[data-id="${v.id}"]`)?.classList.toggle('watched', !watched);
+  };
+
   stopPlayer();
 
   const wrap = document.getElementById('watchPlayerWrap');
@@ -588,8 +598,13 @@ async function markWatched(v) {
   if (v.watched_at) return;
   v.watched_at = new Date().toISOString();
   await api(`/videos/${v.id}/watched`, { method: 'POST' });
-  const card = document.querySelector(`.video-card[data-id="${v.id}"]`);
-  if (card) card.classList.add('watched');
+  document.querySelector(`.video-card[data-id="${v.id}"]`)?.classList.add('watched');
+  if (state.watchVideo === v) updateWatchMarkButton(v);
+}
+
+function updateWatchMarkButton(v) {
+  const btn = document.getElementById('watchMarkWatchedBtn');
+  btn.textContent = v.watched_at ? 'Mark unwatched' : 'Mark watched';
 }
 
 function stopPlayer() {
@@ -1810,13 +1825,15 @@ function setupEvents() {
   // Mark all (or, in select mode, only the selected videos) as watched/unwatched
   document.getElementById('markAllSelect').addEventListener('change', async (e) => {
     const action = e.target.value;
-    e.target.value = '';
+    e.target.value = ''; // reset immediately so the same action can be re-run once more videos load in
     const ids = state.selectMode ? [...state.selectedIds] : state.videos.map(v => v.id);
     if (!action || ids.length === 0) return;
     await api(`/videos/${action}-bulk`, { method: 'POST', body: { ids } });
     state.selectedIds.clear();
     await loadVideos(true);
     refreshSidebarCounts();
+    showToast('mark-all', { icon: icon('check'), title: `Marked ${ids.length} video${ids.length !== 1 ? 's' : ''} as ${action}` });
+    dismissToast('mark-all', 1500);
   });
 
   // Select mode — click videos to select them, then bulk-mark only those
