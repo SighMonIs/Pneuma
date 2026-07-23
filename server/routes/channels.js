@@ -77,11 +77,13 @@ async function resolveChannelFromUrl(url) {
   const info = items[0];
   if (!info) throw new Error('Could not resolve channel info');
 
-  const channelId = info.channel_id || info.uploader_id;
+  // Flat-playlist entries carry the parent channel under playlist_* fields
+  // rather than channel_id/uploader_id directly (varies by yt-dlp version).
+  const channelId = info.channel_id || info.uploader_id || info.playlist_channel_id;
   if (!channelId) throw new Error('Could not determine channel ID from this URL');
   return {
     yt_channel_id: channelId,
-    name: info.channel || info.uploader,
+    name: info.channel || info.uploader || info.playlist_channel || info.playlist_uploader,
     thumbnail_url: info.channel_url ? `https://i.ytimg.com/vi/${info.id}/default.jpg` : null,
     rss_url: channelId ? rssUrlFromChannelId(channelId) : null,
   };
