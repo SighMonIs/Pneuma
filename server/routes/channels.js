@@ -78,6 +78,7 @@ async function resolveChannelFromUrl(url) {
   if (!info) throw new Error('Could not resolve channel info');
 
   const channelId = info.channel_id || info.uploader_id;
+  if (!channelId) throw new Error('Could not determine channel ID from this URL');
   return {
     yt_channel_id: channelId,
     name: info.channel || info.uploader,
